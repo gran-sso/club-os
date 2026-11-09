@@ -1748,6 +1748,36 @@ For environments where full browser automation is unavailable, operators should 
 - **Full Application Test Suite**: `php artisan test` — **313 passed, 1,649 assertions, 0 failures** in 89s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 481ms.
 
+---
+
+## 21. Help Section Modernization, Dashboard Search Streamlining, and Member Profile Enterprise Compact Redesign (November 9, 2026)
+
+### 21.1 Help Center Enterprise Two-Column Desk Redesign & Bylaws Removal
+- Refactored `/admin/help` (`App\Filament\Pages\HelpPage` and `resources/views/filament/pages/help.blade.php`) into an enterprise documentation layout:
+  - **Left Sidebar Navigation Menu**: Role-based sections (Counter Cashier & POS, Front Desk & Facilities, Finance & Accounting, Stores & Inventory, Executive Governance) with real-time active indicators and step count badges.
+  - **Right Content Area**: Numbered step-by-step procedure cards with actionable instructions, keyboard keycaps (<kbd>F2</kbd>, <kbd>F8</kbd>, etc.), contextual alerts, and printable desk cheat sheet.
+  - **Removed Bylaws Section**: Club bylaws link and content removed as Malabar Club has not codified specific custom bylaws.
+  - All 13 tests in `HelpCenterTest` pass.
+
+### 21.2 Admin Dashboard Search Widget Streamlining
+- Removed the redundant `GlobalQuickSearchWidget` and its Blade view from the admin dashboard.
+- Filament's top-bar command search (`Cmd+K` / `Ctrl+K`) remains the authoritative, unified search mechanism across all 20 sections of the application, eliminating visual duplication.
+- All 9 tests in `GlobalSearchScalingTest` pass.
+
+### 21.3 Member Profile Non-Colored Monochrome Enterprise Restyling (Decision D30)
+- Fully refactored `resources/views/filament/resources/members/pages/view-member.blade.php`:
+  - **Primary CTA Buttons**: Replaced amber/yellow/green gradients with a crisp, executive slate-900 primary button (`bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-2xs`) and clean white/slate secondary buttons (`bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs border border-slate-300 shadow-2xs`).
+  - **Compact Height & Density**: Standardized all button heights from `42px`/`44px` down to `h-8.5` (34px), reduced avatar size from `w-18` to compact `w-12` in solid slate-900, tightened balance display to compact `px-3.5 py-2.5`, and tightened vertical page padding to `space-y-4`.
+  - **Monochrome Modal Actions**: Standardized all 12 modal forms (Top-Up, RFID Card, Dependent, Status Change, Badminton Booking, Room Reservation, Affiliated Club Intro Letter, Locker Assignment, Annual Renewal, Invoices, Admin Notes) with clean `h-8.5` slate-900 submit buttons and subtle border-slate-300 cancel buttons, replacing previous colorful rainbow variants (`bg-emerald-600`, `bg-blue-600`, `bg-amber-600`, `bg-purple-700`, `bg-indigo-600`).
+  - **Clean Tabs**: Standardized horizontal profile tab bar to compact `h-8.5` buttons with subtle slate borders and neutral counter badges, replacing colorful amber text and green badges.
+  - **Member Actions Popover**: Replaced emoji icons with high-density monochrome SVG icons and compact `p-2` list rows.
+
+### 21.4 Automated Verification
+- `php artisan test --filter=MemberProfileViewTest`: **27 passed, 123 assertions, 0 failures**.
+- `php artisan test --filter=MembershipAndAccessTest`: **7 passed, 36 assertions, 0 failures**.
+- `npm run build`: Compiled cleanly in 1.12s.
+
+
 
 
 
