@@ -130,6 +130,36 @@ class HelpCenterTest extends TestCase
             ->assertSet('searchQuery', 'coa');
     }
 
+    public function test_help_page_select_topic_displays_step_by_step_procedure(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->call('selectTopic', 'cashier-recharge')
+            ->assertSet('activeTopic', 'cashier-recharge')
+            ->assertSet('activeTab', 'cashier')
+            ->assertSee('Standard Step-by-Step Procedure')
+            ->assertSee('Identify Member at POS')
+            ->assertSee('Click Quick Top-Up')
+            ->assertSee('Prepaid Member Liability (2010)');
+    }
+
+    public function test_help_page_sidebar_grouped_topics(): void
+    {
+        $this->actingAs($this->admin);
+
+        $component = Livewire::test(HelpPage::class);
+        $groups = $component->get('groupedTopics');
+
+        $this->assertArrayHasKey('cashier', $groups);
+        $this->assertArrayHasKey('reception', $groups);
+        $this->assertArrayHasKey('finance', $groups);
+        $this->assertArrayHasKey('inventory', $groups);
+        $this->assertArrayHasKey('executive', $groups);
+        $this->assertArrayHasKey('bylaws', $groups);
+        $this->assertNotEmpty($groups['cashier']['topics']);
+    }
+
     public function test_user_menu_contains_help_link(): void
     {
         $this->actingAs($this->admin);
