@@ -74,6 +74,7 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'url' => route('pos'),
                 'details' => ['Section' => 'Commercial & Counters', 'Action' => 'Open Counter POS'],
                 'keywords' => ['pos', 'counter', 'billing', 'sale', 'fast sale', 'quick sale', 'till', 'cashier', 'order', 'token'],
+                'visible' => fn (): bool => ! (auth()->user()?->hasRole('admin') ?? false),
             ],
             [
                 'title' => '🏨 Front-Desk Room Rack (Visual Grid & Housekeeping)',
@@ -109,6 +110,10 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
 
         return collect($screens)
             ->filter(function (array $screen) use ($normalized): bool {
+                if (isset($screen['visible']) && is_callable($screen['visible']) && ! call_user_func($screen['visible'])) {
+                    return false;
+                }
+
                 if (str_contains(strtolower($screen['title']), $normalized)) {
                     return true;
                 }

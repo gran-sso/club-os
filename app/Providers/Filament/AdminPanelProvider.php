@@ -69,7 +69,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Counter POS Terminal')
                     ->url(fn (): string => route('pos'))
                     ->icon(Heroicon::OutlinedBolt)
-                    ->sort(-1),
+                    ->sort(-1)
+                    ->visible(fn (): bool => ! (auth()->user()?->hasRole('admin') ?? false)),
             ])
             ->globalSearch(\App\Domain\Shared\Services\ClubGlobalSearchProvider::class)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])

@@ -1501,10 +1501,18 @@ For environments where full browser automation is unavailable, operators should 
   - High-visibility command bar with instant keyboard focus synchronization to the global search engine.
   - 1-click quick-jump shortcut pills for Counter POS (`/pos`), Room Rack (`/admin/room-rack`), Court Schedule (`/admin/court-schedule`), Executive Reports (`/admin/financial-reports`), Bank Passbook (`/admin/bank-accounts`), and Settings (`/admin/system-settings`).
 
-### 16.4 Automated Verification
-- **Global Search Test Suite**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 81 assertions, 0 failures**.
+### 16.4 Executive Segregation: Counter POS Hidden for Admin Role
+- In accordance with internal financial controls and executive segregation of duties, the Counter POS Terminal link has been hidden for the `admin` role:
+  - **Sidebar Navigation**: `NavigationItem` visibility condition updated in `AdminPanelProvider` (`visible(fn () => !auth()->user()?->hasRole('admin'))`).
+  - **Dashboard Command Hub**: POS quick-jump pill hidden on `GlobalQuickSearchWidget` for `admin`, remaining active for `cashier`, `manager`, and `reception`.
+  - **Global Search Quick Links**: `ClubGlobalSearchProvider` omits the cashier terminal quick-link for `admin` searches, returning pure billing & invoice registers instead.
+
+### 16.5 Automated Verification
+- **Global Search Test Suite**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 84 assertions, 0 failures**.
+- **Admin Panel Role Test Suite**: `tests/Feature/AdminPanelTest.php` — **6 passed, 64 assertions, 0 failures**.
 - **Full Application Test Suite**: `php artisan test` — **280 passed, 1,506 assertions, 0 failures** in 71s.
-- **Frontend Assets**: `npm run build` compiled cleanly in 515ms.
+- **Frontend Assets**: `npm run build` compiled cleanly in 397ms.
+
 
 
 

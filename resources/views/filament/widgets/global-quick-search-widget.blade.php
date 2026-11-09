@@ -89,6 +89,7 @@
             <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
                 <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">Quick Jump:</span>
 
+                @unless(auth()->user()?->hasRole('admin'))
                 <a
                     href="{{ route('pos') }}"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition-colors"
@@ -96,6 +97,7 @@
                     <span>⚡</span>
                     <span>Counter POS</span>
                 </a>
+                @endunless
 
                 <a
                     href="{{ url('/admin/room-rack') }}"

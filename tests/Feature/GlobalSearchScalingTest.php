@@ -102,10 +102,11 @@ class GlobalSearchScalingTest extends TestCase
 
     public function test_club_global_search_provider_returns_navigation_screens(): void
     {
-        $this->actingAs($this->admin);
+        // 1. When acting as Cashier, POS is returned
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+        $this->actingAs($cashier);
         $provider = new ClubGlobalSearchProvider();
 
-        // 1. Search for POS
         $posResults = $provider->getResults('pos');
         $this->assertNotNull($posResults);
         $categories = $posResults->getCategories();
@@ -113,7 +114,15 @@ class GlobalSearchScalingTest extends TestCase
         $posItems = collect($categories->get('Operational Screens & Quick Links'));
         $this->assertTrue($posItems->contains(fn ($res) => str_contains($res->title, 'Counter POS')));
 
-        // 2. Search for Reports
+        // 2. When acting as Admin, Counter POS is hidden from navigation screens
+        $this->actingAs($this->admin);
+        $adminPosResults = $provider->getResults('pos');
+        if ($adminPosResults && $adminPosResults->getCategories()->has('Operational Screens & Quick Links')) {
+            $adminPosItems = collect($adminPosResults->getCategories()->get('Operational Screens & Quick Links'));
+            $this->assertFalse($adminPosItems->contains(fn ($res) => str_contains($res->title, 'Counter POS')));
+        }
+
+        // 3. Search for Reports as Admin
         $reportResults = $provider->getResults('reports');
         $this->assertNotNull($reportResults);
         $reportCategories = $reportResults->getCategories();
@@ -121,7 +130,7 @@ class GlobalSearchScalingTest extends TestCase
         $reportItems = collect($reportCategories->get('Operational Screens & Quick Links'));
         $this->assertTrue($reportItems->contains(fn ($res) => str_contains($res->title, 'Executive Reporting Hub')));
 
-        // 3. Search for Room Rack
+        // 4. Search for Room Rack
         $roomResults = $provider->getResults('room rack');
         $this->assertNotNull($roomResults);
         $roomCategories = $roomResults->getCategories();
@@ -304,15 +313,25 @@ class GlobalSearchScalingTest extends TestCase
 
     public function test_dashboard_hero_quick_search_widget_renders_successfully(): void
     {
+        // 1. Admin sees search hub but Counter POS is hidden
         $this->actingAs($this->admin);
 
         Livewire::test(GlobalQuickSearchWidget::class)
             ->assertSuccessful()
             ->assertSee('Club-Wide Global Search & Command Hub')
             ->assertSee('18 Sections Active')
-            ->assertSee('Counter POS')
+            ->assertDontSee('Counter POS')
             ->assertSee('Room Rack')
             ->assertSee('Court Schedule')
             ->assertSee('Executive Reports');
+
+        // 2. Cashier sees Counter POS on widget
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+        $this->actingAs($cashier);
+
+        Livewire::test(GlobalQuickSearchWidget::class)
+            ->assertSuccessful()
+            ->assertSee('Counter POS')
+            ->assertSee('Room Rack');
     }
 }
