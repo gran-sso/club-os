@@ -100,9 +100,7 @@ class HelpCenterTest extends TestCase
             ->call('setTab', 'executive')
             ->assertSet('activeTab', 'executive')
             ->assertSee('Staff User Management')
-            ->call('setTab', 'bylaws')
-            ->assertSet('activeTab', 'bylaws')
-            ->assertSee('Zero-Credit Policy');
+            ->assertDontSee('Club Bylaws');
     }
 
     public function test_help_page_live_search_filters_articles(): void
@@ -156,7 +154,7 @@ class HelpCenterTest extends TestCase
         $this->assertArrayHasKey('finance', $groups);
         $this->assertArrayHasKey('inventory', $groups);
         $this->assertArrayHasKey('executive', $groups);
-        $this->assertArrayHasKey('bylaws', $groups);
+        $this->assertArrayNotHasKey('bylaws', $groups);
         $this->assertNotEmpty($groups['cashier']['topics']);
     }
 

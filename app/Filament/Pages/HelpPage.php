@@ -18,7 +18,7 @@ class HelpPage extends Page
 
     protected string $view = 'filament.pages.help';
 
-    public string $activeTab = 'cashier'; // 'cashier', 'reception', 'finance', 'inventory', 'executive', 'bylaws'
+    public string $activeTab = 'cashier'; // 'cashier', 'reception', 'finance', 'inventory', 'executive'
 
     public string $activeTopic = 'cashier-shift';
 
@@ -31,14 +31,14 @@ class HelpPage extends Page
 
         if ($topic && array_key_exists($topic, $this->getAllTopics())) {
             $this->selectTopic($topic);
-        } elseif ($tab && in_array($tab, ['cashier', 'reception', 'finance', 'inventory', 'executive', 'bylaws'], true)) {
+        } elseif ($tab && in_array($tab, ['cashier', 'reception', 'finance', 'inventory', 'executive'], true)) {
             $this->setTab($tab);
         }
     }
 
     public function setTab(string $tab): void
     {
-        if (!in_array($tab, ['cashier', 'reception', 'finance', 'inventory', 'executive', 'bylaws'], true)) {
+        if (!in_array($tab, ['cashier', 'reception', 'finance', 'inventory', 'executive'], true)) {
             return;
         }
 
@@ -104,7 +104,6 @@ class HelpPage extends Page
             'finance' => ['label' => 'Finance & Accounts', 'icon' => 'scale', 'topics' => []],
             'inventory' => ['label' => 'Procurement & Stores', 'icon' => 'archive-box', 'topics' => []],
             'executive' => ['label' => 'Executive & Admin', 'icon' => 'shield-check', 'topics' => []],
-            'bylaws' => ['label' => 'Club Bylaws', 'icon' => 'document-check', 'topics' => []],
         ];
 
         $query = trim(strtolower($this->searchQuery));
@@ -818,59 +817,6 @@ class HelpPage extends Page
                 ],
                 'formula' => '8 Core Statements: Sales &bull; Income/Exp &bull; Till Recon &bull; Food &bull; Bar Stock &bull; Sports &bull; Zero-Credit &bull; Dept P&L',
                 'policy_note' => 'Reports use immutable double-entry ledger entries. Backdated entries in locked fiscal periods are prohibited.',
-            ],
-
-            // =========================================================================
-            // 6. CLUB BYLAWS & SYSTEM RULES
-            // =========================================================================
-            'bylaws-rules' => [
-                'tab' => 'bylaws',
-                'tab_label' => 'Club Bylaws',
-                'icon' => '📜',
-                'title' => 'Club Operational Bylaws & System Rules',
-                'summary' => 'The fundamental non-negotiable rules codified into the Malabar Club transactional engine governing credit, security, records, and access.',
-                'target_role' => 'All Staff, Management Committee & Members',
-                'estimated_time' => '3 mins read',
-                'tags' => ['bylaws', 'zero-credit', 'zero credit', 'overdraft', 'immutable', 'reversals', 'rules', 'policy', 'sponsorship'],
-                'steps' => [
-                    [
-                        'number' => 1,
-                        'title' => 'Rule 1: Strict Zero-Credit Policy (No Overdrafts)',
-                        'instruction' => 'No member, dependent, visiting guest, or affiliated reciprocal member may receive goods, liquor, food, sports access, or room stays on credit or with a negative account balance. No role, including General Manager and Administrator, can override this policy.',
-                        'result' => 'Transactions with insufficient verified prepaid funds are rejected automatically by server ledger locks.',
-                        'tip' => 'Zero-credit guarantees zero bad debt and protects club solvency.',
-                    ],
-                    [
-                        'number' => 2,
-                        'title' => 'Rule 2: Centralized Server Ledger Ownership',
-                        'instruction' => 'A member\'s RFID contactless smartcard does not store money. It stores an encrypted, unique identifier that links to the central database ledger. Offline prepaid spending is strictly disabled.',
-                        'result' => 'Lost or stolen cards cannot be spent or forged; replacing a card instantly maps to the server balance.',
-                        'tip' => 'Monetary calculations are performed as exact integers in Indian Paise.',
-                    ],
-                    [
-                        'number' => 3,
-                        'title' => 'Rule 3: Immutable Financial Records & Linked Reversals',
-                        'instruction' => 'Posted invoices, stock movements, wallet recharges, and general ledger journals cannot be updated, edited, or deleted under any circumstance. Correcting a mistake requires an authorized, linked reversal or credit note.',
-                        'result' => 'Database triggers permanently block UPDATE and DELETE queries on posted records.',
-                        'tip' => 'Full legal audit trail is maintained for statutory authorities.',
-                    ],
-                    [
-                        'number' => 4,
-                        'title' => 'Rule 4: Guest Entry & Sponsoring Eligibility',
-                        'instruction' => 'Guest entry for the bar and card room requires formal registration, an eligible sponsoring club member or affiliated reciprocal member, and the applicable paid day pass.',
-                        'result' => 'Unpaid draft entries never activate gate access. Unsponsored visitors cannot enter.',
-                        'tip' => 'Complimentary guest passes are prohibited by club bylaws.',
-                    ],
-                    [
-                        'number' => 5,
-                        'title' => 'Rule 5: Fiscal Period Closing Locks',
-                        'instruction' => 'Audited financial periods are locked by the Club Accountant. Once closed, posting backdated transactions into that date range is strictly forbidden.',
-                        'result' => 'Protects statutory statements from unauthorized modifications.',
-                        'tip' => 'Period closing is performed annually after completion of the statutory audit.',
-                    ],
-                ],
-                'formula' => 'Foundational Mandates: Zero-Credit &bull; Server Ledger &bull; Immutable History &bull; Mandatory Sponsorship &bull; Period Locks',
-                'policy_note' => 'These policies represent official club bylaws approved by the Management Committee and cannot be bypassed programmatically.',
             ],
         ];
     }

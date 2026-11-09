@@ -130,7 +130,7 @@
 
                 <!-- Footer Summary of Procedures -->
                 <div class="pt-3 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-                    <span>14 Standard Operating Guides</span>
+                    <span>13 Standard Operating Guides</span>
                     <span class="font-bold text-amber-700">Malabar Club</span>
                 </div>
             </div>
