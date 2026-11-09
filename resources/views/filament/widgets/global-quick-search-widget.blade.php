@@ -104,7 +104,7 @@
                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 transition-colors"
                 >
                     <span>🏨</span>
-                    <span>Room Rack</span>
+                    <span>Accommodation Deck</span>
                 </a>
 
                 <a

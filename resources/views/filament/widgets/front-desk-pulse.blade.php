@@ -13,7 +13,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ url('/admin/room-rack') }}" class="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1">
-                    <span>Room Rack</span>
+                    <span>Accommodation Deck</span>
                     <span>&rarr;</span>
                 </a>
             </div>

@@ -58,7 +58,7 @@
                 </a>
                 @if (auth('web')->user()?->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))
                     <a href="{{ url('/admin/room-rack') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden md:inline-flex items-center gap-1.5">
-                        🏨 Room Rack
+                        🏨 Accommodation Deck
                     </a>
                     <a href="{{ url('/admin/court-schedule') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden lg:inline-flex items-center gap-1.5">
                         🏸 Court Schedule

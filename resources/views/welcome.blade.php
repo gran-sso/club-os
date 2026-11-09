@@ -134,13 +134,13 @@
                             </div>
                             <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-semibold">Reception</span>
                         </div>
-                        <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">Visual Room Rack</h3>
+                        <h3 class="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">Accommodation Deck</h3>
                         <p class="text-xs text-slate-400 leading-relaxed">
                             Front-desk accommodation grid (Rooms 101–105), housekeeping cleanliness tracking, and guest check-in/out.
                         </p>
                     </div>
                     <div class="pt-5 flex items-center text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
-                        <span>View Room Rack</span>
+                        <span>View Accommodation Deck</span>
                         <span class="ml-1">→</span>
                     </div>
                 </a>

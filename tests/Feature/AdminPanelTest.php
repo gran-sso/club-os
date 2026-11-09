@@ -74,7 +74,7 @@ class AdminPanelTest extends TestCase
         foreach ([$cashier, $reception] as $staff) {
             $response = $this->actingAs($staff)->get('/admin/room-rack');
             $response->assertStatus(200);
-            $response->assertSee('Visual Room Rack');
+            $response->assertSee('Accommodation Deck');
 
             $responseCourt = $this->actingAs($staff)->get('/admin/court-schedule');
             $responseCourt->assertStatus(200);
@@ -114,7 +114,7 @@ class AdminPanelTest extends TestCase
 
         $response = $this->actingAs($cashier)->get('/pos');
         $response->assertStatus(200);
-        $response->assertSee('Room Rack');
+        $response->assertSee('Accommodation Deck');
         $response->assertSee('Court Schedule');
         $response->assertDontSee('Club Admin');
     }

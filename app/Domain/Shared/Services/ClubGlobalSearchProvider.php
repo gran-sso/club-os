@@ -77,10 +77,10 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'visible' => fn (): bool => ! (auth()->user()?->hasRole('admin') ?? false),
             ],
             [
-                'title' => '🏨 Front-Desk Room Rack (Visual Grid & Housekeeping)',
+                'title' => '🏨 Front-Desk Accommodation Deck (Room Rack Grid & Housekeeping)',
                 'url' => url('/admin/room-rack'),
                 'details' => ['Section' => 'Operations & Front Desk', 'Action' => 'View Deluxe Rooms 101–105'],
-                'keywords' => ['room', 'rack', 'room rack', 'accommodation', 'hotel', 'deluxe', 'housekeeping', 'cleaning', 'rooms'],
+                'keywords' => ['accommodation deck', 'deck', 'room rack', 'room', 'rack', 'accommodation', 'hotel', 'deluxe', 'housekeeping', 'cleaning', 'rooms'],
             ],
             [
                 'title' => '🏸 Badminton Court Schedule (Hourly Slots & Matrix)',

@@ -49,7 +49,7 @@ class FrontDeskAndOperationalWorkflowsTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/admin/room-rack');
         $response->assertStatus(200);
-        $response->assertSee('Accommodation Visual Room Rack');
+        $response->assertSee('Accommodation Deck');
         $response->assertSee('Deluxe Room 101');
 
         $response = $this->actingAs($this->admin)->get('/admin/court-schedule');
@@ -62,7 +62,7 @@ class FrontDeskAndOperationalWorkflowsTest extends TestCase
     {
         $responseCashier = $this->actingAs($this->cashier)->get('/admin/room-rack');
         $responseCashier->assertStatus(200);
-        $responseCashier->assertSee('Accommodation Visual Room Rack');
+        $responseCashier->assertSee('Accommodation Deck');
 
         $responseCourt = $this->actingAs($this->cashier)->get('/admin/court-schedule');
         $responseCourt->assertStatus(200);

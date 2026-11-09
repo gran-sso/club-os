@@ -25,9 +25,9 @@ class RoomRackPage extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Visual Room Rack';
+    protected static ?string $navigationLabel = 'Accommodation Deck';
 
-    protected static ?string $title = 'Accommodation Visual Room Rack';
+    protected static ?string $title = 'Accommodation Deck';
 
     protected static ?string $slug = 'room-rack';
 
@@ -436,7 +436,7 @@ class RoomRackPage extends Page
             'rate_per_night_rupees' => $rateRupees,
             'paid_amount_rupees' => $rateRupees,
             'payment_mode' => 'cash',
-            'notes' => 'Walk-in booking via Visual Room Rack',
+            'notes' => 'Walk-in booking via Accommodation Deck',
         ];
 
         $this->showNewBookingModal = true;

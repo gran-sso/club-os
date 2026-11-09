@@ -133,13 +133,13 @@ class GlobalSearchScalingTest extends TestCase
         $reportItems = collect($reportCategories->get('Operational Screens & Quick Links'));
         $this->assertTrue($reportItems->contains(fn ($res) => str_contains($res->title, 'Executive Reporting Hub')));
 
-        // 4. Search for Room Rack
-        $roomResults = $provider->getResults('room rack');
+        // 4. Search for Accommodation Deck
+        $roomResults = $provider->getResults('accommodation deck');
         $this->assertNotNull($roomResults);
         $roomCategories = $roomResults->getCategories();
         $this->assertTrue($roomCategories->has('Operational Screens & Quick Links'));
         $roomItems = collect($roomCategories->get('Operational Screens & Quick Links'));
-        $this->assertTrue($roomItems->contains(fn ($res) => str_contains($res->title, 'Front-Desk Room Rack')));
+        $this->assertTrue($roomItems->contains(fn ($res) => str_contains($res->title, 'Front-Desk Accommodation Deck')));
     }
 
     public function test_member_resource_search_by_name_phone_and_details(): void
@@ -325,7 +325,7 @@ class GlobalSearchScalingTest extends TestCase
             ->assertSee('20 Sections Active')
             ->assertDontSee('Counter POS')
             ->assertSee('Staff Access')
-            ->assertSee('Room Rack')
+            ->assertSee('Accommodation Deck')
             ->assertSee('Court Schedule')
             ->assertSee('Executive Reports');
 
@@ -336,6 +336,6 @@ class GlobalSearchScalingTest extends TestCase
         Livewire::test(GlobalQuickSearchWidget::class)
             ->assertSuccessful()
             ->assertSee('Counter POS')
-            ->assertSee('Room Rack');
+            ->assertSee('Accommodation Deck');
     }
 }
