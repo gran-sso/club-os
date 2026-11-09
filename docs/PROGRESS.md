@@ -1441,5 +1441,23 @@ For environments where full browser automation is unavailable, operators should 
 - **Full Application Test Suite**: `php artisan test` — **271 passed, 1,425 assertions, 0 failures** in 66s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 905ms.
 
+---
+
+## 15. Repository Initialization & Upstream Sync (November 9, 2026)
+
+### 15.1 Git Remote Configuration
+- Target remote repository configured: `https://github.com/gran-sso/club-os.git`.
+- Remote origin verified:
+  ```bash
+  origin  https://github.com/gran-sso/club-os.git (fetch)
+  origin  https://github.com/gran-sso/club-os.git (push)
+  ```
+
+### 15.2 Sanitized Commit & Push
+- Validated `.gitignore` to ensure `.env`, `.DS_Store`, `database.sqlite`, `node_modules`, `vendor`, and `.phpunit.cache` remain excluded.
+- Created root commit `7aa1793` (`feat: Initial commit of Club OS management and billing platform for Malabar Club`).
+- Pushed branch `main` to `origin/main` with upstream tracking enabled (`git push -u origin main`). Working tree is clean and up to date.
+
+
 
 
