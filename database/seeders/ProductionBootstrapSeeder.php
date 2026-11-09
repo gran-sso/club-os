@@ -31,6 +31,7 @@ class ProductionBootstrapSeeder extends Seeder
 
         // 1. Core Permissions
         $permissions = [
+            'users.manage',
             'tariffs.manage',
             'refunds.approve',
             'members.manage',

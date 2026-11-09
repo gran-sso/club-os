@@ -106,6 +106,13 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'details' => ['Section' => 'Audit & System', 'Action' => 'Inspect Outbox & Connectors'],
                 'keywords' => ['integration', 'status', 'hardware', 'tally', 'tally prime', 'turnstile', 'biometric', 'rfid', 'thermal printer', 'diagnostics'],
             ],
+            [
+                'title' => '🛡️ Staff & User Access Control (RBAC, Roles & Credentials)',
+                'url' => url('/admin/users'),
+                'details' => ['Section' => 'System & Access Control', 'Action' => 'Manage Staff & Roles'],
+                'keywords' => ['user', 'users', 'staff', 'role', 'roles', 'permission', 'permissions', 'access control', 'rbac', 'cashier account', 'password', 'deactivate', 'employee'],
+                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole('admin') || auth()->user()?->hasPermissionTo('users.manage')),
+            ],
         ];
 
         return collect($screens)

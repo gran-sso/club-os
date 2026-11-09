@@ -2,7 +2,7 @@
 
 ## Current state
 
-Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search and Wholesale Supplier & Distributor management suite implemented and verified. All **287 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,534 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
+Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search, Wholesale Supplier management suite, and dedicated Staff & User Access Control module implemented and verified. All **295 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,573 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
 
 All 58 acceptance scenario definitions from `docs/ACCEPTANCE_TESTS.md` are mapped in the authoritative coverage matrix below. Every ID matches the original client specification:
 - **55 scenarios are verified with passing automated tests**.
@@ -1568,6 +1568,61 @@ For environments where full browser automation is unavailable, operators should 
 - **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 86 assertions, 0 failures**.
 - **Full Application Test Suite**: `php artisan test` — **287 passed, 1,534 assertions, 0 failures** in 71s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 420ms.
+
+---
+
+## 18. Dedicated Staff & User Access Control Module (November 9, 2026)
+
+### 18.1 Dedicated Staff & User Access Resource (Decision D52)
+- Created `App\Filament\Resources\Users\UserResource` under a new dedicated navigation group **`System & Access Control`** (sort order 1):
+  - **Staff Master Form (`UserForm.php`)**:
+    - **Identity & Club Profile**: Staff full name, employee / payroll code (`employee_id` with unique constraint), job designation (e.g. Senior Counter Cashier, Head Bartender), unique login email, official phone/mobile number, and active account toggle switch.
+    - **Security & Authentication**: Password and confirmation inputs with reveal toggle. Required with minimum 8 characters on create; optional on edit (only re-hashes and updates when non-empty).
+    - **Role-Based Access Control (RBAC)**: Checkbox relationship selector for the 6 core club roles with clear operational descriptions:
+      - `admin`: Club Administrator — Full System, Settings & Access Control.
+      - `manager`: General Manager — Operations, Members, Tariffs & Approvals.
+      - `accountant`: Club Accountant — Financial Ledgers, Settlements & Vouchers.
+      - `auditor`: Internal Auditor — Read-Only Financial Registers & Reports.
+      - `reception`: Front Desk Reception — Room Rack, Court Schedule & Guest KYC.
+      - `cashier`: Counter Cashier — POS Terminal Billing, Drawer Shifts & Prepaid Recharges.
+    - **Granular Permission Overrides**: Collapsible accordion enabling administrators to grant or revoke specific granular capabilities directly (e.g. `users.manage`, `tariffs.manage`, `refunds.approve`, `contractor.settle`, `counter.operate`, `stock.manage`).
+  - **Staff Directory Table (`UsersTable.php`)**:
+    - Columns: Staff Name with email & designation subtext, Staff ID badge, Assigned Roles badges (color-coded per role), Direct Permissions count badge, copyable phone, boolean active status indicator (check / x), and registration date.
+    - Filters: Filter by Assigned Role, TernaryFilter by Status (Active Staff / Deactivated Staff).
+    - Actions:
+      - **Edit**: Profile, role assignment, and password updates.
+      - **1-Click Status Toggle (`toggle_status`)**: Instant deactivation/activation with confirmation modal explaining security impact.
+      - **Guarded Delete (`DeleteAction`)**: Strictly cancels deletion and guides staff to deactivate instead if historical transactions exist.
+
+### 18.2 Critical Security Safeguards & Audit Integrity
+- **Access Gatekeeper**: Enforced in `UserResource` methods (`canViewAny`, `canCreate`, `canEdit`, `canDelete`) restricting all user management strictly to administrators (`admin` role or `users.manage` permission). All non-admin staff (Manager, Cashier, Reception, Accountant) receive HTTP 403 Forbidden.
+- **Immediate Login Gate**: Updated `User::canAccessPanel(Panel $panel)` and auth checks to verify `is_active === true`. Deactivating an account immediately blocks entry to both the Filament back-office panel and the Counter POS interface.
+- **Lockout Prevention (Self-Protection)**:
+  - Administrators cannot delete or deactivate their own currently active account via form or table actions.
+  - The system blocks deactivating or deleting the sole remaining active administrator in the club database.
+- **Audit Trail Preservation**:
+  - Implemented `User::hasHistoricalRecords()`, scanning linked records across `shifts`, `bills`, `journal_headers`, `expenses`, and `purchase_receipts`.
+  - Attempted deletion of any staff user with historical transactional links is blocked, alerting the administrator to deactivate the account instead so legal audit attributions are permanently preserved.
+
+### 18.3 Scaled Global Search & Dashboard Integration
+- Added `UserResource` to Filament’s global search index (`name`, `email`, `employee_id`, `phone`, `designation`).
+- Enriched `ClubGlobalSearchProvider` with quick-link matching (`users`, `staff`, `roles`, `permissions`, `access control`, `passwords`), visible strictly to `admin`.
+- Added a direct **Staff Access** quick-jump pill on the dashboard hero widget (`GlobalQuickSearchWidget`) for the `admin` role.
+
+### 18.4 Automated Verification
+- **User Access Control Test Suite**: `tests/Feature/UserAccessControlTest.php` — **8 passed, 36 assertions, 0 failures**:
+  - `test_admin_can_access_user_management_pages`: Verified HTTP 200 on index, create, and edit pages for Admin.
+  - `test_non_admin_cannot_access_user_management_pages`: Verified HTTP 403 Forbidden for Manager, Cashier, and Reception.
+  - `test_admin_can_create_staff_user_with_role_and_direct_permissions`: Verified form fill, bcrypt hashing, role & permission syncing in DB.
+  - `test_deactivated_staff_cannot_access_panel`: Verified `canAccessPanel()` returns false and panel rejects inactive staff.
+  - `test_admin_cannot_deactivate_self_via_edit_form_or_action`: Verified self-deactivation is strictly rejected.
+  - `test_admin_cannot_delete_self`: Verified `canDelete` returns false for self.
+  - `test_user_with_historical_records_cannot_be_deleted`: Verified shift/bill-linked cashiers cannot be hard-deleted.
+  - `test_user_resource_global_search`: Verified multi-attribute search by name, email, and staff ID.
+- **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 89 assertions, 0 failures**.
+- **Full Application Test Suite**: `php artisan test` — **295 passed, 1,573 assertions, 0 failures** in 76s.
+- **Frontend Assets**: `npm run build` compiled cleanly in 389ms.
+
 
 
 

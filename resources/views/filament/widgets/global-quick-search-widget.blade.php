@@ -40,7 +40,7 @@
                         <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
                             <span>Club-Wide Global Search &amp; Command Hub</span>
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                18 Sections Active
+                                19 Sections Active
                             </span>
                         </h2>
                         <p class="text-xs text-slate-300">
@@ -138,6 +138,16 @@
                     <span>⚙️</span>
                     <span>Club Settings</span>
                 </a>
+
+                @if(auth()->user()?->hasRole('admin'))
+                    <a
+                        href="{{ url('/admin/users') }}"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 transition-colors"
+                    >
+                        <span>🛡️</span>
+                        <span>Staff Access</span>
+                    </a>
+                @endif
             </div>
         </div>
     </div>

@@ -64,6 +64,7 @@ class AdminPanelProvider extends PanelProvider
                 'Procurement & Food Contractor',
                 'Finance & Audit Ledger',
                 'Club Master Setup',
+                'System & Access Control',
             ])
             ->navigationItems([
                 NavigationItem::make('Counter POS Terminal')
