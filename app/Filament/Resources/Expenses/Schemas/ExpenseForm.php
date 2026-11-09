@@ -27,11 +27,57 @@ class ExpenseForm
                             Select::make('account_id')
                                 ->label('General Ledger Expense Head')
                                 ->required()
-                                ->options(fn () => Account::where('type', 'expense')->pluck('name', 'id'))
+                                ->options(fn () => Account::where('type', 'expense')
+                                    ->where('is_active', true)
+                                    ->orderBy('code')
+                                    ->get()
+                                    ->mapWithKeys(
+                                        fn ($a) => [$a->id => "{$a->name} (#{$a->code})" . ($a->category ? " — {$a->category}" : '')]
+                                    )
+                                )
                                 ->default(fn () => Account::where('code', '5030')->first()?->id)
                                 ->searchable()
                                 ->preload()
-                                ->helperText('Determines the financial accounting ledger debit entry.'),
+                                ->createOptionForm([
+                                    TextInput::make('code')
+                                        ->label('Expense Code (e.g. 5160)')
+                                        ->required()
+                                        ->maxLength(32)
+                                        ->unique('accounts', 'code')
+                                        ->dehydrateStateUsing(fn ($state) => strtoupper(trim((string) $state)))
+                                        ->helperText('Unique 4-digit or alphanumeric code in 5xxx range.'),
+
+                                    TextInput::make('name')
+                                        ->label('Expense Head Name')
+                                        ->required()
+                                        ->maxLength(100)
+                                        ->placeholder('e.g. Badminton Court Maintenance & Shuttlecocks'),
+
+                                    TextInput::make('category')
+                                        ->label('Category / Grouping')
+                                        ->placeholder('e.g. Repairs & Maintenance')
+                                        ->datalist([
+                                            'Utilities & Power',
+                                            'Repairs & Maintenance',
+                                            'Housekeeping & Hospitality',
+                                            'Administration & Staff',
+                                            'Statutory & Professional',
+                                            'Finance & Bank Charges',
+                                        ]),
+                                ])
+                                ->createOptionUsing(function (array $data): int {
+                                    $account = Account::create([
+                                        'code' => $data['code'],
+                                        'name' => $data['name'],
+                                        'type' => \App\Domain\Shared\Enums\AccountType::EXPENSE,
+                                        'category' => $data['category'] ?? 'General Operations',
+                                        'is_system' => false,
+                                        'is_active' => true,
+                                    ]);
+
+                                    return $account->id;
+                                })
+                                ->helperText('Determines the financial accounting ledger debit entry. Click + to add a new Expense Head.'),
 
                             Select::make('department_id')
                                 ->label('Operating Department (P&L)')

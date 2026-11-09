@@ -40,7 +40,7 @@
                         <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
                             <span>Club-Wide Global Search &amp; Command Hub</span>
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                19 Sections Active
+                                20 Sections Active
                             </span>
                         </h2>
                         <p class="text-xs text-slate-300">

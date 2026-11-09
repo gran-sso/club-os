@@ -88,6 +88,7 @@ class GlobalSearchScalingTest extends TestCase
             FacilityResource::class,
             \App\Filament\Resources\Suppliers\SupplierResource::class,
             \App\Filament\Resources\Users\UserResource::class,
+            \App\Filament\Resources\Accounts\AccountResource::class,
         ];
 
         foreach ($resources as $resource) {
@@ -321,7 +322,7 @@ class GlobalSearchScalingTest extends TestCase
         Livewire::test(GlobalQuickSearchWidget::class)
             ->assertSuccessful()
             ->assertSee('Club-Wide Global Search & Command Hub')
-            ->assertSee('19 Sections Active')
+            ->assertSee('20 Sections Active')
             ->assertDontSee('Counter POS')
             ->assertSee('Staff Access')
             ->assertSee('Room Rack')

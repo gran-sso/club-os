@@ -200,23 +200,39 @@ class ProductionBootstrapSeeder extends Seeder
 
         // 7. General Ledger Chart of Accounts
         $accounts = [
-            ['code' => '1010', 'name' => 'Cash in Hand (Counter Tills)', 'type' => AccountType::ASSET, 'description' => 'Physical cash float and collected cash'],
-            ['code' => '1020', 'name' => 'Bank Clearing & Digital Settlements', 'type' => AccountType::ASSET, 'description' => 'UPI, card terminals, and gateway clearing'],
-            ['code' => '1030', 'name' => 'Inventory Stock', 'type' => AccountType::ASSET, 'description' => 'Beverage and consumable stores'],
-            ['code' => '2010', 'name' => 'Member Prepaid Advances Liability', 'type' => AccountType::LIABILITY, 'description' => 'Unspent member wallet balances'],
-            ['code' => '2020', 'name' => 'Food Contractor Payable', 'type' => AccountType::LIABILITY, 'description' => 'Next-day food contractor remittances'],
-            ['code' => '2030', 'name' => 'GST & Taxes Payable', 'type' => AccountType::LIABILITY, 'description' => 'Collected tax liability for statutory remittance'],
-            ['code' => '3010', 'name' => 'Club Capital & General Reserve', 'type' => AccountType::EQUITY, 'description' => 'Corpus and general reserve'],
-            ['code' => '4010', 'name' => 'Guest Entry & Pass Revenue', 'type' => AccountType::REVENUE, 'description' => 'Bar, card room and day entry fees'],
-            ['code' => '4020', 'name' => 'Bar & Beverage Sales Revenue', 'type' => AccountType::REVENUE, 'description' => 'Direct bar liquor and beverage sales'],
-            ['code' => '4030', 'name' => 'Room Accommodation Revenue', 'type' => AccountType::REVENUE, 'description' => 'Guest room night charges'],
-            ['code' => '4040', 'name' => 'Sports & Facility Subscriptions', 'type' => AccountType::REVENUE, 'description' => 'Gym and badminton plan fees'],
-            ['code' => '5010', 'name' => 'Cost of Goods Sold - Liquor', 'type' => AccountType::EXPENSE, 'description' => 'Weighted-average consumption cost'],
-            ['code' => '5020', 'name' => 'Contractor Food Expense', 'type' => AccountType::EXPENSE, 'description' => 'Settled food contractor obligations'],
-            ['code' => '5030', 'name' => 'Operating & Administrative Expenses', 'type' => AccountType::EXPENSE, 'description' => 'General clubhouse operating costs'],
+            // Core System Accounts (Automated Double-Entry Posting)
+            ['code' => '1010', 'name' => 'Cash in Hand (Counter Tills)', 'type' => AccountType::ASSET, 'is_system' => true, 'category' => 'Current Assets', 'description' => 'Physical cash float and collected cash'],
+            ['code' => '1020', 'name' => 'Bank Clearing & Digital Settlements', 'type' => AccountType::ASSET, 'is_system' => true, 'category' => 'Current Assets', 'description' => 'UPI, card terminals, and gateway clearing'],
+            ['code' => '1030', 'name' => 'Inventory Stock', 'type' => AccountType::ASSET, 'is_system' => true, 'category' => 'Current Assets', 'description' => 'Beverage and consumable stores'],
+            ['code' => '2010', 'name' => 'Member Prepaid Advances Liability', 'type' => AccountType::LIABILITY, 'is_system' => true, 'category' => 'Current Liabilities', 'description' => 'Unspent member wallet balances'],
+            ['code' => '2020', 'name' => 'Food Contractor Payable', 'type' => AccountType::LIABILITY, 'is_system' => true, 'category' => 'Current Liabilities', 'description' => 'Next-day food contractor remittances'],
+            ['code' => '2030', 'name' => 'GST & Taxes Payable', 'type' => AccountType::LIABILITY, 'is_system' => true, 'category' => 'Statutory Liabilities', 'description' => 'Collected tax liability for statutory remittance'],
+            ['code' => '3010', 'name' => 'Club Capital & General Reserve', 'type' => AccountType::EQUITY, 'is_system' => true, 'category' => 'Capital & Reserves', 'description' => 'Corpus and general reserve'],
+            ['code' => '4010', 'name' => 'Guest Entry & Pass Revenue', 'type' => AccountType::REVENUE, 'is_system' => true, 'category' => 'Operating Revenue', 'description' => 'Bar, card room and day entry fees'],
+            ['code' => '4020', 'name' => 'Bar & Beverage Sales Revenue', 'type' => AccountType::REVENUE, 'is_system' => true, 'category' => 'Operating Revenue', 'description' => 'Direct bar liquor and beverage sales'],
+            ['code' => '4030', 'name' => 'Room Accommodation Revenue', 'type' => AccountType::REVENUE, 'is_system' => true, 'category' => 'Operating Revenue', 'description' => 'Guest room night charges'],
+            ['code' => '4040', 'name' => 'Sports & Facility Subscriptions', 'type' => AccountType::REVENUE, 'is_system' => true, 'category' => 'Operating Revenue', 'description' => 'Gym and badminton plan fees'],
+            ['code' => '5010', 'name' => 'Cost of Goods Sold - Liquor', 'type' => AccountType::EXPENSE, 'is_system' => true, 'category' => 'Direct Operating Costs', 'description' => 'Weighted-average consumption cost'],
+            ['code' => '5020', 'name' => 'Contractor Food Expense', 'type' => AccountType::EXPENSE, 'is_system' => true, 'category' => 'Direct Operating Costs', 'description' => 'Settled food contractor obligations'],
+            ['code' => '5030', 'name' => 'General Operating & Administrative Expenses', 'type' => AccountType::EXPENSE, 'is_system' => true, 'category' => 'General Administration', 'description' => 'General clubhouse operating costs'],
+
+            // Standard Club Operational Expense Heads
+            ['code' => '5110', 'name' => 'Electricity & Power Charges (KSEB)', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Utilities & Power', 'description' => 'State electricity board monthly power tariff'],
+            ['code' => '5120', 'name' => 'Generator Diesel & Lubricants', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Utilities & Power', 'description' => 'Fuel and engine oil for backup power generators'],
+            ['code' => '5130', 'name' => 'Water Supply & Tanker Charges', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Utilities & Power', 'description' => 'Piped water utility and auxiliary tanker supply'],
+            ['code' => '5210', 'name' => 'Clubhouse Repairs & Building Maintenance', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Repairs & Maintenance', 'description' => 'Civil maintenance, painting, and structural repairs'],
+            ['code' => '5220', 'name' => 'Badminton Court & Sports Equipment AMC', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Repairs & Maintenance', 'description' => 'Wooden court polishing, net replacement, and gym gear servicing'],
+            ['code' => '5230', 'name' => 'Air Conditioning & Refrigeration Servicing', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Repairs & Maintenance', 'description' => 'Cooling maintenance for bar chillers and guest rooms'],
+            ['code' => '5310', 'name' => 'Guest Room Linen, Laundry & Dry Cleaning', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Housekeeping & Hospitality', 'description' => 'Bed sheets, bath towels, and curtains commercial laundering'],
+            ['code' => '5320', 'name' => 'Cleaning Consumables, Sanitizers & Toiletries', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Housekeeping & Hospitality', 'description' => 'Detergents, disinfectants, soap dispensers, and tissue paper'],
+            ['code' => '5410', 'name' => 'Staff Uniforms, Welfare & Refreshments', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Administration & Staff', 'description' => 'Staff uniforms, tea/canteen refreshments, and medical kit'],
+            ['code' => '5420', 'name' => 'Printing, Stationery & Office Supplies', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Administration & Staff', 'description' => 'Register books, billing rolls, envelopes, and toner cartridges'],
+            ['code' => '5430', 'name' => 'Excise Bar License & Statutory Permit Fees', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Statutory & Professional', 'description' => 'FL-4 license renewal and annual state excise fees'],
+            ['code' => '5440', 'name' => 'Statutory Audit & Legal Accounting Fees', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Statutory & Professional', 'description' => 'Chartered accountant audit fees and compliance filing'],
+            ['code' => '5450', 'name' => 'Bank Charges & Card Terminal MDR Fees', 'type' => AccountType::EXPENSE, 'is_system' => false, 'category' => 'Finance & Bank Charges', 'description' => 'POS machine merchant discount rates, SMS charges, and cheque fees'],
         ];
         foreach ($accounts as $acc) {
-            Account::firstOrCreate(['code' => $acc['code']], $acc);
+            Account::updateOrCreate(['code' => $acc['code']], $acc);
         }
 
         // 8. Membership Categories

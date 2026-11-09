@@ -2,7 +2,7 @@
 
 ## Current state
 
-Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search, Wholesale Supplier management suite, and dedicated Staff & User Access Control module implemented and verified. All **295 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,573 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
+Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search, Wholesale Supplier management suite, Staff & User Access Control module, and Dynamic Chart of Accounts & Expense Heads suite implemented and verified. All **304 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,617 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
 
 All 58 acceptance scenario definitions from `docs/ACCEPTANCE_TESTS.md` are mapped in the authoritative coverage matrix below. Every ID matches the original client specification:
 - **55 scenarios are verified with passing automated tests**.
@@ -1622,6 +1622,75 @@ For environments where full browser automation is unavailable, operators should 
 - **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 89 assertions, 0 failures**.
 - **Full Application Test Suite**: `php artisan test` — **295 passed, 1,573 assertions, 0 failures** in 76s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 389ms.
+
+---
+
+## 19. Dynamic Chart of Accounts & Operating Expense Heads Suite (November 9, 2026)
+
+### 19.1 Dedicated Chart of Accounts Resource (Decision D53)
+- Implemented `App\Filament\Resources\Accounts\AccountResource` under navigation group **`Finance & Audit Ledger`** (sort order 2):
+  - **Ledger Master Form (`AccountForm.php`)**:
+    - **Ledger Code**: Unique numerical or alphanumeric code (e.g. `5110`, `5220`). Protected from editing when `is_system === true`.
+    - **Account / Head Name**: Statutory general ledger description (e.g. *Electricity & Power Charges (KSEB)*, *Generator Diesel & Lubricants*).
+    - **Accounting Classification**: Enum selection across standard series (`Expense (5000s)`, `Revenue (4000s)`, `Asset (1000s)`, `Liability (2000s)`, `Equity (3000s)`).
+    - **Statement Sub-Group (`category`)**: Tag for reporting classification (e.g. `Utilities & Power`, `Repairs & Maintenance`, `Housekeeping & Hospitality`, `Administration & Staff`, `Statutory & Professional`, `Finance & Bank Charges`).
+    - **Active Toggle**: Allows archiving defunct accounts without breaking historical audit trails.
+    - **Description**: Detailed audit and operational accounting instructions.
+  - **Directory Table (`AccountsTable.php`)**:
+    - Columns: Mono badge Ledger Code, Name with statement group subtext, Classification badge with custom colors (Warning: Expense, Info: Revenue, Success: Asset, Danger: Liability, Purple: Equity), Statement Group tag, System Lock indicator (Lock icon for core system accounts, Sparkles icon for custom discretionary heads), and Active status icon.
+    - Filters: Filter by Classification Type, TernaryFilter for System vs Custom Heads, TernaryFilter for Active Status.
+    - Actions: Edit action, and guarded Delete action.
+  - **Role-Based Access Control**:
+    - Accessible strictly to `admin` and `accountant` roles (or users with `reports.view`).
+    - Frontline `cashier` is strictly forbidden (HTTP 403).
+
+### 19.2 In-Line Quick Creation Modal on Operating Expense Vouchers
+- Enhanced `App\Filament\Resources\Expenses\Schemas\ExpenseForm.php`:
+  - Equipped the `account_id` field with Filament's `createOptionForm()` and `createOptionUsing()` modal action.
+  - Displays formatted options showing head name, code badge, and category (e.g. `Electricity & Power Charges (KSEB) (#5110) — Utilities & Power`).
+  - Accountants posting invoices can click the `+` button directly inside the Expense Voucher creation screen to register a new 5000-series expense head on the fly without leaving the voucher.
+
+### 19.3 Pre-Seeded Standard Club Operational Expense Heads
+- Updated `database/seeders/ProductionBootstrapSeeder.php` with 13 realistic club operational expense heads:
+  1. `5110`: Electricity & Power Charges (KSEB) (`Utilities & Power`)
+  2. `5120`: Generator Diesel & Lubricants (`Utilities & Power`)
+  3. `5130`: Water Supply & Tanker Charges (`Utilities & Power`)
+  4. `5210`: Clubhouse Repairs & Building Maintenance (`Repairs & Maintenance`)
+  5. `5220`: Badminton Court & Sports Equipment AMC (`Repairs & Maintenance`)
+  6. `5230`: Air Conditioning & Refrigeration Servicing (`Repairs & Maintenance`)
+  7. `5310`: Guest Room Linen, Laundry & Dry Cleaning (`Housekeeping & Hospitality`)
+  8. `5320`: Cleaning Consumables, Sanitizers & Toiletries (`Housekeeping & Hospitality`)
+  9. `5410`: Staff Uniforms, Welfare & Refreshments (`Administration & Staff`)
+  10. `5420`: Printing, Stationery & Office Supplies (`Administration & Staff`)
+  11. `5430`: Excise Bar License & Statutory Permit Fees (`Statutory & Professional`)
+  12. `5440`: Statutory Audit & Legal Accounting Fees (`Statutory & Professional`)
+  13. `5450`: Bank Charges & Card Terminal MDR Fees (`Finance & Bank Charges`)
+
+### 19.4 System Account Integrity & Audit Safeguards
+- Added `is_system` boolean column to `accounts` table via migration `2026_11_09_130000_add_system_and_category_fields_to_accounts_table.php`.
+- Core double-entry accounts (`1010`, `1020`, `1030`, `2010`, `2020`, `2030`, `3010`, `4010`–`4040`, `5010`–`5030`) are marked `is_system = true`, blocking deletion and locking code alteration.
+- Accounts with linked historical transactions (`Account::hasHistoricalLines()`) cannot be hard-deleted, prompting the user to deactivate the account instead to preserve financial ledger integrity.
+
+### 19.5 Scaled Global Search & Dashboard Command Hub
+- Added `AccountResource` to Filament global search index (`code`, `name`, `category`, `description`).
+- Enriched `ClubGlobalSearchProvider` with quick-link matching (`chart of accounts`, `gl`, `ledger`, `expense head`, `kseb`, `electricity`, `diesel`, `generator`, `maintenance`).
+- Updated dashboard hero widget (`GlobalQuickSearchWidget`) badge to **20 Sections Active**.
+
+### 19.6 Automated Verification
+- **Chart of Accounts Test Suite**: `tests/Feature/ChartOfAccountsTest.php` — **9 passed, 42 assertions, 0 failures**:
+  - `test_core_system_accounts_and_standard_expense_heads_are_seeded`: Verified core system vs discretionary flags and types.
+  - `test_admin_can_access_chart_of_accounts`: Verified Admin access to index and create pages.
+  - `test_accountant_can_access_chart_of_accounts`: Verified Accountant access to index and create pages.
+  - `test_cashier_cannot_access_chart_of_accounts`: Verified Cashier receives 403 Forbidden.
+  - `test_accountant_can_create_new_discretionary_expense_head`: Verified form fill, validation, and DB creation.
+  - `test_protected_system_accounts_cannot_be_deleted`: Verified `canDelete` is false and table action cancels deletion.
+  - `test_accounts_with_historical_records_cannot_be_deleted`: Verified expense-linked accounts cannot be hard-deleted.
+  - `test_expense_form_has_dropdown_with_custom_expense_heads`: Verified Expense form dropdown and Livewire field.
+  - `test_chart_of_accounts_global_search`: Verified multi-attribute search by code (5110) and name (Diesel).
+- **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 91 assertions, 0 failures**.
+- **Full Application Test Suite**: `php artisan test` — **304 passed, 1,617 assertions, 0 failures** in 70s.
+- **Frontend Assets**: `npm run build` compiled cleanly in 418ms.
+
 
 
 

@@ -107,6 +107,13 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'keywords' => ['integration', 'status', 'hardware', 'tally', 'tally prime', 'turnstile', 'biometric', 'rfid', 'thermal printer', 'diagnostics'],
             ],
             [
+                'title' => '⚖️ Chart of Accounts & Expense Heads (GL Ledgers & 5000-Series)',
+                'url' => url('/admin/accounts'),
+                'details' => ['Section' => 'Finance & Audit Ledger', 'Action' => 'Manage GL Ledgers & Expense Heads'],
+                'keywords' => ['account', 'accounts', 'chart of accounts', 'coa', 'gl', 'ledger', 'expense head', 'expense heads', '5000', '5100', 'kseb', 'electricity', 'diesel', 'generator', 'maintenance'],
+                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole(['admin', 'accountant']) || auth()->user()?->hasPermissionTo('reports.view')),
+            ],
+            [
                 'title' => '🛡️ Staff & User Access Control (RBAC, Roles & Credentials)',
                 'url' => url('/admin/users'),
                 'details' => ['Section' => 'System & Access Control', 'Action' => 'Manage Staff & Roles'],
