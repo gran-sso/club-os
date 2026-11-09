@@ -40,7 +40,6 @@ use App\Filament\Resources\RoomReservations\RoomReservationResource;
 use App\Filament\Resources\Shifts\ShiftResource;
 use App\Filament\Resources\Subscriptions\FacilitySubscriptionResource;
 use App\Filament\Resources\Tariffs\TariffResource;
-use App\Filament\Widgets\GlobalQuickSearchWidget;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -314,28 +313,12 @@ class GlobalSearchScalingTest extends TestCase
         $this->assertArrayHasKey('Amount', $expResults->first()->details);
     }
 
-    public function test_dashboard_hero_quick_search_widget_renders_successfully(): void
+    public function test_dashboard_does_not_contain_redundant_search_widget(): void
     {
-        // 1. Admin sees search hub but Counter POS is hidden
         $this->actingAs($this->admin);
 
-        Livewire::test(GlobalQuickSearchWidget::class)
-            ->assertSuccessful()
-            ->assertSee('Club-Wide Global Search & Command Hub')
-            ->assertSee('20 Sections Active')
-            ->assertDontSee('Counter POS')
-            ->assertSee('Staff Access')
-            ->assertSee('Accommodation Deck')
-            ->assertSee('Court Schedule')
-            ->assertSee('Executive Reports');
-
-        // 2. Cashier sees Counter POS on widget
-        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
-        $this->actingAs($cashier);
-
-        Livewire::test(GlobalQuickSearchWidget::class)
-            ->assertSuccessful()
-            ->assertSee('Counter POS')
-            ->assertSee('Accommodation Deck');
+        $response = $this->get('/admin');
+        $response->assertSuccessful();
+        $response->assertDontSee('Club-Wide Global Search &amp; Command Hub', false);
     }
 }
