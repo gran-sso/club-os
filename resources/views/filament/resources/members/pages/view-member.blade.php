@@ -1,56 +1,56 @@
 <x-filament-panels::page>
-    <div class="space-y-6 text-slate-800 dark:text-slate-100 {{ ($showLetterViewModal || $showInvoiceModal) ? 'print:hidden' : '' }}">
+    <div class="space-y-4 text-slate-800 dark:text-slate-100 {{ ($showLetterViewModal || $showInvoiceModal) ? 'print:hidden' : '' }}">
         
         <!-- ========================================== -->
         <!-- 1. TOP HERO HEADER CARD                    -->
         <!-- ========================================== -->
-        <div class="p-4 sm:p-6 bg-gradient-to-br from-white via-slate-50 to-amber-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div class="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 
                 <!-- Left: Avatar, Name & Identifiers -->
-                <div class="flex items-start sm:items-center gap-3.5 sm:gap-4.5">
+                <div class="flex items-start sm:items-center gap-3 sm:gap-4">
                     @php
                         $nameParts = explode(' ', trim($member->name));
                         $initials = count($nameParts) >= 2 
                             ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1))
                             : strtoupper(substr($nameParts[0] ?? 'M', 0, 2));
                     @endphp
-                    <div class="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 flex items-center justify-center font-black text-slate-950 text-xl sm:text-2xl shadow-sm shadow-amber-500/25 shrink-0 select-none">
+                    <div class="w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs">
                         {{ $initials }}
                     </div>
 
                     <div class="space-y-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 # {{ $member->membership_number }}
                             </span>
 
-                            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                            <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 {{ $member->category?->name ?? 'Standard Category' }}
                             </span>
 
                             @php
                                 $statusVal = $member->status instanceof \BackedEnum ? $member->status->value : (string) $member->status;
                                 $statusClasses = match ($statusVal) {
-                                    'active' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                                    'suspended' => 'bg-rose-50 text-rose-800 border-rose-200',
-                                    'resigned' => 'bg-slate-100 text-slate-700 border-slate-200',
-                                    default => 'bg-amber-50 text-amber-800 border-amber-200',
+                                    'active' => 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+                                    'suspended' => 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
+                                    'resigned' => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+                                    default => 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
                                 };
                             @endphp
-                            <span class="text-[11px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-lg border {{ $statusClasses }}">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border {{ $statusClasses }}">
                                 {{ ucfirst($statusVal) }}
                             </span>
                         </div>
 
-                        <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                             {{ $member->name }}
                         </h1>
 
                         <!-- Contact & Chips -->
-                        <div class="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-600 dark:text-slate-400">
+                        <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500 dark:text-slate-400">
                             @if ($member->phone)
-                                <a href="tel:{{ $member->phone }}" class="inline-flex items-center gap-1 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                                <a href="tel:{{ $member->phone }}" class="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
                                     <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                     </svg>
@@ -59,7 +59,7 @@
                             @endif
 
                             @if ($member->email)
-                                <a href="mailto:{{ $member->email }}" class="inline-flex items-center gap-1 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                                <a href="mailto:{{ $member->email }}" class="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-slate-200 transition-colors">
                                     <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                     </svg>
@@ -71,7 +71,7 @@
                                 <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
-                                <span>Joined: <strong>{{ $member->joined_at ? $member->joined_at->format('d M Y') : 'Founding' }}</strong></span>
+                                <span>Joined: <strong class="text-slate-700 dark:text-slate-300">{{ $member->joined_at ? $member->joined_at->format('d M Y') : 'Founding' }}</strong></span>
                             </div>
 
                             <div class="inline-flex items-center gap-1">
@@ -85,34 +85,34 @@
                 </div>
 
                 <!-- Right: Authoritative Live Wallet Balance Widget -->
-                <div class="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center p-4 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs min-w-[220px]">
+                <div class="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950/80 rounded-xl border border-slate-200/90 dark:border-slate-800 min-w-[200px]">
                     <div class="text-left lg:text-right">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Prepaid Wallet Balance</span>
-                        <div class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">Prepaid Wallet</span>
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono tracking-tight">
                             ₹{{ number_format($balanceRupees, 2) }}
                         </div>
-                        <span class="text-[9px] text-slate-500 dark:text-slate-400 block uppercase font-bold tracking-tight">Strict No-Credit Active</span>
+                        <span class="text-[9px] text-slate-500 dark:text-slate-400 block uppercase font-medium tracking-tight">Strict No-Credit</span>
                     </div>
 
                     @if ($reservedRupees > 0)
-                        <div class="mt-2 text-left lg:text-right text-[11px] font-medium text-amber-600 dark:text-amber-400 border-t border-slate-100 dark:border-slate-800 pt-1.5 w-full">
-                            <span>Reserved / On-Hold: ₹{{ number_format($reservedRupees, 2) }}</span>
+                        <div class="mt-1.5 text-left lg:text-right text-[11px] font-medium text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1 w-full">
+                            <span>Reserved: ₹{{ number_format($reservedRupees, 2) }}</span>
                             <span class="block text-slate-500 font-mono">Available: ₹{{ number_format($availableRupees, 2) }}</span>
                         </div>
                     @endif
                 </div>
             </div>
 
-            <!-- Quick Action Bar (Streamlined with Categorized Actions Menu) -->
-            <div class="mt-5 pt-4 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2.5 print:hidden no-print">
+            <!-- Quick Action Bar (Compact, Monochrome Enterprise Styling) -->
+            <div class="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 print:hidden no-print">
                 
-                <!-- Left: Core 1-Tap Actions & Categorized Menu -->
-                <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 flex-1">
+                <!-- Left: Core Actions & Categorized Menu -->
+                <div class="flex flex-wrap items-center gap-2 flex-1">
                     
-                    <!-- 1. Top-Up Wallet (Primary CTA) -->
+                    <!-- 1. Top-Up Wallet (Primary Monochrome Action) -->
                     <button wire:click="openTopUpModal" type="button"
-                        class="min-h-[42px] px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-initial">
-                        <svg class="w-4 h-4 text-slate-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:active:bg-slate-200 text-white dark:text-slate-950 font-semibold text-xs transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-initial">
+                        <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                         <span>Top-Up Wallet</span>
@@ -121,12 +121,12 @@
                     <!-- 2. Unified Member Actions Menu (Alpine.js Popover / Bottom Sheet) -->
                     <div x-data="{ open: false }" class="relative inline-block text-left flex-1 sm:flex-initial">
                         <button @click="open = !open" type="button"
-                            class="min-h-[42px] w-full sm:w-auto px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-2 cursor-pointer select-none">
-                            <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 w-full sm:w-auto px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer select-none">
+                            <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
                             </svg>
                             <span>Member Actions</span>
-                            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
@@ -152,158 +152,180 @@
                             x-transition:leave="transition ease-in duration-150"
                             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-2 sm:scale-95"
-                            class="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-full left-0 sm:left-0 right-0 sm:right-auto z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[580px] overflow-y-auto bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl p-4 sm:p-4 divide-y divide-slate-100 space-y-3">
+                            class="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-full left-0 sm:left-0 right-0 sm:right-auto z-50 w-full sm:w-[380px] max-h-[85vh] sm:max-h-[540px] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl p-3 sm:p-3 divide-y divide-slate-100 dark:divide-slate-800 space-y-2.5">
                             
                             <!-- Header (Mobile Sheet title) -->
-                            <div class="flex items-center justify-between pb-2">
+                            <div class="flex items-center justify-between pb-1.5">
                                 <div>
-                                    <h4 class="text-xs font-black uppercase tracking-wider text-slate-400">Member Services &amp; Actions</h4>
-                                    <p class="text-sm font-bold text-slate-900">{{ $member->name }} &bull; #{{ $member->membership_number }}</p>
+                                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Member Services &amp; Actions</h4>
+                                    <p class="text-xs font-bold text-slate-900 dark:text-white">{{ $member->name }} &bull; #{{ $member->membership_number }}</p>
                                 </div>
-                                <button @click="open = false" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 sm:hidden cursor-pointer">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button @click="open = false" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 sm:hidden cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
                                 </button>
                             </div>
 
                             <!-- Group 1: Front-Desk Facilities & Bookings -->
-                            <div class="pt-3 space-y-1">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1.5">Front-Desk &amp; Sports Bookings</span>
+                            <div class="pt-2 space-y-0.5">
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">Front-Desk &amp; Sports Bookings</span>
                                 
                                 <button type="button" @click="open = false; $wire.openBookCourtModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        🏸
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Book Badminton Court</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Reserve 60-min slot with plan entitlement check</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Book Badminton Court</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Reserve 60-min slot with plan entitlement check</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openBookRoomModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        🛏️
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Reserve Guest Room</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Daily accommodation booking &amp; deposits</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Reserve Guest Room</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Daily accommodation booking &amp; deposits</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openAssignLockerModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        🔐
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Assign Club Locker</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Kitbag storage allocation &amp; key assignment</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Assign Club Locker</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Kitbag storage allocation &amp; key assignment</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openIntroLetterModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        📜
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Affiliated Club Intro Letter</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Generate formal reciprocal visit certificate</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Affiliated Club Intro Letter</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Generate formal reciprocal visit certificate</span>
                                     </div>
                                 </button>
                             </div>
 
                             <!-- Group 2: Membership & Administration -->
-                            <div class="pt-3 space-y-1">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1.5">Membership &amp; Secretarial</span>
+                            <div class="pt-2 space-y-0.5">
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">Membership &amp; Secretarial</span>
 
                                 <button type="button" @click="open = false; $wire.openRenewModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        🌟
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Renew Membership Dues</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Extend term validity with prepaid wallet balance check</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Renew Membership Dues</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Extend term validity with prepaid wallet balance check</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openCardModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        💳
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">
                                             {{ $member->activeCard ? 'Replace RFID Smartcard' : 'Issue RFID Smartcard' }}
                                         </span>
-                                        <span class="text-[11px] text-slate-500 block truncate">
+                                        <span class="text-[10px] text-slate-500 block truncate">
                                             {{ $member->activeCard ? 'Card #' . $member->activeCard->card_number . ' (retains balance)' : 'Link new contactless card UID' }}
                                         </span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openDependentModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        👥
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Register Family Dependent</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Spouse &amp; child roster &amp; wallet spending controls</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Register Family Dependent</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Spouse &amp; child roster &amp; wallet spending controls</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openAddNoteModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        📝
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Add Administrative Note</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Record committee directive or dining preference</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Add Administrative Note</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Record committee directive or dining preference</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openStatusModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        🛡️
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Change Lifecycle Status</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Active, Suspended, or Resigned standing</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Change Lifecycle Status</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Active, Suspended, or Resigned standing</span>
                                     </div>
                                 </button>
 
                                 <a href="{{ \App\Filament\Resources\Members\MemberResource::getUrl('edit', ['record' => $member]) }}"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
-                                        ✏️
+                                    class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                    <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:text-slate-900 dark:group-hover:text-white flex items-center justify-center shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 block">Edit Member Master</span>
-                                        <span class="text-[11px] text-slate-500 block truncate">Update contact, address, and statutory KYC proofs</span>
+                                        <span class="text-xs font-semibold text-slate-900 dark:text-white block">Edit Member Master</span>
+                                        <span class="text-[10px] text-slate-500 block truncate">Update contact, address, and statutory KYC proofs</span>
                                     </div>
                                 </a>
                             </div>
 
                             <!-- Group 3: Gate Security -->
-                            <div class="pt-3 space-y-1">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1.5">Turnstile &amp; Gate Security</span>
+                            <div class="pt-2 space-y-0.5">
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">Turnstile &amp; Gate Security</span>
 
                                 @if ($member->activeCard)
                                     <button type="button" @click="open = false; $wire.blockActiveCard()"
-                                        class="w-full p-2.5 rounded-xl hover:bg-rose-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors text-base">
-                                            ⛔
+                                        class="w-full p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                        <div class="w-7 h-7 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:bg-rose-100 dark:group-hover:bg-rose-900">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                            </svg>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <span class="text-xs font-bold text-rose-700 block">Emergency Block Gate Access</span>
-                                            <span class="text-[11px] text-rose-500 block truncate">Immediately barricade RFID card from turnstiles</span>
+                                            <span class="text-xs font-semibold text-rose-700 dark:text-rose-400 block">Emergency Block Gate Access</span>
+                                            <span class="text-[10px] text-rose-500 block truncate">Immediately barricade RFID card from turnstiles</span>
                                         </div>
                                     </button>
                                 @endif
@@ -313,13 +335,15 @@
                                 @endphp
                                 @if ($blockedCard && !$member->activeCard)
                                     <button type="button" @click="open = false; $wire.unblockCard({{ $blockedCard->id }})"
-                                        class="w-full p-2.5 rounded-xl hover:bg-emerald-50 text-left transition flex items-center gap-3 cursor-pointer group">
-                                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors text-base">
-                                            ✅
+                                        class="w-full p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors flex items-center gap-2.5 cursor-pointer group">
+                                        <div class="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <span class="text-xs font-bold text-emerald-700 block">Restore Gate Access</span>
-                                            <span class="text-[11px] text-emerald-500 block truncate">Unblock card {{ $blockedCard->card_number }}</span>
+                                            <span class="text-xs font-semibold text-slate-900 dark:text-white block">Restore Gate Access</span>
+                                            <span class="text-[10px] text-slate-500 block truncate">Unblock card {{ $blockedCard->card_number }}</span>
                                         </div>
                                     </button>
                                 @endif
@@ -331,8 +355,8 @@
                     <!-- 3. WhatsApp Direct Share Button (If phone exists) -->
                     @if ($member->phone)
                         <a href="{{ $whatsappUrl }}" target="_blank"
-                            class="min-h-[42px] px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer">
-                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.045-1.013-.075-.242-.077-.552-.19-1.002-.387-1.854-.808-3.056-2.698-3.149-2.82-.092-.123-.746-.991-.746-1.89 0-.9.472-1.343.64-1.528.169-.185.367-.231.49-.231.122 0 .245.002.352.007.112.005.263-.042.411.314.154.372.525 1.28.572 1.374.046.094.077.204.015.328-.061.123-.092.2-.184.308-.092.108-.193.241-.276.323-.092.093-.188.193-.081.377.108.185.478.788 1.025 1.275.704.628 1.298.822 1.482.915.185.092.293.077.4-.046.108-.123.461-.539.585-.724.123-.185.246-.154.415-.092.169.061 1.077.508 1.261.6.185.093.308.139.354.216.046.077.046.446-.098.851zM12 2C6.477 2 2 6.477 2 12c0 1.891.526 3.66 1.442 5.176L2 22l4.981-1.306C8.423 21.524 10.154 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
                             </svg>
                             <span>WhatsApp Statement</span>
@@ -343,8 +367,8 @@
 
                 <!-- Right: Print Statement Button -->
                 <button type="button" wire:click="printStatement"
-                    class="min-h-[42px] px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
-                    <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                    <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                     <span>Print Statement</span>
@@ -356,12 +380,12 @@
         <!-- 2. MOBILE HORIZONTAL SCROLLING TAB BAR    -->
         <!-- ========================================== -->
         <div class="relative print:hidden no-print">
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar p-1.5 bg-slate-100 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700/80 scroll-smooth">
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-slate-200/90 dark:border-slate-700/80 scroll-smooth">
                 
                 <!-- Tab: Overview -->
                 <button type="button" wire:click="setActiveTab('overview')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'overview' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'overview' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
                     <span>Overview &amp; KYC</span>
@@ -369,60 +393,60 @@
 
                 <!-- Tab: Wallet Ledger -->
                 <button type="button" wire:click="setActiveTab('wallet')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'wallet' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'wallet' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                     <span>Prepaid Wallet Ledger</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         ₹{{ number_format($balanceRupees, 2) }}
                     </span>
                 </button>
 
                 <!-- Tab: Bills & Invoices -->
                 <button type="button" wire:click="setActiveTab('bills')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'bills' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'bills' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     <span>Invoices &amp; Bills</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         {{ $totalBillsCount }}
                     </span>
                 </button>
 
                 <!-- Tab: Sports & Facilities -->
                 <button type="button" wire:click="setActiveTab('facilities')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'facilities' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'facilities' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                     </svg>
                     <span>Sports &amp; Facilities</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         {{ $facilitiesCount }}
                     </span>
                 </button>
 
                 <!-- Tab: Gate & Turnstile Logs -->
                 <button type="button" wire:click="setActiveTab('access')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'access' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'access' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
                     <span>Gate &amp; Turnstile Logs</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         {{ $accessEvents->count() }}
                     </span>
                 </button>
 
                 <!-- Tab: Dependents & Guests -->
                 <button type="button" wire:click="setActiveTab('dependents')"
-                    class="min-h-[44px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer select-none {{ $activeTab === 'dependents' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'dependents' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                     <span>Family &amp; Guests</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         {{ $dependents->count() + $sponsoredGuests->count() }}
                     </span>
                 </button>
@@ -672,8 +696,8 @@
                         </div>
 
                         <button wire:click="openRenewModal" type="button"
-                            class="min-h-[40px] px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                             </svg>
                             <span>Renew Subscription</span>
@@ -820,8 +844,8 @@
                         </div>
 
                         <button wire:click="openAddNoteModal" type="button"
-                            class="min-h-[40px] px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                             <span>Add Administrative Note</span>
@@ -868,26 +892,26 @@
         @if ($activeTab === 'wallet')
             <div class="space-y-5">
                 <!-- Wallet Header Bar with Actions -->
-                <div class="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+                <div class="p-3.5 sm:p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Server-Authoritative Ledger</div>
-                        <h2 class="text-lg font-black text-slate-900 dark:text-white">Prepaid Account Transaction History</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Backed by immutable double-entry journal vouchers in MySQL.</p>
+                        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Server-Authoritative Ledger</div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Prepaid Account Transaction History</h2>
+                        <p class="text-xs text-slate-500">Backed by immutable double-entry journal vouchers in MySQL.</p>
                     </div>
 
-                    <div class="flex items-center gap-2 print:hidden no-print">
+                    <div class="flex items-center gap-1.5 print:hidden no-print">
                         <button wire:click="openTopUpModal" type="button"
-                            class="min-h-[44px] px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-slate-300 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                             <span>Top-Up Balance</span>
                         </button>
 
                         @if ($member->phone)
                             <a href="{{ $whatsappUrl }}" target="_blank"
-                                class="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
-                                <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                class="h-8.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                                <svg class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.045-1.013-.075-.242-.077-.552-.19-1.002-.387-1.854-.808-3.056-2.698-3.149-2.82-.092-.123-.746-.991-.746-1.89 0-.9.472-1.343.64-1.528.169-.185.367-.231.49-.231.122 0 .245.002.352.007.112.005.263-.042.411.314.154.372.525 1.28.572 1.374.046.094.077.204.015.328-.061.123-.092.2-.184.308-.092.108-.193.241-.276.323-.092.093-.188.193-.081.377.108.185.478.788 1.025 1.275.704.628 1.298.822 1.482.915.185.092.293.077.4-.046.108-.123.461-.539.585-.724.123-.185.246-.154.415-.092.169.061 1.077.508 1.261.6.185.093.308.139.354.216.046.077.046.446-.098.851zM12 2C6.477 2 2 6.477 2 12c0 1.891.526 3.66 1.442 5.176L2 22l4.981-1.306C8.423 21.524 10.154 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
                                 </svg>
                                 <span>Share WhatsApp</span>
@@ -895,8 +919,8 @@
                         @endif
 
                         <button type="button" onclick="window.print()"
-                            class="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm transition-all border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer">
-                            <svg class="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                             </svg>
                             <span>Print</span>
@@ -973,13 +997,13 @@
         @if ($activeTab === 'bills')
             <div class="space-y-4">
                 <!-- Bills Filter Bar -->
-                <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div class="p-3 sm:p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
                     <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
                         <input type="text" wire:model.live.debounce.300ms="billSearch" placeholder="Search by Bill #..."
-                            class="px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-60 min-h-[40px]">
+                            class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 w-full sm:w-56 h-8.5">
 
                         <select wire:model.live="billDepartmentFilter"
-                            class="px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 min-h-[40px]">
+                            class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 h-8.5">
                             <option value="all">All Outlets / Departments</option>
                             <option value="restaurant">Restaurant / F&B</option>
                             <option value="bar">Bar Counter</option>
@@ -1042,9 +1066,9 @@
                                                 {{ $bStatus }}
                                             </span>
                                         </td>
-                                        <td class="p-3.5 text-right">
+                                        <td class="p-3 text-right">
                                             <button wire:click="openInvoiceModal({{ $bill->id }})" type="button"
-                                                class="min-h-[36px] px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer">
+                                                class="h-7.5 px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-300 dark:border-slate-700 transition cursor-pointer">
                                                 View Bill
                                             </button>
                                         </td>
@@ -1074,17 +1098,17 @@
                         <h4 class="font-bold text-slate-900 dark:text-white text-sm">Direct Front-Desk Facility Booking</h4>
                         <p class="text-xs text-slate-500">Quickly book badminton slots or guest rooms with this member pre-selected.</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
                         <button wire:click="openBookCourtModal" type="button"
-                            class="min-h-[40px] px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
                             <span>Book Badminton Slot</span>
                         </button>
                         <button wire:click="openBookRoomModal" type="button"
-                            class="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                             </svg>
                             <span>Reserve Guest Room</span>
@@ -1276,8 +1300,8 @@
                         </h3>
 
                         <button wire:click="openAssignLockerModal" type="button"
-                            class="min-h-[40px] px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                             <span>Assign Club Locker</span>
@@ -1349,21 +1373,21 @@
         @if ($activeTab === 'access')
             <div class="space-y-6">
                 <!-- Turnstile Security Header & Emergency Revoke -->
-                <div class="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
+                <div class="p-3.5 sm:p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="space-y-0.5">
                         <div class="flex items-center gap-2">
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
                                 <span>Turnstile &amp; Biometric Access Controller</span>
                             </h3>
                             @if ($member->activeCard)
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                     Token Active
                                 </span>
                             @else
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                                     No Active Token
                                 </span>
                             @endif
@@ -1373,11 +1397,11 @@
                         </p>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
                         @if ($member->activeCard)
                             <button wire:click="blockActiveCard" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2 cursor-pointer">
-                                <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                class="h-8.5 px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                                 </svg>
                                 <span>Emergency Block Access</span>
@@ -1389,8 +1413,8 @@
                         @endphp
                         @if ($blockedCard && !$member->activeCard)
                             <button wire:click="unblockCard({{ $blockedCard->id }})" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2 cursor-pointer">
-                                <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                class="h-8.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer">
+                                <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <span>Restore Gate Access</span>
@@ -1484,8 +1508,8 @@
                         </div>
 
                         <button wire:click="openDependentModal" type="button"
-                            class="min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                             </svg>
                             <span>Add Dependent</span>
@@ -1523,7 +1547,7 @@
 
                                 <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                     <button wire:click="toggleDependentWalletDebit({{ $dep->id }})" type="button"
-                                        class="min-h-[38px] px-3 py-1.5 rounded-lg text-xs font-bold transition w-full {{ $dep->can_spend_wallet ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200' }} cursor-pointer">
+                                        class="h-8 px-3 py-1 rounded-lg text-xs font-semibold transition w-full {{ $dep->can_spend_wallet ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700' }} cursor-pointer">
                                         {{ $dep->can_spend_wallet ? 'Revoke Wallet Permission' : 'Authorize Wallet Debits' }}
                                     </button>
                                 </div>
@@ -1603,41 +1627,41 @@
         <!-- MODAL: Top-Up Prepaid Wallet -->
         @if ($showTopUpModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs">
                                 ₹
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Top-Up Prepaid Wallet</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Top-Up Prepaid Wallet</h3>
                                 <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeTopUpModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeTopUpModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processTopUp" class="space-y-4">
+                    <form wire:submit="processTopUp" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Recharge Amount (₹) <span class="text-rose-500">*</span>
                             </label>
                             <div class="relative">
-                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-slate-400">₹</span>
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₹</span>
                                 <input type="number" step="1" min="1" wire:model="topUpAmount" placeholder="e.g. 2000" autofocus required
-                                    class="w-full pl-8 pr-4 py-2.5 text-base font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                                    class="w-full pl-7 pr-3 py-2 text-sm font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 font-mono">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Collection Tender Type <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="topUpTender" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <select wire:model="topUpTender" class="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 <option value="cash">Cash (Counter Cash Drawer)</option>
                                 <option value="digital">Digital / UPI / QR Settlement</option>
                                 <option value="card">Card (POS Terminal)</option>
@@ -1646,20 +1670,20 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Transaction / Bank Reference #
                             </label>
                             <input type="text" wire:model="topUpRef" placeholder="e.g. UPI-123456789 or Cash Slip #"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 font-mono">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeTopUpModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Confirm &amp; Credit Wallet
                             </button>
                         </div>
@@ -1671,51 +1695,51 @@
         <!-- MODAL: Issue or Replace RFID Card -->
         @if ($showCardModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div>
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">
                                 {{ $member->activeCard ? 'Replace RFID Access Card' : 'Issue Initial RFID Card' }}
                             </h3>
                             <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                         </div>
-                        <button wire:click="closeCardModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeCardModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
                     @if ($member->activeCard)
-                        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300">
+                        <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300">
                             <strong>Notice:</strong> Current Card <code class="font-bold">{{ $member->activeCard->card_number }}</code> will be blocked immediately. Statutory replacement fee: <strong>₹{{ number_format($lostCardFee, 2) }}</strong>. Wallet balance is preserved.
                         </div>
                     @endif
 
-                    <form wire:submit="processCardIssue" class="space-y-4">
+                    <form wire:submit="processCardIssue" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Physical RFID Card UID / Scan <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" wire:model="newCardNumber" placeholder="Tap card or enter UID (e.g. CARD-VENU-02)" autofocus required
-                                class="w-full px-3.5 py-2.5 text-sm font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                                class="w-full px-3 py-2 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Issuance / Replacement Reason
                             </label>
                             <input type="text" wire:model="cardReason" placeholder="e.g. Lost physical card / Damaged antenna"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeCardModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Issue Physical Card
                             </button>
                         </div>
@@ -1727,42 +1751,42 @@
         <!-- MODAL: Add Family Dependent -->
         @if ($showDependentModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div>
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Register Family Dependent</h3>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Register Family Dependent</h3>
                             <p class="text-[11px] text-slate-500">Linked to Member #{{ $member->membership_number }}</p>
                         </div>
-                        <button wire:click="closeDependentModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeDependentModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processDependentRegister" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-3">
+                    <form wire:submit="processDependentRegister" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     First Name <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="text" wire:model="depFirstName" placeholder="e.g. Anjali" autofocus required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Last Name
                                 </label>
                                 <input type="text" wire:model="depLastName" placeholder="e.g. Nair"
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Relationship to Member <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="depRelationship" class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <select wire:model="depRelationship" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 <option value="Spouse">Spouse</option>
                                 <option value="Child">Child (Son / Daughter)</option>
                                 <option value="Parent">Parent (Father / Mother)</option>
@@ -1770,30 +1794,30 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Contact Mobile Number
                             </label>
                             <input type="text" wire:model="depPhone" placeholder="e.g. +91 98470 12345"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 font-mono">
                         </div>
 
-                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                        <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model="depCanSpendWallet" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
-                                <span class="text-xs font-bold text-slate-900 dark:text-white">Authorize Counter Wallet Debits</span>
+                                <input type="checkbox" wire:model="depCanSpendWallet" class="w-4 h-4 rounded text-slate-900 focus:ring-slate-900">
+                                <span class="text-xs font-semibold text-slate-900 dark:text-white">Authorize Counter Wallet Debits</span>
                             </label>
-                            <p class="text-[11px] text-slate-500 mt-1">
+                            <p class="text-[11px] text-slate-500 mt-0.5">
                                 Disabled by default. Only check if member has provided written authorization to debit wallet.
                             </p>
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeDependentModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Save Dependent
                             </button>
                         </div>
@@ -1805,25 +1829,25 @@
         <!-- MODAL: Change Lifecycle Status -->
         @if ($showStatusModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div>
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Manage Membership Status</h3>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Manage Membership Status</h3>
                             <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                         </div>
-                        <button wire:click="closeStatusModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeStatusModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processStatusChange" class="space-y-4">
+                    <form wire:submit="processStatusChange" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 New Membership Status <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="newStatus" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <select wire:model="newStatus" class="w-full px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 <option value="active">Active (Full Club &amp; Facility Access)</option>
                                 <option value="suspended">Suspended (Temporary Bar / Disciplinary)</option>
                                 <option value="expired">Expired (Annual Dues Lapsed)</option>
@@ -1833,20 +1857,20 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Audit Reason / Notation
                             </label>
                             <input type="text" wire:model="statusReason" placeholder="e.g. Relocated abroad / Disciplinary hold"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeStatusModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Update Status
                             </button>
                         </div>
@@ -1940,13 +1964,13 @@
 
                     <div class="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
                         <span class="text-[11px] text-slate-400">Handled by: <strong>{{ $selectedInvoice['cashier'] }}</strong></span>
-                        <div class="flex items-center gap-2 print:hidden no-print">
+                        <div class="flex items-center gap-1.5 print:hidden no-print">
                             <button type="button" onclick="window.print()"
-                                class="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer">
+                                class="h-8.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer">
                                 Print Receipt
                             </button>
                             <button wire:click="closeInvoiceModal" type="button"
-                                class="min-h-[38px] px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition cursor-pointer">
                                 Close
                             </button>
                         </div>
@@ -1960,30 +1984,32 @@
         <!-- ============================================================ -->
         @if ($showBookCourtModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
-                                🏸
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Book Badminton Court Slot</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Book Badminton Court Slot</h3>
                                 <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeBookCourtModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeBookCourtModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processDirectCourtBooking" class="space-y-4">
+                    <form wire:submit="processDirectCourtBooking" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Sports Facility Court <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="bookCourtFacilityId" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <select wire:model="bookCourtFacilityId" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 @if ($courtFacility)
                                     <option value="{{ $courtFacility->id }}">{{ $courtFacility->name }} ({{ $courtFacility->code }})</option>
                                 @endif
@@ -1991,19 +2017,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Booking Date <span class="text-rose-500">*</span>
                             </label>
                             <input type="date" wire:model.live="bookCourtDate" min="{{ now()->toDateString() }}" required
-                                class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono">
+                                class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Start Time (1-Hr) <span class="text-rose-500">*</span>
                                 </label>
-                                <select wire:model="bookCourtStartTime" class="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                <select wire:model="bookCourtStartTime" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
                                     <option value="06:00">06:00 AM</option>
                                     <option value="07:00">07:00 AM</option>
                                     <option value="08:00">08:00 AM</option>
@@ -2017,10 +2043,10 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     End Time
                                 </label>
-                                <select wire:model="bookCourtEndTime" class="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                <select wire:model="bookCourtEndTime" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
                                     <option value="07:00">07:00 AM</option>
                                     <option value="08:00">08:00 AM</option>
                                     <option value="09:00">09:00 AM</option>
@@ -2037,15 +2063,15 @@
 
                         <!-- Entitlement status pill -->
                         @if ($courtIsPlanCovered)
-                            <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                                <svg class="w-4 h-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
-                                <span><strong>Active Sports Subscription Detected:</strong> Slot fee is 100% plan covered (₹0.00).</span>
+                                <span><strong>Active Sports Subscription:</strong> Slot fee is 100% plan covered (₹0.00).</span>
                             </div>
                         @else
-                            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                                <svg class="w-4 h-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <span><strong>Pay-per-Play:</strong> No active badminton subscription. Hourly court tariff applies.</span>
@@ -2054,11 +2080,11 @@
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeBookCourtModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Confirm Court Booking
                             </button>
                         </div>
@@ -2072,85 +2098,87 @@
         <!-- ============================================================ -->
         @if ($showBookRoomModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
-                                🛏️
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Reserve Guest Room</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Reserve Guest Room</h3>
                                 <p class="text-[11px] text-slate-500">Sponsor: Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeBookRoomModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeBookRoomModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processDirectRoomBooking" class="space-y-4">
+                    <form wire:submit="processDirectRoomBooking" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Accommodation Room <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="bookRoomFacilityId" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <select wire:model="bookRoomFacilityId" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 @foreach ($availableRooms as $room)
                                     <option value="{{ $room->id }}">{{ $room->name }} ({{ $room->code }})</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Check-In Date <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="date" wire:model="bookRoomCheckIn" min="{{ now()->toDateString() }}" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Check-Out Date <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="date" wire:model="bookRoomCheckOut" min="{{ now()->addDay()->toDateString() }}" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Nightly Rate (₹)
                                 </label>
                                 <input type="number" wire:model="bookRoomRateRupees" step="100" min="500" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Advance Deposit (₹)
                                 </label>
                                 <input type="number" wire:model="bookRoomDepositRupees" step="100" min="0" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Primary Guest / Occupant Name
                             </label>
                             <input type="text" wire:model="bookRoomGuestName" placeholder="e.g. Kishore Warrier or visiting family"
-                                class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                                class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeBookRoomModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Confirm Room Reservation
                             </button>
                         </div>
@@ -2164,31 +2192,33 @@
         <!-- ============================================================ -->
         @if ($showIntroLetterModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold">
-                                📜
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Affiliated Club Introduction Letter</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Affiliated Club Introduction Letter</h3>
                                 <p class="text-[11px] text-slate-500">Reciprocal Visit &bull; Member #{{ $member->membership_number }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeIntroLetterModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeIntroLetterModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="generateIntroLetter" class="space-y-4">
+                    <form wire:submit="generateIntroLetter" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Destination Affiliated Club <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" wire:model="letterDestinationClub" list="affiliated_clubs_list" required
-                                class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                             <datalist id="affiliated_clubs_list">
                                 <option value="Trivandrum Club, Vazhuthacaud, Thiruvananthapuram">
                                 <option value="Rama Varma Club, Club Road, Kochi">
@@ -2200,46 +2230,46 @@
                             </datalist>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Visit From <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="date" wire:model="letterVisitStart" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Visit To <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="date" wire:model="letterVisitEnd" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Accompanying Dependents
                             </label>
                             <input type="text" wire:model="letterAccompanying" placeholder="e.g. Spouse & 2 Children"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Purpose of Visit / Remarks
                             </label>
                             <input type="text" wire:model="letterPurpose" placeholder="e.g. Personal recreation & leisure stay"
-                                class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                                class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeIntroLetterModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Generate Official Certificate
                             </button>
                         </div>
@@ -2253,41 +2283,41 @@
         <!-- ============================================================ -->
         @if ($showLetterViewModal && $generatedLetter)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity print:p-0 print:static print:bg-transparent print:overflow-visible print:block print:w-full print:h-auto">
-                <div id="printable-intro-letter" class="bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl p-6 sm:p-8 space-y-6 max-h-[94vh] overflow-y-auto text-slate-900 print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:max-w-none print:w-full print:block print:h-auto">
+                <div id="printable-intro-letter" class="bg-white rounded-t-2xl sm:rounded-xl border border-slate-200 shadow-2xl w-full max-w-2xl p-5 sm:p-7 space-y-5 max-h-[94vh] overflow-y-auto text-slate-900 print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:max-w-none print:w-full print:block print:h-auto">
                     
                     <!-- Official Letterhead Header -->
-                    <div class="border-b-2 border-amber-600 pb-4 flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-yellow-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-xs">
+                    <div class="border-b border-slate-300 pb-3 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-2xs">
                                 MC
                             </div>
                             <div>
-                                <h2 class="text-xl font-black uppercase tracking-tight text-slate-900">{{ config('club.name', 'Malabar Club') }}</h2>
-                                <p class="text-xs font-semibold text-amber-800 uppercase tracking-wider">Secretariat &bull; Vadakkencherry, Palakkad &bull; Kerala 678683</p>
+                                <h2 class="text-lg font-bold uppercase tracking-tight text-slate-900">{{ config('club.name', 'Malabar Club') }}</h2>
+                                <p class="text-xs font-medium text-slate-600 uppercase tracking-wider">Secretariat &bull; Vadakkencherry, Palakkad &bull; Kerala 678683</p>
                                 <p class="text-[11px] text-slate-500">Affiliated to Premier Clubs across India &bull; Est. 1998 &bull; Phone: +91 4922 255222</p>
                             </div>
                         </div>
                         <div class="text-right">
                             <span class="text-[10px] uppercase font-bold text-slate-400 block">Ref Number</span>
-                            <span class="text-xs font-mono font-extrabold text-slate-900 block">{{ $generatedLetter['reference_number'] }}</span>
-                            <span class="text-[11px] text-slate-600 block mt-0.5">{{ $generatedLetter['date'] }}</span>
+                            <span class="text-xs font-mono font-bold text-slate-900 block">{{ $generatedLetter['reference_number'] }}</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">{{ $generatedLetter['date'] }}</span>
                         </div>
                     </div>
 
                     <!-- Addressee -->
                     <div class="text-xs leading-relaxed space-y-1">
                         <p class="font-bold">To,</p>
-                        <p class="font-extrabold text-slate-900 text-sm">{{ $generatedLetter['destination_club'] }}</p>
+                        <p class="font-bold text-slate-900 text-sm">{{ $generatedLetter['destination_club'] }}</p>
                         <p class="text-slate-600">Attention: The Honorary Secretary / General Manager</p>
                     </div>
 
                     <!-- Subject -->
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-900">
+                    <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs font-bold text-slate-900">
                         SUBJECT: Letter of Introduction &amp; Reciprocal Visiting Privileges — Member # {{ $generatedLetter['membership_number'] }}
                     </div>
 
                     <!-- Body Prose -->
-                    <div class="text-xs leading-relaxed space-y-3 text-slate-800">
+                    <div class="text-xs leading-relaxed space-y-2.5 text-slate-800">
                         <p>Dear Sir / Madam,</p>
                         <p>
                             We have great pleasure in introducing our esteemed member, <strong>{{ $generatedLetter['member_name'] }}</strong> (Membership No: <strong class="font-mono">{{ $generatedLetter['membership_number'] }}</strong>, Classification: <strong>{{ $generatedLetter['category_name'] }}</strong>), who is a bonafide member of Malabar Club in good standing with all statutory subscriptions up to date.
@@ -2304,31 +2334,31 @@
                     </div>
 
                     <!-- Sign-off Block -->
-                    <div class="pt-4 flex items-end justify-between border-t border-slate-200 text-xs">
+                    <div class="pt-3 flex items-end justify-between border-t border-slate-200 text-xs">
                         <div>
-                            <div class="w-16 h-16 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-[10px] text-slate-400 font-mono text-center p-1">
-                                [ Official Club Seal ]
+                            <div class="w-14 h-14 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-[10px] text-slate-400 font-mono text-center p-1">
+                                [ Seal ]
                             </div>
                         </div>
-                        <div class="text-right space-y-1">
+                        <div class="text-right space-y-0.5">
                             <p class="text-slate-600">Yours faithfully,</p>
-                            <p class="font-bold text-slate-900 pt-4">For {{ config('club.name', 'Malabar Club') }}</p>
-                            <p class="font-extrabold text-sm text-slate-900">{{ $generatedLetter['secretary_name'] }}</p>
-                            <p class="text-[11px] text-slate-500 uppercase font-semibold">Honorary Secretary / General Manager</p>
+                            <p class="font-bold text-slate-900 pt-3">For {{ config('club.name', 'Malabar Club') }}</p>
+                            <p class="font-bold text-sm text-slate-900">{{ $generatedLetter['secretary_name'] }}</p>
+                            <p class="text-[11px] text-slate-500 uppercase font-medium">Honorary Secretary / General Manager</p>
                         </div>
                     </div>
 
                     <!-- Footer Action Buttons -->
                     <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 print:hidden no-print">
                         <button type="button" onclick="window.print()"
-                            class="min-h-[44px] px-5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-2 cursor-pointer shadow-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="h-8.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-semibold text-xs transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                             </svg>
                             <span>Print Official Letter</span>
                         </button>
                         <button wire:click="closeLetterViewModal" type="button"
-                            class="min-h-[44px] px-4 py-2 rounded-xl border border-slate-300 font-bold text-xs hover:bg-slate-100 transition cursor-pointer">
+                            class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 font-semibold text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer">
                             Close
                         </button>
                     </div>
@@ -2341,30 +2371,32 @@
         <!-- ============================================================ -->
         @if ($showAddNoteModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400 flex items-center justify-center font-bold">
-                                📝
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Add Administrative Note</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Add Administrative Note</h3>
                                 <p class="text-[11px] text-slate-500">Internal Audit &bull; Member #{{ $member->membership_number }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeAddNoteModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeAddNoteModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processAddNote" class="space-y-4">
+                    <form wire:submit="processAddNote" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Note Classification / Category <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="noteCategory" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <select wire:model="noteCategory" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 <option value="general">General Administrative Note</option>
                                 <option value="committee_directive">Managing Committee Directive</option>
                                 <option value="disciplinary">Disciplinary / Policy Observation</option>
@@ -2373,23 +2405,23 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Confidential Note Remarks <span class="text-rose-500">*</span>
                             </label>
-                            <textarea wire:model="noteContent" rows="4" placeholder="Enter administrative observations, committee instructions, or member preferences..." required
-                                class="w-full px-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
-                            <p class="text-[11px] text-slate-400 mt-1">
+                            <textarea wire:model="noteContent" rows="3" placeholder="Enter administrative observations, committee instructions, or member preferences..." required
+                                class="w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"></textarea>
+                            <p class="text-[11px] text-slate-400 mt-0.5">
                                 Note will be permanently recorded with your name ({{ auth()->user()?->name }}) and current timestamp for administrative auditing.
                             </p>
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeAddNoteModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Save Administrative Note
                             </button>
                         </div>
@@ -2403,30 +2435,32 @@
         <!-- ============================================================ -->
         @if ($showAssignLockerModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
-                                🔐
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Assign Club Locker</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Assign Club Locker</h3>
                                 <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; {{ $member->name }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeAssignLockerModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeAssignLockerModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processAssignLocker" class="space-y-4">
+                    <form wire:submit="processAssignLocker" class="space-y-3">
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Available Locker <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="selectedLockerId" required class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <select wire:model="selectedLockerId" required class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 @forelse ($availableLockers as $lck)
                                     <option value="{{ $lck->id }}">{{ $lck->locker_number }} — {{ $lck->zone }} (Deposit: ₹{{ number_format($lck->deposit_rupees, 2) }})</option>
                                 @empty
@@ -2435,38 +2469,38 @@
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Deposit Amount (₹) <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="number" wire:model="lockerDepositRupees" min="0" step="100" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Physical Key Number
                                 </label>
                                 <input type="text" wire:model="lockerKeyNumber" placeholder="e.g. KEY-101"
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Allocation Remarks
                             </label>
                             <input type="text" wire:model="lockerNotes" placeholder="e.g. Assigned for badminton kit storage"
-                                class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                                class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeAssignLockerModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Confirm Locker Assignment
                             </button>
                         </div>
@@ -2480,31 +2514,33 @@
         <!-- ============================================================ -->
         @if ($showRenewModal)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold">
-                                🌟
+                <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5 max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Renew Annual Subscription</h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Renew Annual Subscription</h3>
                                 <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; Current Valid Until: {{ $annualDuesInfo['valid_until_formatted'] }}</p>
                             </div>
                         </div>
-                        <button wire:click="closeRenewModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button wire:click="closeRenewModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <form wire:submit="processRenewMembership" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-3">
+                    <form wire:submit="processRenewMembership" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2.5">
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Renewal Period <span class="text-rose-500">*</span>
                                 </label>
-                                <select wire:model="renewalYears" class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <select wire:model="renewalYears" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                     <option value="1">1 Year</option>
                                     <option value="2">2 Years</option>
                                     <option value="3">3 Years</option>
@@ -2512,19 +2548,19 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                     Annual Dues Fee (₹) <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="number" wire:model="renewalFeeRupees" min="0" step="500" required
-                                    class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono">
+                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Payment Tender Mode <span class="text-rose-500">*</span>
                             </label>
-                            <select wire:model="renewalTender" class="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <select wire:model="renewalTender" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
                                 <option value="prepaid">Prepaid Wallet Debit (Current Balance: ₹{{ number_format($balanceRupees, 2) }})</option>
                                 <option value="cash">Counter Cash Receipt</option>
                                 <option value="digital">Digital UPI / POS Card</option>
@@ -2533,25 +2569,25 @@
                         </div>
 
                         <!-- Zero-Credit Policy Notice -->
-                        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
+                        <div class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
                             <strong>Prepaid Wallet Policy:</strong> If paid via Prepaid Wallet, sufficient balance is strictly verified on the server ledger. Overdrafts, negative balances, and credit tabs are strictly blocked.
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
                                 Statutory Audit Remarks
                             </label>
                             <input type="text" wire:model="renewalNotes"
-                                class="w-full px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                                class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
 
                         <div class="pt-2 flex items-center justify-end gap-2">
                             <button wire:click="closeRenewModal" type="button"
-                                class="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                                class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="min-h-[44px] px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-xs cursor-pointer">
+                                class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Confirm Subscription Renewal
                             </button>
                         </div>
