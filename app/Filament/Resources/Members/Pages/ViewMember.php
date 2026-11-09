@@ -159,30 +159,6 @@ class ViewMember extends ViewRecord
         $record = $this->getRecord();
 
         return [
-            Action::make('topUpWallet')
-                ->label('Top-Up Wallet')
-                ->icon(Heroicon::OutlinedBanknotes)
-                ->color('success')
-                ->action(fn () => $this->openTopUpModal()),
-
-            Action::make('renewMembership')
-                ->label('Renew Dues')
-                ->icon(Heroicon::OutlinedSparkles)
-                ->color('info')
-                ->action(fn () => $this->openRenewModal()),
-
-            Action::make('issueOrReplaceCard')
-                ->label($record->activeCard ? 'Replace RFID Card' : 'Issue RFID Card')
-                ->icon(Heroicon::OutlinedCreditCard)
-                ->color('primary')
-                ->action(fn () => $this->openCardModal()),
-
-            Action::make('changeStatus')
-                ->label('Status')
-                ->icon(Heroicon::OutlinedShieldCheck)
-                ->color('warning')
-                ->action(fn () => $this->openStatusModal()),
-
             Action::make('edit')
                 ->label('Edit Profile')
                 ->icon(Heroicon::OutlinedPencilSquare)

@@ -21,21 +21,21 @@
 
                     <div class="space-y-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-amber-100/80 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                            <span class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
                                 # {{ $member->membership_number }}
                             </span>
 
-                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
                                 {{ $member->category?->name ?? 'Standard Category' }}
                             </span>
 
                             @php
                                 $statusVal = $member->status instanceof \BackedEnum ? $member->status->value : (string) $member->status;
                                 $statusClasses = match ($statusVal) {
-                                    'active' => 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-                                    'suspended' => 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
-                                    'resigned' => 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-                                    default => 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                                    'active' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                                    'suspended' => 'bg-rose-50 text-rose-800 border-rose-200',
+                                    'resigned' => 'bg-slate-100 text-slate-700 border-slate-200',
+                                    default => 'bg-amber-50 text-amber-800 border-amber-200',
                                 };
                             @endphp
                             <span class="text-[11px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-lg border {{ $statusClasses }}">
@@ -104,16 +104,16 @@
             </div>
 
             <!-- Quick Action Bar (Streamlined with Categorized Actions Menu) -->
-            <div class="mt-5 pt-4 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5 print:hidden no-print">
+            <div class="mt-5 pt-4 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2.5 print:hidden no-print">
                 
                 <!-- Left: Core 1-Tap Actions & Categorized Menu -->
                 <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 flex-1">
                     
-                    <!-- 1. Top-Up Wallet (1-Tap Primary) -->
+                    <!-- 1. Top-Up Wallet (Primary CTA) -->
                     <button wire:click="openTopUpModal" type="button"
-                        class="min-h-[44px] px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-initial">
-                        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        class="min-h-[42px] px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-initial">
+                        <svg class="w-4 h-4 text-slate-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
                         <span>Top-Up Wallet</span>
                     </button>
@@ -121,12 +121,12 @@
                     <!-- 2. Unified Member Actions Menu (Alpine.js Popover / Bottom Sheet) -->
                     <div x-data="{ open: false }" class="relative inline-block text-left flex-1 sm:flex-initial">
                         <button @click="open = !open" type="button"
-                            class="min-h-[44px] w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer select-none">
-                            <svg class="w-4 h-4 text-amber-400 dark:text-amber-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                            class="min-h-[42px] w-full sm:w-auto px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-2 cursor-pointer select-none">
+                            <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
                             </svg>
                             <span>Member Actions</span>
-                            <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
@@ -152,15 +152,15 @@
                             x-transition:leave="transition ease-in duration-150"
                             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-2 sm:scale-95"
-                            class="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-full left-0 sm:left-0 right-0 sm:right-auto z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[580px] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-4 sm:p-4 divide-y divide-slate-100 dark:divide-slate-800 space-y-3">
+                            class="fixed sm:absolute bottom-0 sm:bottom-auto sm:top-full left-0 sm:left-0 right-0 sm:right-auto z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[580px] overflow-y-auto bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl p-4 sm:p-4 divide-y divide-slate-100 space-y-3">
                             
                             <!-- Header (Mobile Sheet title) -->
                             <div class="flex items-center justify-between pb-2">
                                 <div>
                                     <h4 class="text-xs font-black uppercase tracking-wider text-slate-400">Member Services &amp; Actions</h4>
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $member->name }} &bull; #{{ $member->membership_number }}</p>
+                                    <p class="text-sm font-bold text-slate-900">{{ $member->name }} &bull; #{{ $member->membership_number }}</p>
                                 </div>
-                                <button @click="open = false" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 sm:hidden cursor-pointer">
+                                <button @click="open = false" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 sm:hidden cursor-pointer">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
@@ -172,45 +172,45 @@
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1.5">Front-Desk &amp; Sports Bookings</span>
                                 
                                 <button type="button" @click="open = false; $wire.openBookCourtModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         🏸
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Book Badminton Court</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Book Badminton Court</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Reserve 60-min slot with plan entitlement check</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openBookRoomModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         🛏️
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Reserve Guest Room</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Reserve Guest Room</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Daily accommodation booking &amp; deposits</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openAssignLockerModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         🔐
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Assign Club Locker</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Assign Club Locker</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Kitbag storage allocation &amp; key assignment</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openIntroLetterModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         📜
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Affiliated Club Intro Letter</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Affiliated Club Intro Letter</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Generate formal reciprocal visit certificate</span>
                                     </div>
                                 </button>
@@ -221,23 +221,23 @@
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 mb-1.5">Membership &amp; Secretarial</span>
 
                                 <button type="button" @click="open = false; $wire.openRenewModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         🌟
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Renew Membership Dues</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Renew Membership Dues</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Extend term validity with prepaid wallet balance check</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openCardModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         💳
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">
+                                        <span class="text-xs font-bold text-slate-900 block">
                                             {{ $member->activeCard ? 'Replace RFID Smartcard' : 'Issue RFID Smartcard' }}
                                         </span>
                                         <span class="text-[11px] text-slate-500 block truncate">
@@ -247,45 +247,45 @@
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openDependentModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         👥
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Register Family Dependent</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Register Family Dependent</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Spouse &amp; child roster &amp; wallet spending controls</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openAddNoteModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         📝
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Add Administrative Note</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Add Administrative Note</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Record committee directive or dining preference</span>
                                     </div>
                                 </button>
 
                                 <button type="button" @click="open = false; $wire.openStatusModal()"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         🛡️
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Change Lifecycle Status</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Change Lifecycle Status</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Active, Suspended, or Resigned standing</span>
                                     </div>
                                 </button>
 
                                 <a href="{{ \App\Filament\Resources\Members\MemberResource::getUrl('edit', ['record' => $member]) }}"
-                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left transition flex items-center gap-3 cursor-pointer group">
-                                    <div class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                    class="w-full p-2.5 rounded-xl hover:bg-slate-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:bg-slate-200 transition-colors text-base">
                                         ✏️
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-xs font-bold text-slate-900 dark:text-white block">Edit Member Master</span>
+                                        <span class="text-xs font-bold text-slate-900 block">Edit Member Master</span>
                                         <span class="text-[11px] text-slate-500 block truncate">Update contact, address, and statutory KYC proofs</span>
                                     </div>
                                 </a>
@@ -297,13 +297,13 @@
 
                                 @if ($member->activeCard)
                                     <button type="button" @click="open = false; $wire.blockActiveCard()"
-                                        class="w-full p-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left transition flex items-center gap-3 cursor-pointer group">
-                                        <div class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                        class="w-full p-2.5 rounded-xl hover:bg-rose-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 group-hover:bg-rose-100 transition-colors text-base">
                                             ⛔
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <span class="text-xs font-bold text-rose-700 dark:text-rose-300 block">Emergency Block Gate Access</span>
-                                            <span class="text-[11px] text-rose-500 dark:text-rose-400 block truncate">Immediately barricade RFID card from turnstiles</span>
+                                            <span class="text-xs font-bold text-rose-700 block">Emergency Block Gate Access</span>
+                                            <span class="text-[11px] text-rose-500 block truncate">Immediately barricade RFID card from turnstiles</span>
                                         </div>
                                     </button>
                                 @endif
@@ -313,13 +313,13 @@
                                 @endphp
                                 @if ($blockedCard && !$member->activeCard)
                                     <button type="button" @click="open = false; $wire.unblockCard({{ $blockedCard->id }})"
-                                        class="w-full p-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left transition flex items-center gap-3 cursor-pointer group">
-                                        <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-base">
+                                        class="w-full p-2.5 rounded-xl hover:bg-emerald-50 text-left transition flex items-center gap-3 cursor-pointer group">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors text-base">
                                             ✅
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <span class="text-xs font-bold text-emerald-700 dark:text-emerald-300 block">Restore Gate Access</span>
-                                            <span class="text-[11px] text-emerald-500 dark:text-emerald-400 block truncate">Unblock card {{ $blockedCard->card_number }}</span>
+                                            <span class="text-xs font-bold text-emerald-700 block">Restore Gate Access</span>
+                                            <span class="text-[11px] text-emerald-500 block truncate">Unblock card {{ $blockedCard->card_number }}</span>
                                         </div>
                                     </button>
                                 @endif
@@ -331,8 +331,8 @@
                     <!-- 3. WhatsApp Direct Share Button (If phone exists) -->
                     @if ($member->phone)
                         <a href="{{ $whatsappUrl }}" target="_blank"
-                            class="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
-                            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            class="min-h-[42px] px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer">
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.045-1.013-.075-.242-.077-.552-.19-1.002-.387-1.854-.808-3.056-2.698-3.149-2.82-.092-.123-.746-.991-.746-1.89 0-.9.472-1.343.64-1.528.169-.185.367-.231.49-.231.122 0 .245.002.352.007.112.005.263-.042.411.314.154.372.525 1.28.572 1.374.046.094.077.204.015.328-.061.123-.092.2-.184.308-.092.108-.193.241-.276.323-.092.093-.188.193-.081.377.108.185.478.788 1.025 1.275.704.628 1.298.822 1.482.915.185.092.293.077.4-.046.108-.123.461-.539.585-.724.123-.185.246-.154.415-.092.169.061 1.077.508 1.261.6.185.093.308.139.354.216.046.077.046.446-.098.851zM12 2C6.477 2 2 6.477 2 12c0 1.891.526 3.66 1.442 5.176L2 22l4.981-1.306C8.423 21.524 10.154 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
                             </svg>
                             <span>WhatsApp Statement</span>
@@ -343,8 +343,8 @@
 
                 <!-- Right: Print Statement Button -->
                 <button type="button" wire:click="printStatement"
-                    class="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm transition-all border border-slate-300 dark:border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
-                    <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    class="min-h-[42px] px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm transition-all border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                    <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                     <span>Print Statement</span>
