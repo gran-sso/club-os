@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Connection Required — Malabar Club</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 480px;
+            margin: 20px;
+            padding: 32px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 20px;
+            padding: 12px;
+            border-radius: 50%;
+            background-color: rgba(217, 119, 6, 0.15);
+            color: #d97706;
+        }
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: #f8fafc;
+        }
+        p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #94a3b8;
+            margin: 0 0 16px;
+        }
+        .alert-box {
+            background-color: rgba(217, 119, 6, 0.1);
+            border-left: 4px solid #d97706;
+            padding: 12px 16px;
+            text-align: left;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #fde68a;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #d97706;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background-color: #b45309;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-6.364-2.636 9 9 0 010-12.728m3.536 3.536a5 5 0 017.072 0M3 3l18 18" />
+            </svg>
+        </div>
+        <h1>Connection Lost — Offline Safeguard</h1>
+        <p>The application has lost connectivity to the Malabar Club authoritative server.</p>
+        <div class="alert-box">
+            <strong>Financial Integrity Rule:</strong>
+            In accordance with club rules, offline spending, offline balance caching, and deferred replay mutations are strictly prohibited to prevent balance overdrafts and ledger variances.
+        </div>
+        <p>Please check your local Wi-Fi or LAN connection. Once the connection is re-established, click retry below.</p>
+        <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+    </div>
+</body>
+</html>

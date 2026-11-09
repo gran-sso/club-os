@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Filament\Resources\Expenses;
+
+use App\Domain\Finance\Models\Expense;
+use App\Filament\Resources\Expenses\Pages\CreateExpense;
+use App\Filament\Resources\Expenses\Pages\ListExpenses;
+use App\Filament\Resources\Expenses\Schemas\ExpenseForm;
+use App\Filament\Resources\Expenses\Tables\ExpensesTable;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+
+class ExpenseResource extends Resource
+{
+    protected static ?string $model = Expense::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Procurement & Food Contractor';
+
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $navigationLabel = 'Operating Expenses';
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->hasPermissionTo('reports.view')));
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->hasPermissionTo('reports.view')));
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return ExpenseForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return ExpensesTable::configure($table);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListExpenses::route('/'),
+            'create' => CreateExpense::route('/create'),
+        ];
+    }
+}

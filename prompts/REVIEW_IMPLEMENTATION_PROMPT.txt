@@ -1,0 +1,9 @@
+Review the existing Malabar Club implementation against AGENTS.md, docs/PROJECT_SPEC.md, docs/IMPLEMENTATION_PLAN.md and docs/ACCEPTANCE_TESTS.md. Inspect the actual code, migrations, routes, policies, queue jobs and test evidence; do not rely only on the progress summary or screenshots.
+
+Prioritise no-credit enforcement, wallet concurrency/idempotency, external payment recovery, balanced journal/source uniqueness, revenue-versus-funding separation, contractor settlement allocation, stock costing/returns, concurrent bookings, entitlement validity, counter reconciliation and honest Tally/access status.
+
+Check that ordinary staff cannot bypass approvals through direct requests, posted financial records cannot be edited, lost cards cannot operate, production cannot select development simulators, and private documents/secrets are protected. Check cardholder verification and authenticated integration boundaries.
+
+Identify concrete defects with reproducible business scenarios and affected files. Fix authorised code defects and add focused regression tests that prove the business outcome. Do not create tests that merely repeat a private helper's implementation. Run relevant MySQL tests and builds, and inspect the changed user workflow when possible.
+
+Update docs/PROGRESS.md with verified results and remaining limitations. Distinguish app logic, fixtures, sandbox provider behaviour, actual hardware tests and production qualification. Do not fabricate evidence, remove required business checks to make tests pass, or declare live readiness while mandatory integrations remain unqualified.

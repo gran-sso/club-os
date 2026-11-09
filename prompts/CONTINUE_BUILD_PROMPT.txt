@@ -1,0 +1,9 @@
+Continue building the existing Malabar Club application. Read AGENTS.md, docs/PROJECT_SPEC.md, docs/IMPLEMENTATION_PLAN.md, docs/DECISIONS.md, docs/ACCEPTANCE_TESTS.md and docs/PROGRESS.md, then inspect the actual code and recent changes.
+
+Resume at the earliest unfinished or failed dependency in the implementation plan. Do not restart/scaffold a second application, replace functioning modules with mockups, or ask routine questions already answered by the documents. Resolve ordinary details using the recorded defaults and document any new decision.
+
+Implement the next complete workflow, including its shared services, database constraints, authorisation, UI, journal/stock/contractor implications and tests. Preserve no-credit, centrally authoritative prepaid funds, exact money arithmetic, idempotency, append-only posting, correct period-based entitlements and genuine integration status. An unrelated missing device or credential must not stall the rest of the application.
+
+Run the meaningful tests for changed behaviour, the relevant regression checks and build. Fix actual failures. Keep browser/device/sandbox checks distinct, and never report a device-dependent test as passed from a simulator.
+
+Continue sequentially while feasible. Update docs/PROGRESS.md with the changes, exact commands/results, current start instructions, blockers and next task. Record relevant decisions. Do not deploy or activate live financial/physical integrations as part of this development request.

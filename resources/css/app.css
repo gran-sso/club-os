@@ -1,0 +1,193 @@
+@import 'tailwindcss';
+
+@source '../../resources/views/**/*.blade.php';
+@source '../../app/Livewire/**/*.php';
+@source '../../app/Filament/**/*.php';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* ==========================================================================
+   Mobile & Tablet Native Application UX Optimizations
+   ========================================================================== */
+
+/* Fast touch responsiveness & tap highlight removal */
+html, body {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Standalone PWA overscroll contain to avoid browser pull-to-refresh reload glitches */
+@media (display-mode: standalone) {
+    body {
+        overscroll-behavior-y: contain;
+    }
+}
+
+/* Mobile font-size safeguard: Prevent iOS Safari auto-zoom on input focus */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Bottom safe-area clearance for mobile navigation dock on screens < 1024px */
+@media (max-width: 1023px) {
+    .fi-main, main.fi-main-ctn {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
+/* Smooth momentum touch scrolling */
+.overflow-y-auto, .overflow-x-auto, .fi-sidebar-nav {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   Print & Document Export Styles (Anti-button & Clean Invoice / Form Output)
+   ========================================================================== */
+
+@media print {
+    /* 1. Eliminate all buttons, clickable controls, and action triggers */
+    button,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    [role="button"],
+    a[role="button"],
+    .no-print,
+    .print\:hidden,
+    .print-hidden,
+    [data-no-print],
+    .fi-btn,
+    .fi-icon-btn,
+    .fi-link,
+    .fi-ac,
+    .fi-ac-btn-action,
+    .fi-modal-close-btn,
+    .fi-modal-footer,
+    .fi-modal-footer-actions,
+    .fi-modal-header-actions,
+    .fi-form-actions,
+    .fi-header-actions {
+        display: none !important;
+    }
+
+    /* 2. Hide navigational chrome, sidebars, topbars, pagination, and breadcrumbs */
+    .fi-topbar,
+    .fi-sidebar,
+    .fi-sidebar-close-overlay,
+    .fi-breadcrumbs,
+    .fi-pagination,
+    .fi-tabs,
+    .fi-ta-actions,
+    .fi-ta-header-ctn,
+    .fi-ta-filters,
+    .fi-ta-search-field,
+    .pwa-mobile-dock,
+    nav[aria-label="Mobile Navigation Dock"],
+    nav[aria-label="Breadcrumbs"],
+    header:not(.printable-header),
+    footer:not(.printable-footer),
+    /* Floating toast notifications and alerts */
+    .fi-no,
+    .fi-no-notification,
+    .fi-notifications,
+    .filament-notifications,
+    [role="status"]:not(.printable-status) {
+        display: none !important;
+    }
+
+    /* 3. Modal isolation & full-bleed print formatting */
+    .fi-modal-close-overlay {
+        display: none !important;
+    }
+
+    /* Modal wrappers & overlays should not darken, clip or obscure print */
+    .fixed.inset-0,
+    [role="dialog"] {
+        position: static !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* For Filament native modals mounted outside layout */
+    body:has(.fi-modal-window) .fi-layout {
+        display: none !important;
+    }
+
+    /* Ensure modals unclip and expand naturally to page margins */
+    .fi-modal-window,
+    .fi-modal-ctn {
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+    }
+
+    /* 4. Page layout, background, and typography optimizations */
+    html, body {
+        background: #ffffff !important;
+        color: #0f172a !important; /* slate-900 */
+        font-size: 11pt !important;
+        line-height: 1.4 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Neutralize shadows, glows, and dark backgrounds for ink-friendly print */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* Avoid page-breaks cutting across table rows and cards */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    tr, .break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    thead {
+        display: table-header-group !important;
+    }
+
+    tfoot {
+        display: table-footer-group !important;
+    }
+
+    /* Unstick headers and fixed toolbars */
+    .sticky, .fixed {
+        position: static !important;
+    }
+}

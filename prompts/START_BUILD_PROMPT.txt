@@ -1,0 +1,33 @@
+Build the Malabar Club, Vadakkencherry management application in this workspace for Skysys Infosolutions OPC Pvt. Ltd.
+
+Start implementation now. The business requirements and sensible defaults are already documented. Do not respond only with a plan, request another discovery questionnaire, or wait for approval of ordinary implementation choices. Record any additional routine decisions and continue.
+
+First read:
+1. AGENTS.md
+2. docs/PROJECT_SPEC.md
+3. docs/IMPLEMENTATION_PLAN.md
+4. docs/DECISIONS.md
+5. docs/ACCEPTANCE_TESTS.md
+6. docs/PROGRESS.md
+
+Use PHP 8.4, Laravel 13, MySQL 8.4/InnoDB, Filament 5, Livewire 4, Blade, Tailwind CSS 4.1+ and Alpine.js. Resolve compatible stable packages from their current documentation, commit lockfiles, and build one modular application with one database. Keep central business services shared by all screens. Use Filament for administration and task-specific Livewire screens for the POS/reception/booking workflows.
+
+The club starts with 460 members, five rooms, one badminton court, two to three counters and five staff users. All facilities are club-operated except externally supplied food, whose qualifying paid sales are settled with the contractor on the following day. These counts must be configurable, not hard limits.
+
+The critical rules are no customer credit, no negative authorised prepaid spending, no double-counted recharges/sales, immutable posted transactions, balanced journals, atomic/idempotent financial posting, and separate contractor payables. Guests may be sponsored by a club member or an affiliated member. Bar/card-room guest entry requires registration and the applicable paid pass. Membership and gym/badminton plans have separate validity. Treat member prepaid cards and bank payment cards as different instruments.
+
+Inspect the workspace first and preserve all existing documents and code. This folder is already non-empty. If scaffolding Laravel requires an empty target, scaffold in a temporary directory and merge intended app files carefully into this root without overwriting the supplied documents or unrelated work. Do not delete the project directory to make an installer work.
+
+First implement Stages 0–2: real app setup, authentication/permissions, configuration, members/families/affiliates/guests, card registration/replacement, operational journal, counter shifts, prepaid recharge, paid checkout, and receipt/statement. Produce this functioning workflow: staff login → open counter → find member/card → confirm a recharge → complete a paid service/guest-entry sale → print receipt → inspect correct balance, collections and balanced journal. Test two counters competing for insufficient shared prepaid funds on MySQL.
+
+Then continue through the remaining stages in dependency order as the session permits. Add bar/stock, food settlements, rooms, gym/badminton, expenses/reports/Tally and qualified access hardware. Do not create dashboard-only placeholders or visible dead-end menus and call them implemented modules. The member portal is an optional later stage.
+
+Use fictional seed data in a development-only seeder. Generate local development login credentials securely outside committed files; document the provisioning method. Create no live member records, payments, messages, door activations or accounting vouchers. Missing real fees, accounting mappings, hardware or credentials must not block unrelated development. Use clearly labelled development adapters and fixtures, keep production guards, and list external qualification honestly.
+
+Define the Tally XML/export/outbox contract and access/card/payment/printing interfaces early. Tally downtime must not block normal club posting. Use the manufacturer's biometric engine and documented integration; do not invent device APIs or custom facial-recognition models. Do not claim a simulated card tap or access response proves physical hardware integration.
+
+For each completed stage, run the meaningful tests in docs/ACCEPTANCE_TESTS.md, the application build, and relevant browser workflows when available. Inspect and fix failures before moving on. Use MySQL tests for financial concurrency, not SQLite-only substitutes. Do not claim unexecuted checks passed.
+
+Keep docs/PROGRESS.md current with actual changes, test commands/results, local start instructions, adapter status, known defects and the exact next task. Record further ordinary defaults in docs/DECISIONS.md. If the environment genuinely prevents a required command, record its exact failure, continue independent work and report the remaining blocker. If session/context limits require stopping, save a precise checkpoint so the continuation prompt resumes from the existing implementation.
+
+Begin by inspecting the workspace and toolchain, then implement the first stage immediately.
