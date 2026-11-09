@@ -2,7 +2,7 @@
 
 ## Current state
 
-Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). All **260 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,370 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
+Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search and Wholesale Supplier & Distributor management suite implemented and verified. All **287 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,534 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
 
 All 58 acceptance scenario definitions from `docs/ACCEPTANCE_TESTS.md` are mapped in the authoritative coverage matrix below. Every ID matches the original client specification:
 - **55 scenarios are verified with passing automated tests**.
@@ -1512,6 +1512,63 @@ For environments where full browser automation is unavailable, operators should 
 - **Admin Panel Role Test Suite**: `tests/Feature/AdminPanelTest.php` — **6 passed, 64 assertions, 0 failures**.
 - **Full Application Test Suite**: `php artisan test` — **280 passed, 1,506 assertions, 0 failures** in 71s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 397ms.
+
+---
+
+## 17. Wholesale Supplier & Distributor Management Suite (November 9, 2026)
+
+### 17.1 Dedicated Wholesale Suppliers Resource (Decision D51)
+- Implemented `App\Filament\Resources\Suppliers\SupplierResource` under navigation group **Procurement & Food Contractor** (sort order 1):
+  - **Supplier Master Schema (`SupplierForm.php`)**:
+    - Unique Supplier / Depot Code (e.g. `KSBC-FL4`, `MALABAR-BEV`) with uppercase normalization and unique validation.
+    - Official Trade Name (e.g. `Kerala State Beverages Corporation (KSBC Wholesale Depot)`).
+    - 15-character Indian GSTIN with state code and format regex validation (`^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$`).
+    - Contact Person / Depot Manager name.
+    - Phone number and official distributor email.
+    - Physical Depot / Warehouse Address.
+    - Active Status toggle.
+  - **Supplier Management Table (`SuppliersTable.php`)**:
+    - Columns: Code badge, Name with contact person subtext, copyable GSTIN with badge, copyable phone, total purchase receipts count badge, active status icon.
+    - Filters: Active status ternary filter (All / Active Only / Inactive Only).
+    - Actions: Edit action, and guarded Delete action (strictly blocks deleting suppliers with linked purchase receipts or inward stock movements).
+  - **Role-Based Access Control**:
+    - `canViewAny`: `admin`, `manager`, `accountant`, or users with `stock.manage`.
+    - `canCreate` / `canEdit`: `admin`, `manager`, or users with `stock.manage`.
+    - `canDelete`: `admin` and `manager` only.
+    - Frontline `cashier` is strictly forbidden (HTTP 403).
+
+### 17.2 In-Line Quick Creation Modal on Purchase Receipt Form
+- Enhanced `App\Filament\Resources\Purchases\Schemas\PurchaseReceiptForm.php`:
+  - Equipped the `supplier_id` select dropdown with Filament's `createOptionForm()` and `createOptionUsing()` modal action.
+  - Staff receiving goods at the club delivery dock can click the `+` button directly inside the Purchase Receipt creation form to instantly register an emergency or new distributor on the fly without navigating away or losing unsaved consignment line items.
+  - Newly created supplier is immediately selected in the dropdown.
+
+### 17.3 Core Wholesale Suppliers Seeded
+- Updated `database/seeders/ProductionBootstrapSeeder.php` with default authorized Kerala wholesale depots:
+  1. `KSBC-FL4`: Kerala State Beverages Corporation (KSBC Wholesale Depot) - FL4 License Depot, Palakkad.
+  2. `MALABAR-BEV`: Malabar Beverage & FMCG Distributors - Authorized soft drink, soda & bar consumables distributor.
+  3. `APEX-HOSP`: Apex Club & Hospitality Supplies - Club linen, toiletries & housekeeping consumables.
+
+### 17.4 Global Search Integration
+- Integrated `SupplierResource` into Filament's global search engine:
+  - Searchable attributes: `name`, `code`, `gstin`, `contact_person`, `phone`.
+  - Result title: `Supplier: {name} ({code})`.
+  - Result details: `Code`, `Contact`, `GSTIN`, `Phone`, `Status`.
+  - Direct edit URL navigation upon selection.
+
+### 17.5 Automated Verification
+- **Supplier Management Test Suite**: `tests/Feature/SupplierManagementTest.php` — **7 passed, 23 assertions, 0 failures**:
+  - `test_default_core_wholesale_suppliers_are_seeded`: Verifies KSBC, Malabar Beverage, and Apex Club supplies exist in DB.
+  - `test_admin_can_access_supplier_pages`: Verifies Admin access to supplier index and create pages.
+  - `test_manager_can_access_supplier_pages`: Verifies Manager access to supplier index and create pages.
+  - `test_cashier_cannot_access_supplier_resource`: Verifies Cashier receives 403 Forbidden.
+  - `test_manager_can_create_new_wholesale_supplier_via_form`: Tests form validation, uppercase code, and DB insertion.
+  - `test_supplier_resource_global_search`: Tests multi-attribute global search by name and code.
+  - `test_purchase_receipt_form_has_supplier_dropdown`: Tests supplier dropdown existence on Purchase Receipt form and Livewire field.
+- **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 86 assertions, 0 failures**.
+- **Full Application Test Suite**: `php artisan test` — **287 passed, 1,534 assertions, 0 failures** in 71s.
+- **Frontend Assets**: `npm run build` compiled cleanly in 420ms.
+
 
 
 

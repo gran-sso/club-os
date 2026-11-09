@@ -31,6 +31,38 @@ class PurchaseReceiptForm
                                 ->options(fn () => Supplier::where('is_active', true)->pluck('name', 'id'))
                                 ->searchable()
                                 ->preload()
+                                ->createOptionForm([
+                                    TextInput::make('name')
+                                        ->label('Supplier / Distributor Name')
+                                        ->required()
+                                        ->maxLength(150)
+                                        ->placeholder('e.g. Kerala State Beverages Corp (KSBC)'),
+                                    TextInput::make('code')
+                                        ->label('Supplier Reference Code')
+                                        ->required()
+                                        ->maxLength(32)
+                                        ->placeholder('e.g. KSBC-PKD')
+                                        ->dehydrateStateUsing(fn ($state) => strtoupper(trim((string) $state))),
+                                    TextInput::make('gstin')
+                                        ->label('GSTIN (15 Digits)')
+                                        ->maxLength(15)
+                                        ->placeholder('e.g. 32AABCK1234F1Z5'),
+                                    TextInput::make('phone')
+                                        ->label('Phone Number')
+                                        ->tel()
+                                        ->maxLength(30),
+                                ])
+                                ->createOptionUsing(function (array $data): int {
+                                    $supplier = Supplier::create([
+                                        'name' => $data['name'],
+                                        'code' => strtoupper(trim($data['code'])),
+                                        'gstin' => isset($data['gstin']) ? strtoupper(trim($data['gstin'])) : null,
+                                        'phone' => $data['phone'] ?? null,
+                                        'is_active' => true,
+                                    ]);
+
+                                    return $supplier->id;
+                                })
                                 ->helperText('e.g. Kerala State Beverages Corporation (KSBC) or authorized distributor.'),
 
                             TextInput::make('invoice_number')

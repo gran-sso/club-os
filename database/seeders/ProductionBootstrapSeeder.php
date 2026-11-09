@@ -271,7 +271,47 @@ class ProductionBootstrapSeeder extends Seeder
             ]
         );
 
-        // 10. Initial Production Administrator (Provisioned securely)
+        // 10. Core Wholesale Suppliers & Distributors
+        \App\Domain\Inventory\Models\Supplier::firstOrCreate(
+            ['code' => 'KSBC-FL4'],
+            [
+                'name' => 'Kerala State Beverages Corporation (KSBC Wholesale Depot)',
+                'contact_person' => 'Depot Manager / FL-4 Officer',
+                'phone' => '+91 491 2501234',
+                'email' => 'ksbc.palakkad@kerala.gov.in',
+                'gstin' => '32AAACK1234F1Z1',
+                'address' => 'KSBC Warehouse Depot, Industrial Estate, Palakkad - 678001',
+                'is_active' => true,
+            ]
+        );
+
+        \App\Domain\Inventory\Models\Supplier::firstOrCreate(
+            ['code' => 'MALABAR-BEV'],
+            [
+                'name' => 'Malabar Beverage & FMCG Distributors',
+                'contact_person' => 'Suresh Kumar',
+                'phone' => '+91 98470 55667',
+                'email' => 'orders@malabarbev.com',
+                'gstin' => '32AABCM5678G1Z2',
+                'address' => 'Main Road, Vadakkencherry, Palakkad - 678683',
+                'is_active' => true,
+            ]
+        );
+
+        \App\Domain\Inventory\Models\Supplier::firstOrCreate(
+            ['code' => 'APEX-HOSP'],
+            [
+                'name' => 'Apex Club & Hospitality Supplies',
+                'contact_person' => 'Naveen George',
+                'phone' => '+91 94471 22334',
+                'email' => 'sales@apexhospitality.in',
+                'gstin' => '32AAACA9988H1Z9',
+                'address' => 'Market Road, Alathur, Palakkad - 678541',
+                'is_active' => true,
+            ]
+        );
+
+        // 11. Initial Production Administrator (Provisioned securely)
         // If an administrator already exists, reseeding does NOT modify or reset credentials
         if (User::whereHas('roles', fn($q) => $q->where('name', 'admin'))->count() === 0) {
             $adminEmail = env('INITIAL_ADMIN_EMAIL', 'admin@malabarclub.local');

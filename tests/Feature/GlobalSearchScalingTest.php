@@ -86,6 +86,7 @@ class GlobalSearchScalingTest extends TestCase
             JournalHeaderResource::class,
             FinancialPeriodResource::class,
             FacilityResource::class,
+            \App\Filament\Resources\Suppliers\SupplierResource::class,
         ];
 
         foreach ($resources as $resource) {
