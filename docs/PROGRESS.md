@@ -2,7 +2,7 @@
 
 ## Current state
 
-Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search, Wholesale Supplier management suite, Staff & User Access Control module, and Dynamic Chart of Accounts & Expense Heads suite implemented and verified. All **304 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,617 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
+Verification pass completed on 9 November 2026. Universal print-sanitization and modal print-isolation pass completed across all forms, modals, vouchers, and member profiles (suppressing buttons, chrome, and isolating active modal documents from background page tables in `@media print`). Scaled global search, Wholesale Supplier management, Staff & User Access Control, Dynamic Chart of Accounts, and User Menu Help Hub implemented and verified. All **313 automated feature and integration tests** pass on dedicated MySQL 8.4/InnoDB (`malabar_club_testing`) with **1,649 assertions and 0 failures**. The frontend production bundle compiled cleanly (`npm run build`).
 
 All 58 acceptance scenario definitions from `docs/ACCEPTANCE_TESTS.md` are mapped in the authoritative coverage matrix below. Every ID matches the original client specification:
 - **55 scenarios are verified with passing automated tests**.
@@ -1690,6 +1690,64 @@ For environments where full browser automation is unavailable, operators should 
 - **Global Search Scaling Test**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 91 assertions, 0 failures**.
 - **Full Application Test Suite**: `php artisan test` — **304 passed, 1,617 assertions, 0 failures** in 70s.
 - **Frontend Assets**: `npm run build` compiled cleanly in 418ms.
+
+---
+
+## 20. User Menu "Help" Page & Multi-Role Operational Guide (November 9, 2026)
+
+### 20.1 User Profile Menu Integration (Decision D54)
+- Implemented `App\Filament\Pages\HelpPage` registered at `/admin/help`:
+  - **Sidebar Navigation Omitted**: Configured `shouldRegisterNavigation = false` so that the sidebar navigation remains focused and uncluttered.
+  - **User Menu Registration**: Registered directly in `AdminPanelProvider` under `->userMenuItems(...)` with the concise label **"Help"** and icon `Heroicon::OutlinedQuestionMarkCircle`.
+  - Accessible to all authenticated staff members (Administrators, Managers, Accountants, Cashiers, Receptionists, and Auditors).
+
+### 20.2 Six Role-Tailored Operational Manual Tabs
+- **1. ⚡ Counter Cashier & POS Guide**:
+  - Shift lifecycle: Entering physical Opening Cash Float, monitoring real-time drawer Expected Cash (`Float + Cash Sales + Cash Recharges`), counting physical cash, and closing shifts with discrepancy tracking.
+  - Interactive Keyboard Shortcut Keycaps: Focus Member (<kbd>F2</kbd>), Item Search / Barcode (<kbd>F3</kbd>), Cart / Qty (<kbd>F4</kbd>), Prepaid Wallet Tender (<kbd>F8</kbd>), Cash Tender (<kbd>F9</kbd>), Digital UPI / Card POS (<kbd>F10</kbd>), Serving Sizes (<kbd>1: 30ml</kbd>, <kbd>2: 60ml</kbd>, <kbd>3: Bottle</kbd>), and Dismiss (<kbd>Esc</kbd>).
+  - Walkthroughs for Member Wallet Quick Top-Up and Visiting Guest Day Pass issuance.
+- **2. 🏨 Front Desk & Facilities Guide**:
+  - **Accommodation Deck** visual grid (Rooms 101–105): Occupancy color legend (Vacant Ready, Occupied, Reserved, Needs Cleaning, Maintenance), walk-in booking, check-in/out, and housekeeping status toggles.
+  - Badminton Court matrix (6:00 AM – 10:00 PM): Hourly slot bookings, entitlement detection (fee waived for active sports subscribers), and pay-per-play.
+  - Visiting Guest registration, sponsor eligibility verification, and member KYC.
+- **3. 💰 Finance, Accounts & Contractor Settlements Guide**:
+  - Chart of Accounts 5-digit classification: 1xxx Assets, 2xxx Liabilities, 3xxx Equity, 4xxx Revenues, 5xxx Expense Heads.
+  - Operating Expense Vouchers: In-line <kbd>+</kbd> modal creation for new expense heads, GST slabs, and payment instruments (NEFT/RTGS, Cheque, Cash).
+  - Daily Food Contractor Settlements: Pass-through billing, GM sign-off, bank UTR recording, and double-entry postings (Debit 2020 / Credit 1020).
+  - Bank Contra Vouchers and fiscal period closing locks.
+- **4. 📦 Procurement, Inventory & Stores Guide**:
+  - Wholesale Suppliers directory: KSBC FL-4 depot, FMCG beverage distributors, 15-digit GSTIN validation.
+  - Inward Purchase Receipts: Milliliter (ml) liquor tracking, automated moving weighted-average cost recalculation, and stock ledger journals (Debit 1030 / Credit 1020).
+  - Bar consumption pegs vs sealed bottle dispensing rules.
+- **5. 🛡️ Executive Governance & Administration Guide**:
+  - Staff onboarding, RBAC roles, instant login deactivation (`is_active = false`), and audit trail deletion blockers.
+  - Executive Reporting Hub: 8 core statutory reports (Department P&L, Till drawer reconciliation, Contractor audit, Stock valuation, Zero-Credit compliance).
+- **6. 📜 Codified Club Bylaws & System Rules**:
+  - Strict Zero-Credit mandate (Rule 1: No overdrafts, no administrative bypass).
+  - Centralized Server Ledger ownership (Rule 2: Cards are identifiers, not cash).
+  - Immutable Financial History & Linked Reversals (Rule 3).
+  - Guest Entry & Sponsor eligibility (Rule 4).
+  - Fiscal period closing locks (Rule 5).
+
+### 20.3 Ergonomics, In-Page Search & Printable Cheat Sheet
+- **In-Page Live Search**: Real-time debounced query filter highlighting specific instructions across all tabs.
+- **Printable Single-Page Desk Cheat Sheet**: Styled with `@media print` isolation for clean, laminated cashier counter and reception desk references.
+- **Global Search Integration**: Integrated into `ClubGlobalSearchProvider` matching keywords (`help`, `manual`, `guide`, `shortcuts`, `sop`, `cashier guide`).
+
+### 20.4 Automated Verification
+- **Help Center Test Suite**: `tests/Feature/HelpCenterTest.php` — **9 passed, 32 assertions, 0 failures**:
+  - `test_admin_can_access_help_page`: Verified HTTP 200 for Admin.
+  - `test_cashier_can_access_help_page`: Verified HTTP 200 and keyboard shortcuts visibility for Cashier.
+  - `test_reception_can_access_help_page`: Verified HTTP 200 for Reception.
+  - `test_accountant_can_access_help_page`: Verified HTTP 200 for Accountant.
+  - `test_unauthenticated_user_redirected_from_help_page`: Verified redirect to `/admin/login`.
+  - `test_help_page_is_not_registered_in_sidebar_navigation`: Verified `shouldRegisterNavigation` is false.
+  - `test_help_page_interactive_tabs`: Verified tab switching across all 6 sections.
+  - `test_user_menu_contains_help_link`: Verified panel user menu contains `'Help'` pointing to `/admin/help`.
+  - `test_global_search_returns_help_page`: Verified search matching.
+- **Full Application Test Suite**: `php artisan test` — **313 passed, 1,649 assertions, 0 failures** in 89s.
+- **Frontend Assets**: `npm run build` compiled cleanly in 481ms.
+
 
 
 

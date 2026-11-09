@@ -73,6 +73,12 @@ class AdminPanelProvider extends PanelProvider
                     ->sort(-1)
                     ->visible(fn (): bool => ! (auth()->user()?->hasRole('admin') ?? false)),
             ])
+            ->userMenuItems([
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Help')
+                    ->url(fn (): string => url('/admin/help'))
+                    ->icon(Heroicon::OutlinedQuestionMarkCircle),
+            ])
             ->globalSearch(\App\Domain\Shared\Services\ClubGlobalSearchProvider::class)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->globalSearchFieldKeyBindingSuffix()

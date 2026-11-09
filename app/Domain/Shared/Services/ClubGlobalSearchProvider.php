@@ -120,6 +120,12 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'keywords' => ['user', 'users', 'staff', 'role', 'roles', 'permission', 'permissions', 'access control', 'rbac', 'cashier account', 'password', 'deactivate', 'employee'],
                 'visible' => fn (): bool => (bool) (auth()->user()?->hasRole('admin') || auth()->user()?->hasPermissionTo('users.manage')),
             ],
+            [
+                'title' => '📖 Help (User Guide, Cashier Shortcuts & Operating Manual)',
+                'url' => url('/admin/help'),
+                'details' => ['Section' => 'User Guide & Help', 'Action' => 'Open System Help'],
+                'keywords' => ['help', 'manual', 'guide', 'shortcuts', 'how to', 'sop', 'cashier guide', 'user guide', 'faq', 'support'],
+            ],
         ];
 
         return collect($screens)
