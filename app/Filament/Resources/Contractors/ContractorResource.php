@@ -30,6 +30,36 @@ class ContractorResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Contractors';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 12;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'contact_person', 'phone', 'email'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Contractor: {$record->name}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Contact Person' => $record->contact_person ?? 'N/A',
+            'Phone' => $record->phone ?? 'N/A',
+            'Status' => ucfirst($record->status ?? 'active'),
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

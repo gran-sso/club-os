@@ -23,6 +23,36 @@ class FacilityResource extends Resource
 
     protected static ?string $navigationLabel = 'Facilities Master';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 18;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code', 'type'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Facility: {$record->name} ({$record->code})";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Type' => ucfirst($record->type ?? 'facility'),
+            'Capacity' => $record->capacity ? $record->capacity . ' persons' : 'N/A',
+            'Status' => $record->is_active ? 'Active' : 'Inactive',
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

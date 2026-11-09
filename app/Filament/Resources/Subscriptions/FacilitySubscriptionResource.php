@@ -25,6 +25,50 @@ class FacilitySubscriptionResource extends Resource
 
     protected static ?string $navigationLabel = 'Sports Subscriptions';
 
+    protected static ?string $recordTitleAttribute = 'subscription_number';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 3;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['subscription_number', 'facility_code', 'plan_type', 'member.membership_number', 'member.person.first_name', 'member.person.last_name'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Subscription #{$record->subscription_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $memberInfo = $record->member?->name
+            ? "{$record->member->name} ({$record->member->membership_number})"
+            : 'N/A';
+
+        $validity = $record->starts_at && $record->ends_at
+            ? $record->starts_at->format('d M') . ' – ' . $record->ends_at->format('d M Y')
+            : 'Active';
+
+        return [
+            'Member' => $memberInfo,
+            'Facility' => strtoupper($record->facility_code ?? 'SPORTS'),
+            'Plan' => ucfirst($record->plan_type ?? 'monthly') . " ({$validity})",
+            'Status' => ucfirst($record->status ?? 'active'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['member.person', 'tariff']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return FacilitySubscriptionForm::configure($schema);

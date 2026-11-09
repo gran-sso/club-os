@@ -26,6 +26,42 @@ class ShiftResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'shift_number';
 
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 7;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['shift_number', 'cashier.name', 'counter.name', 'business_date'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Shift #{$record->shift_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $date = $record->business_date ? $record->business_date->format('d M Y') : 'N/A';
+
+        return [
+            'Counter' => $record->counter?->name ?? 'POS',
+            'Cashier' => $record->cashier?->name ?? 'Staff',
+            'Business Date' => $date,
+            'Status' => ucfirst($record->status ?? 'open'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['counter', 'cashier']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ShiftForm::configure($schema);

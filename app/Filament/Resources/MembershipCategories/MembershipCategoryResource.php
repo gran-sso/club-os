@@ -29,6 +29,35 @@ class MembershipCategoryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 4;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return "Category: {$record->name} ({$record->code})";
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Code' => $record->code,
+            'Entry Fee' => '₹' . number_format(($record->entry_fee_paise ?? 0) / 100, 2),
+            'Annual Dues' => '₹' . number_format(($record->annual_dues_paise ?? 0) / 100, 2),
+            'Status' => $record->is_active ? 'Active' : 'Inactive',
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

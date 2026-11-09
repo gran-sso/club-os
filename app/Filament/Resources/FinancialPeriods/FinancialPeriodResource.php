@@ -26,6 +26,39 @@ class FinancialPeriodResource extends Resource
 
     protected static ?string $navigationLabel = 'Fiscal Periods & Locks';
 
+    protected static ?string $recordTitleAttribute = 'period_code';
+
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 17;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['period_code', 'notes'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Fiscal Period: {$record->period_code}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $dates = $record->start_date && $record->end_date
+            ? $record->start_date->format('d M Y') . ' – ' . $record->end_date->format('d M Y')
+            : 'N/A';
+
+        return [
+            'Dates' => $dates,
+            'Status' => ucfirst($record->status ?? 'open'),
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

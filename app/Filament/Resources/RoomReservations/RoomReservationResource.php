@@ -26,6 +26,48 @@ class RoomReservationResource extends Resource
 
     protected static ?string $navigationLabel = 'Room Bookings';
 
+    protected static ?string $recordTitleAttribute = 'reservation_number';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 5;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['reservation_number', 'guest.person.first_name', 'guest.person.last_name', 'sponsorMember.membership_number', 'sponsorMember.person.first_name', 'sponsorMember.person.last_name', 'facility.name', 'facility.code'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        $room = $record->facility?->name ?? 'Room';
+        return "Reservation #{$record->reservation_number} — {$room}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $occupant = $record->guest?->name ?? $record->sponsorMember?->name ?? 'Direct Guest';
+        $dates = $record->check_in_date && $record->check_out_date
+            ? $record->check_in_date->format('d M') . ' – ' . $record->check_out_date->format('d M Y')
+            : 'N/A';
+
+        return [
+            'Guest / Member' => $occupant,
+            'Dates' => $dates,
+            'Total' => '₹' . number_format(($record->total_charge_paise ?? 0) / 100, 2),
+            'Status' => ucfirst($record->status ?? 'confirmed'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['facility', 'guest.person', 'sponsorMember.person']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return RoomReservationForm::configure($schema);

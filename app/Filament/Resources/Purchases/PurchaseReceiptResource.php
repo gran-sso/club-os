@@ -25,6 +25,42 @@ class PurchaseReceiptResource extends Resource
 
     protected static ?string $navigationLabel = 'Supplier Receipts';
 
+    protected static ?string $recordTitleAttribute = 'receipt_number';
+
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 11;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['receipt_number', 'invoice_number', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Purchase Receipt #{$record->receipt_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Supplier' => $record->supplier?->name ?? 'Direct Vendor',
+            'Invoice #' => $record->invoice_number ?? 'N/A',
+            'Total' => '₹' . number_format(($record->total_net_paise ?? 0) / 100, 2),
+            'Status' => ucfirst($record->status ?? 'posted'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

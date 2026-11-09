@@ -25,7 +25,36 @@ class MemberResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $recordTitleAttribute = 'membership_number';
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 1;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['membership_number', 'person.first_name', 'person.last_name', 'person.phone', 'person.email'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "{$record->name} ({$record->membership_number})";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Phone' => $record->phone ?? 'N/A',
+            'Category' => $record->category?->name ?? 'Standard',
+            'Status' => ucfirst($record->status->value ?? $record->status ?? 'active'),
+            'Wallet' => '₹' . number_format(($record->wallet_balance_paise ?? 0) / 100, 2),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['person', 'category', 'wallet']);
+    }
 
     public static function form(Schema $schema): Schema
     {

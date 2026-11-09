@@ -26,6 +26,48 @@ class CourtBookingResource extends Resource
 
     protected static ?string $navigationLabel = 'Court Bookings';
 
+    protected static ?string $recordTitleAttribute = 'booking_number';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 6;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['booking_number', 'member.membership_number', 'member.person.first_name', 'member.person.last_name', 'facility.name'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Court Booking #{$record->booking_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $memberInfo = $record->member?->name
+            ? "{$record->member->name} ({$record->member->membership_number})"
+            : 'Direct Player';
+
+        $slot = ($record->booking_date ? $record->booking_date->format('d M') : '') . " {$record->start_time}–{$record->end_time}";
+
+        return [
+            'Facility' => $record->facility?->name ?? 'Badminton Court',
+            'Member' => $memberInfo,
+            'Slot' => $slot,
+            'Status' => ucfirst($record->status ?? 'confirmed'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['facility', 'member.person']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return CourtBookingForm::configure($schema);

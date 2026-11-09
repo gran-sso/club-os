@@ -1458,6 +1458,55 @@ For environments where full browser automation is unavailable, operators should 
 - Created root commit `7aa1793` (`feat: Initial commit of Club OS management and billing platform for Malabar Club`).
 - Pushed branch `main` to `origin/main` with upstream tracking enabled (`git push -u origin main`). Working tree is clean and up to date.
 
+---
+
+## 16. Scaled Global Search & Command Hub Across All 18 Sections (November 9, 2026)
+
+### 16.1 Comprehensive Global Search Architecture (Decision D50)
+- Scaled Filament’s global search from an initial single-attribute baseline across **all 18 application resources** spanning all 6 club functional groups:
+  1. **Membership & Guest Desk**:
+     - `MemberResource`: Searchable across `membership_number`, `person.first_name`, `person.last_name`, `person.phone`, `person.email`. Detail badges: Phone, Category, Status, Live Prepaid Wallet Balance. Eager loads `person`, `category`, and `wallet`.
+     - `GuestResource`: Searchable across `person.first_name`, `person.last_name`, `person.phone`, `person.email`. Detail badges: Phone, Sponsor Member, Status.
+     - `FacilitySubscriptionResource`: Searchable across `subscription_number`, `facility_code`, `plan_type`, `member.membership_number`, `member.person.first_name`, `member.person.last_name`. Detail badges: Member, Facility, Plan Dates, Status.
+     - `MembershipCategoryResource`: Searchable across `name`, `code`. Detail badges: Code, Entry Fee, Annual Dues, Status.
+  2. **Operations & Front Desk**:
+     - `RoomReservationResource`: Searchable across `reservation_number`, `guest.person.first_name`, `guest.person.last_name`, `sponsorMember.membership_number`, `sponsorMember.person.first_name`, `facility.name`, `facility.code`. Detail badges: Guest/Member, Dates, Total Charge, Status.
+     - `CourtBookingResource`: Searchable across `booking_number`, `member.membership_number`, `member.person.first_name`, `member.person.last_name`, `facility.name`. Detail badges: Facility, Member, Slot Time, Status.
+     - `ShiftResource`: Searchable across `shift_number`, `cashier.name`, `counter.name`, `business_date`. Detail badges: Counter, Cashier, Business Date, Status.
+  3. **Commercial & Counters**:
+     - `BillResource`: Searchable across `bill_number`, `department_code`. Detail badges: Customer, Department, Net Amount, Status.
+     - `InventoryItemResource`: Searchable across `name`, `sku`, `barcode`, `category`. Detail badges: Category, Stock on Hand, Barcode, Reorder Warning.
+     - `TariffResource`: Searchable across `name`, `code`, `barcode`, `department_code`. Detail badges: Department, Rate, Tax Rate, Status.
+  4. **Procurement & Food Contractor**:
+     - `PurchaseReceiptResource`: Searchable across `receipt_number`, `invoice_number`, `supplier.name`. Detail badges: Supplier, Invoice #, Total, Status.
+     - `ContractorResource`: Searchable across `name`, `contact_person`, `phone`, `email`. Detail badges: Contact Person, Phone, Status.
+     - `ContractorSettlementBatchResource`: Searchable across `batch_number`, `business_date`. Detail badges: Business Date, Net Payable, Paid Amount, Status.
+  5. **Finance & Audit Ledger**:
+     - `ExpenseResource`: Searchable across `expense_number`, `payee`, `document_reference`. Detail badges: Payee, Amount, Date, Status.
+     - `BankAccountResource`: Searchable across `account_name`, `account_number`, `bank_name`, `ifsc_code`. Detail badges: Bank Name, Masked Account #, IFSC, Status.
+     - `JournalHeaderResource`: Searchable across `journal_number`, `description`. Detail badges: Source, Business Date, Description, Total Debits.
+     - `FinancialPeriodResource`: Searchable across `period_code`, `notes`. Detail badges: Date Range, Status.
+  6. **Club Master Setup**:
+     - `FacilityResource`: Searchable across `name`, `code`, `type`. Detail badges: Type, Capacity, Status.
+
+### 16.2 Custom Global Search Provider (`ClubGlobalSearchProvider`)
+- Implemented `App\Domain\Shared\Services\ClubGlobalSearchProvider`:
+  - Enriches standard resource search with an intelligent **Operational Screens & Quick Links** category.
+  - Matches intuitive operational keywords (`pos`, `reports`, `room rack`, `court schedule`, `settings`, `integration`, `p&l`, etc.) and surfaces instant jump actions directly to functional screens.
+  - Formats dropdown result category headers with section context (e.g., `Membership & Guest Desk — Members`, `Operations & Front Desk — Room Bookings`).
+  - Configured in `AdminPanelProvider` with `⌘K` / `Ctrl+K` keybindings, keyboard suffix badges, and 350ms debouncing.
+
+### 16.3 Dashboard Command Hub Hero Widget (`GlobalQuickSearchWidget`)
+- Added `App\Filament\Widgets\GlobalQuickSearchWidget` at the top of the Filament Dashboard (`sort = 0`):
+  - High-visibility command bar with instant keyboard focus synchronization to the global search engine.
+  - 1-click quick-jump shortcut pills for Counter POS (`/pos`), Room Rack (`/admin/room-rack`), Court Schedule (`/admin/court-schedule`), Executive Reports (`/admin/financial-reports`), Bank Passbook (`/admin/bank-accounts`), and Settings (`/admin/system-settings`).
+
+### 16.4 Automated Verification
+- **Global Search Test Suite**: `tests/Feature/GlobalSearchScalingTest.php` — **9 passed, 81 assertions, 0 failures**.
+- **Full Application Test Suite**: `php artisan test` — **280 passed, 1,506 assertions, 0 failures** in 71s.
+- **Frontend Assets**: `npm run build` compiled cleanly in 515ms.
+
+
 
 
 

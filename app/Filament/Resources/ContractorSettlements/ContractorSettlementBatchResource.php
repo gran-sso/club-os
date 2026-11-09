@@ -23,6 +23,39 @@ class ContractorSettlementBatchResource extends Resource
 
     protected static ?string $navigationLabel = 'Contractor Settlements';
 
+    protected static ?string $recordTitleAttribute = 'batch_number';
+
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 13;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['batch_number', 'business_date'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Settlement Batch #{$record->batch_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $date = $record->business_date ? $record->business_date->format('d M Y') : 'N/A';
+
+        return [
+            'Business Date' => $date,
+            'Net Payable' => '₹' . number_format(($record->net_payable_paise ?? 0) / 100, 2),
+            'Paid Amount' => '₹' . number_format(($record->paid_amount_paise ?? 0) / 100, 2),
+            'Status' => ucfirst($record->status ?? 'pending'),
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

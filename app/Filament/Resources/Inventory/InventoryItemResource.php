@@ -23,6 +23,40 @@ class InventoryItemResource extends Resource
 
     protected static ?string $navigationLabel = 'Inventory Items';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 9;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'sku', 'barcode', 'category'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Item: {$record->name} ({$record->sku})";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $stock = (float) ($record->current_stock_qty ?? 0) . ' ' . ($record->base_unit ?? 'units');
+        $isLowStock = ($record->reorder_level && $record->current_stock_qty <= $record->reorder_level);
+
+        return [
+            'Category' => ucfirst($record->category ?? 'Stock'),
+            'Stock on Hand' => $stock,
+            'Barcode' => $record->barcode ?? 'N/A',
+            'Stock Alert' => $isLowStock ? 'Low Stock Warning' : 'Normal',
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

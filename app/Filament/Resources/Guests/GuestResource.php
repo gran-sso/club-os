@@ -24,6 +24,45 @@ class GuestResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 2;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['person.first_name', 'person.last_name', 'person.phone', 'person.email'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Guest: {$record->name}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $sponsor = $record->sponsor?->name
+            ? "{$record->sponsor->name} ({$record->sponsor->membership_number})"
+            : 'None';
+
+        return [
+            'Phone' => $record->phone ?? 'N/A',
+            'Sponsor' => $sponsor,
+            'Status' => ucfirst($record->status ?? 'active'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['person', 'sponsor']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return GuestForm::configure($schema);

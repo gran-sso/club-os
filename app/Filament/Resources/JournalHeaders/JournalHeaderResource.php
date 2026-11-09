@@ -28,6 +28,43 @@ class JournalHeaderResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'journal_number';
 
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 16;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['journal_number', 'description'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Journal Voucher #{$record->journal_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $date = $record->business_date ? $record->business_date->format('d M Y') : 'N/A';
+        $source = $record->source_type ? class_basename($record->source_type) . " #{$record->source_id}" : 'Manual Entry';
+
+        return [
+            'Source' => $source,
+            'Business Date' => $date,
+            'Description' => \Illuminate\Support\Str::limit($record->description ?? 'Journal Entry', 35),
+            'Total Debits' => '₹' . number_format(($record->totalDebits()) / 100, 2),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['lines']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('index');
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

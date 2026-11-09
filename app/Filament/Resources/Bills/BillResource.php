@@ -28,6 +28,43 @@ class BillResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'bill_number';
 
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 8;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['bill_number', 'department_code'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Bill #{$record->bill_number}";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $customerName = $record->customer?->name ?? 'Walk-in Guest';
+        $amount = '₹' . number_format(($record->net_amount_paise ?? 0) / 100, 2);
+
+        return [
+            'Customer' => $customerName,
+            'Department' => strtoupper($record->department_code ?? 'POS'),
+            'Amount' => $amount,
+            'Status' => ucfirst($record->status->value ?? $record->status ?? 'paid'),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer', 'shift']);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return BillForm::configure($schema);

@@ -71,6 +71,10 @@ class AdminPanelProvider extends PanelProvider
                     ->icon(Heroicon::OutlinedBolt)
                     ->sort(-1),
             ])
+            ->globalSearch(\App\Domain\Shared\Services\ClubGlobalSearchProvider::class)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->globalSearchFieldKeyBindingSuffix()
+            ->globalSearchDebounce('350ms')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -78,6 +82,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                \App\Filament\Widgets\GlobalQuickSearchWidget::class,
                 \App\Filament\Widgets\ExecutiveStatsOverviewWidget::class,
                 \App\Filament\Widgets\FrontDeskPulseWidget::class,
                 \App\Filament\Widgets\DepartmentRevenueChart::class,

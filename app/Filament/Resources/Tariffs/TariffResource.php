@@ -28,6 +28,35 @@ class TariffResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static int $globalSearchResultsLimit = 6;
+
+    protected static ?int $globalSearchSort = 10;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code', 'barcode', 'department_code'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Tariff: {$record->name} [{$record->code}]";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Department' => strtoupper($record->department_code ?? 'General'),
+            'Rate' => '₹' . number_format(($record->rate_paise ?? 0) / 100, 2),
+            'GST' => ($record->tax_percent ?? 0) . '%',
+            'Status' => $record->is_active ? 'Active' : 'Inactive',
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();

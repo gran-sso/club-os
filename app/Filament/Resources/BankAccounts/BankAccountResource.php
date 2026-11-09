@@ -28,6 +28,37 @@ class BankAccountResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'account_name';
 
+    protected static int $globalSearchResultsLimit = 5;
+
+    protected static ?int $globalSearchSort = 15;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['account_name', 'account_number', 'bank_name', 'ifsc_code'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return "Bank: {$record->account_name} ({$record->bank_name})";
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        $maskedAccount = '••••' . substr($record->account_number ?? '', -4);
+
+        return [
+            'Bank' => $record->bank_name ?? 'Bank',
+            'A/C #' => $maskedAccount,
+            'IFSC' => $record->ifsc_code ?? 'N/A',
+            'Status' => $record->is_active ? 'Active' : 'Inactive',
+        ];
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();
