@@ -105,6 +105,31 @@ class HelpCenterTest extends TestCase
             ->assertSee('Zero-Credit Policy');
     }
 
+    public function test_help_page_live_search_filters_articles(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->set('searchQuery', 'f8')
+            ->assertSee('High-Speed Keyboard Shortcuts')
+            ->assertSee('Search Results for:')
+            ->assertCount('filteredArticles', 2) // cashier-shortcuts and cashier-recharge have f8 tag
+            ->call('clearSearch')
+            ->assertSet('searchQuery', '')
+            ->assertCount('filteredArticles', 0);
+    }
+
+    public function test_help_page_jump_to_navigation(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->assertSet('activeTab', 'cashier')
+            ->call('jumpTo', 'finance', 'coa')
+            ->assertSet('activeTab', 'finance')
+            ->assertSet('searchQuery', 'coa');
+    }
+
     public function test_user_menu_contains_help_link(): void
     {
         $this->actingAs($this->admin);
