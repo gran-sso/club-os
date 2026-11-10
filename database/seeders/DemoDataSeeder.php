@@ -33,6 +33,10 @@ class DemoDataSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production') && !env('ALLOW_DEMO_SEEDING', false)) {
+            throw new RuntimeException("CRITICAL SAFETY GUARD: DemoDataSeeder contains test users and mock accounts and cannot be run in production!");
+        }
+
         // 0. Ensure master tables, roles, permissions, departments, counters, and tariffs exist
         $this->call(ProductionBootstrapSeeder::class);
 

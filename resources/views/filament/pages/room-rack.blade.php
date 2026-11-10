@@ -419,17 +419,22 @@
         @if ($showCheckInModal && $activeReservationData)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
                 role="dialog" aria-modal="true" aria-labelledby="checkin-modal-title">
-                <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+                <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-4">
                     <div class="flex items-start justify-between border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Front Desk Check-In</span>
-                            <h3 id="checkin-modal-title" class="text-base font-extrabold text-slate-900">{{ $activeReservationData['room_name'] }}</h3>
-                            <p class="text-[11px] text-slate-500 font-mono">{{ $activeReservationData['reservation_number'] }}</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xl font-bold shadow-2xs">
+                                🔑
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Front Desk Check-In</span>
+                                <h3 id="checkin-modal-title" class="text-base font-extrabold text-slate-900">{{ $activeReservationData['room_name'] }}</h3>
+                                <p class="text-[11px] text-slate-500 font-mono">{{ $activeReservationData['reservation_number'] }}</p>
+                            </div>
                         </div>
                         <button wire:click="$set('showCheckInModal', false)" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer">&times;</button>
                     </div>
 
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5">
                         <div class="flex justify-between">
                             <span class="text-slate-500">Guest Name:</span>
                             <span class="font-bold text-slate-900">{{ $activeReservationData['guest_name'] }}</span>
@@ -438,7 +443,7 @@
                             <span class="text-slate-500">Stay Period:</span>
                             <span class="font-semibold text-slate-800 font-mono">{{ $activeReservationData['check_in_date'] }} &rarr; {{ $activeReservationData['check_out_date'] }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between border-t border-slate-200/70 pt-2">
                             <span class="text-slate-500">Total Room Charge:</span>
                             <span class="font-mono font-bold text-slate-900">₹{{ number_format($activeReservationData['total_rupees'], 2) }}</span>
                         </div>
@@ -446,38 +451,94 @@
                             <span class="text-slate-500">Advance Paid:</span>
                             <span class="font-mono font-bold text-emerald-700">₹{{ number_format($activeReservationData['paid_rupees'], 2) }}</span>
                         </div>
-
-                        @if (!$activeReservationData['is_fully_paid'])
-                            <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px] font-semibold">
-                                ⚠️ Non-negotiable policy: Unpaid balance of <strong>₹{{ number_format($activeReservationData['unpaid_rupees'], 2) }}</strong> must be settled before key handover.
-                            </div>
-                        @endif
+                        <div class="flex justify-between border-t border-slate-200/70 pt-2 font-bold text-xs">
+                            <span class="{{ $activeReservationData['is_fully_paid'] ? 'text-emerald-700' : 'text-amber-800' }}">Balance Status:</span>
+                            @if ($activeReservationData['is_fully_paid'])
+                                <span class="font-mono font-extrabold text-emerald-700">PAID IN FULL (₹0.00)</span>
+                            @else
+                                <span class="font-mono font-extrabold text-rose-700">DUE: ₹{{ number_format($activeReservationData['unpaid_rupees'], 2) }}</span>
+                            @endif
+                        </div>
 
                         @if ($activeReservationData['housekeeping_status'] !== 'clean')
-                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] font-semibold">
-                                ⚠️ Room is currently marked as {{ ucfirst($activeReservationData['housekeeping_status']) }}. Housekeeping must clean the room first.
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] font-semibold flex items-center gap-2">
+                                <span>🧹</span>
+                                <span>Room is currently marked as <strong>{{ ucfirst($activeReservationData['housekeeping_status']) }}</strong>. Housekeeping must sanitize before key handover.</span>
                             </div>
                         @endif
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 pt-2">
+                    @if (!$activeReservationData['is_fully_paid'])
+                        <!-- Integrated Balance Collection Section -->
+                        <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                    <span>💵</span> Collect Balance Before Key Handover
+                                </span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 bg-rose-100 text-rose-800 rounded-md">No-Credit Policy</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Amount to Collect (₹)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 font-mono text-slate-400 font-bold">₹</span>
+                                        <input type="number" wire:model="paymentAmountRupees" min="1" max="{{ $activeReservationData['unpaid_rupees'] }}"
+                                            class="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Payment Tender Mode</label>
+                                    <select wire:model="paymentMode"
+                                        class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs">
+                                        <option value="cash">💵 Cash (Till Drawer)</option>
+                                        <option value="upi">📱 Digital UPI (Counter QR)</option>
+                                        <option value="wallet">💳 Prepaid Wallet (Member Ledger)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-amber-900 block leading-tight">
+                                Immediate official Tax Invoice &amp; Payment Receipt will be recorded in General Ledger (4030).
+                            </span>
+                        </div>
+                    @endif
+
+                    <div class="flex flex-wrap items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
                         <button wire:click="$set('showCheckInModal', false)" type="button"
                             class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer">
                             Cancel
                         </button>
-                        @if ($activeReservationData['is_fully_paid'] && $activeReservationData['housekeeping_status'] === 'clean')
-                            <button wire:click="confirmCheckIn" type="button"
-                                class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
-                                <svg width="16" height="16" class="w-4 h-4 text-white shrink-0" style="width: 16px; height: 16px; min-width: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                                </svg>
-                                <span>Confirm Check-In &amp; Issue Key</span>
-                            </button>
+
+                        @if (!$activeReservationData['is_fully_paid'])
+                            @if ($activeReservationData['housekeeping_status'] === 'clean')
+                                <button wire:click="confirmAdvancePayment" type="button"
+                                    class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl transition cursor-pointer">
+                                    Collect Payment Only
+                                </button>
+                                <button wire:click="confirmCheckInWithPayment" type="button"
+                                    class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                                    <svg width="15" height="15" class="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                    </svg>
+                                    <span>Collect ₹{{ number_format($paymentAmountRupees, 0) }} &amp; Issue Key</span>
+                                </button>
+                            @else
+                                <button wire:click="confirmAdvancePayment" type="button"
+                                    class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                                    <span>Collect Payment Only (₹{{ number_format($paymentAmountRupees, 0) }})</span>
+                                </button>
+                            @endif
                         @else
-                            <button wire:click="openPaymentModal({{ $activeReservationData['id'] }})" type="button"
-                                class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-xs cursor-pointer">
-                                Collect Balance Payment
-                            </button>
+                            @if ($activeReservationData['housekeeping_status'] === 'clean')
+                                <button wire:click="confirmCheckIn" type="button"
+                                    class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                                    <svg width="15" height="15" class="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                    </svg>
+                                    <span>Confirm Check-In &amp; Issue Key</span>
+                                </button>
+                            @else
+                                <div class="text-xs text-amber-700 font-bold py-1">Room must be Cleaned by Housekeeping before key handover</div>
+                            @endif
                         @endif
                     </div>
                 </div>

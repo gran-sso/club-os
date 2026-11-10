@@ -165,7 +165,7 @@ class IntegrationStatusPage extends Page
         $dummyReceipt = new PaymentReceipt([
             'receipt_number' => 'RCT-TEST-0001',
             'amount_paise' => 250000,
-            'tender_type' => TenderType::UPI,
+            'tender_type' => TenderType::DIGITAL,
         ]);
         $dummyReceipt->created_at = now();
         $this->printerPreview = $printer->render80mmReceipt(null, $dummyReceipt);
