@@ -306,7 +306,8 @@ class FacilityAndBookingTest extends TestCase
         $subService->createSubscription($member, 'badminton', 'monthly', $tariff, null, '2026-11-01');
 
         // 2. Member books court: plan covered, fee is 0 paise
-        $booking = $bookingService->bookCourt($court, $member, '2026-11-10', '08:00:00', '09:00:00');
+        $bookingDate = now()->addDay()->toDateString();
+        $booking = $bookingService->bookCourt($court, $member, $bookingDate, '08:00:00', '09:00:00');
         $this->assertTrue($booking->is_plan_covered);
         $this->assertNull($booking->bill_line_id); // No direct court bill line required
 

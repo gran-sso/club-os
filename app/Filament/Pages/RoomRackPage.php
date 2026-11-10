@@ -3,6 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Access\Models\Guest;
+use App\Domain\Billing\Models\Bill;
+use App\Domain\Billing\Models\Counter;
+use App\Domain\Billing\Models\PaymentReceipt;
+use App\Domain\Billing\Models\Shift;
+use App\Domain\Billing\Services\BillingService;
+use App\Domain\Billing\Services\ShiftService;
 use App\Domain\Facility\Exceptions\FacilityNotReadyException;
 use App\Domain\Facility\Exceptions\PaymentRequiredException;
 use App\Domain\Facility\Exceptions\RoomUnavailableException;
@@ -10,12 +16,16 @@ use App\Domain\Facility\Models\FacilityMaintenanceBlock;
 use App\Domain\Facility\Models\RoomReservation;
 use App\Domain\Facility\Services\RoomReservationService;
 use App\Domain\Membership\Models\Member;
+use App\Domain\Shared\Enums\ShiftStatus;
+use App\Domain\Shared\Enums\TenderType;
 use App\Domain\Tariff\Models\Facility;
+use App\Models\User;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class RoomRackPage extends Page
 {
@@ -59,6 +69,7 @@ class RoomRackPage extends Page
 
     // Payment modal state
     public int $paymentAmountRupees = 0;
+    public string $paymentMode = 'cash';
 
     // New Booking form state
     public array $newBooking = [
@@ -372,6 +383,7 @@ class RoomRackPage extends Page
         $this->activeReservationId = $res->id;
         $unpaidPaise = max(0, $res->total_charge_paise - $res->paid_amount_paise);
         $this->paymentAmountRupees = (int) ($unpaidPaise / 100);
+        $this->paymentMode = 'cash';
         $this->showPaymentModal = true;
     }
 
@@ -383,11 +395,20 @@ class RoomRackPage extends Page
 
         $service = app(RoomReservationService::class);
         $res = RoomReservation::findOrFail($this->activeReservationId);
-        $service->recordPayment($res, $this->paymentAmountRupees * 100, auth()->user());
+        $amountPaise = $this->paymentAmountRupees * 100;
+        $service->recordPayment($res, $amountPaise, auth()->user());
+
+        $receipt = $this->processAccommodationBilling(
+            $res,
+            $amountPaise,
+            $this->paymentMode,
+            'Accommodation balance payment for ' . $res->reservation_number
+        );
+        $receiptNote = $receipt ? " • Receipt #{$receipt->receipt_number} issued to ledger" : "";
 
         Notification::make()
             ->title("Payment Recorded")
-            ->body("Advance payment of ₹" . number_format($this->paymentAmountRupees, 2) . " credited to reservation {$res->reservation_number}.")
+            ->body("Advance payment of ₹" . number_format($this->paymentAmountRupees, 2) . " credited to reservation {$res->reservation_number}{$receiptNote}.")
             ->success()
             ->send();
 
@@ -466,6 +487,8 @@ class RoomRackPage extends Page
             $guestId = $this->newBooking['guest_type'] === 'guest' ? $this->newBooking['guest_id'] : null;
             $sponsorMemberId = $this->newBooking['sponsor_member_id'] ?? null;
 
+            $paidAmountPaise = (int) ($this->newBooking['paid_amount_rupees'] * 100);
+
             $reservation = $service->createReservation([
                 'facility_id' => $this->newBooking['facility_id'],
                 'guest_id' => $guestId,
@@ -475,14 +498,26 @@ class RoomRackPage extends Page
                 'check_in_date' => $this->newBooking['check_in_date'],
                 'check_out_date' => $this->newBooking['check_out_date'],
                 'rate_per_night_paise' => (int) ($this->newBooking['rate_per_night_rupees'] * 100),
-                'paid_amount_paise' => (int) ($this->newBooking['paid_amount_rupees'] * 100),
+                'paid_amount_paise' => $paidAmountPaise,
                 'housekeeping_status' => 'clean',
                 'notes' => $this->newBooking['notes'],
             ], auth()->user());
 
+            $receipt = null;
+            if ($paidAmountPaise > 0) {
+                $receipt = $this->processAccommodationBilling(
+                    $reservation,
+                    $paidAmountPaise,
+                    $this->newBooking['payment_mode'] ?? 'cash',
+                    'Stay advance on reservation ' . $reservation->reservation_number
+                );
+            }
+
+            $receiptNote = $receipt ? " • Receipt #{$receipt->receipt_number} posted to ledger" : "";
+
             Notification::make()
                 ->title("Reservation Created")
-                ->body("Reservation {$reservation->reservation_number} confirmed for Room {$reservation->facility->name}.")
+                ->body("Reservation {$reservation->reservation_number} confirmed for Room {$reservation->facility->name}{$receiptNote}.")
                 ->success()
                 ->send();
 
@@ -494,6 +529,103 @@ class RoomRackPage extends Page
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+        }
+    }
+
+    /**
+     * Process financial billing for accommodation stay/advance.
+     * Generates an official Bill, PaymentReceipt, and double-entry journal (1010/1020 -> 4030).
+     */
+    protected function processAccommodationBilling(
+        RoomReservation $reservation,
+        int $amountPaise,
+        string $paymentMode = 'cash',
+        string $notes = ''
+    ): ?PaymentReceipt {
+        if ($amountPaise <= 0) {
+            return null;
+        }
+
+        try {
+            $user = auth()->user() ?? User::first();
+
+            // 1. Locate active shift for user, or Counter-1 (Reception), or any active shift
+            $shift = Shift::where('user_id', $user->id)->where('status', ShiftStatus::OPEN)->first()
+                ?? Shift::where('status', ShiftStatus::OPEN)->whereHas('counter', fn($q) => $q->where('code', 'COUNTER-1'))->first()
+                ?? Shift::where('status', ShiftStatus::OPEN)->first();
+
+            // 2. Auto-open a front-desk shift on Counter-1 if no shift is currently open
+            if (!$shift) {
+                $receptionCounter = Counter::where('code', 'COUNTER-1')->first() ?? Counter::first();
+                if ($receptionCounter) {
+                    $shift = app(ShiftService::class)->openShift(
+                        counterId: $receptionCounter->id,
+                        userId: $user->id,
+                        openingFloatPaise: 0,
+                        notes: 'Front Desk Accommodation Deck auto-shift'
+                    );
+                }
+            }
+
+            if (!$shift) {
+                return null;
+            }
+
+            // 3. Determine payer/customer
+            $customer = $reservation->guest ?? $reservation->sponsorMember;
+            if (!$customer && $reservation->payer_type && $reservation->payer_id) {
+                $customer = app($reservation->payer_type)->find($reservation->payer_id);
+            }
+            if (!$customer) {
+                $customer = Member::first() ?? Guest::first();
+            }
+
+            // If paying via wallet, payer must be a member
+            if ($paymentMode === 'wallet' && !($customer instanceof Member)) {
+                $customer = $reservation->sponsorMember ?? Member::first();
+            }
+
+            $billingService = app(BillingService::class);
+            $facility = $reservation->facility;
+
+            $bill = $billingService->createDraftBill(
+                shift: $shift,
+                customer: $customer,
+                departmentCode: 'accommodation',
+                items: [
+                    [
+                        'item_name' => "Room Stay - {$facility->name} ({$reservation->reservation_number})",
+                        'quantity' => 1,
+                        'unit_price_paise' => $amountPaise,
+                        'tax_percent' => 0,
+                    ]
+                ],
+                idempotencyKey: 'res_bill_' . $reservation->id . '_' . time() . '_' . Str::random(6),
+                notes: $notes ?: "Accommodation charge for {$reservation->reservation_number}",
+                userId: $user->id
+            );
+
+            $tenderType = match ($paymentMode) {
+                'upi' => TenderType::DIGITAL_UPI,
+                'wallet' => TenderType::PREPAID_WALLET,
+                default => TenderType::CASH,
+            };
+
+            $result = $billingService->checkout(
+                bill: $bill,
+                tenders: [
+                    [
+                        'tender_type' => $tenderType,
+                        'amount_paise' => $amountPaise,
+                    ]
+                ],
+                userId: $user->id
+            );
+
+            return $result['receipts'][0] ?? null;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Accommodation auto-billing error: ' . $e->getMessage());
+            return null;
         }
     }
 }

@@ -374,6 +374,17 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div>
+                                <label for="new-booking-payment-mode" class="block text-xs font-bold text-slate-700 mb-1">Payment Tender Mode</label>
+                                <select id="new-booking-payment-mode" wire:model="newBooking.payment_mode"
+                                    class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                    <option value="cash">💵 Cash (Front Desk Till Drawer)</option>
+                                    <option value="upi">📱 Digital UPI (Counter QR / POS Terminal)</option>
+                                    <option value="wallet">💳 Member Prepaid Wallet (Server Ledger Debit)</option>
+                                </select>
+                                <span class="text-[10px] text-slate-500 block mt-1">Collecting advance immediately generates an official tax invoice &amp; receipt credited to Room Accommodation Revenue (4030).</span>
+                            </div>
                         </div>
 
                         <!-- Section 3: Arrival Notes -->
@@ -593,7 +604,17 @@
                             <input type="number" id="payment-advance-amount" wire:model="paymentAmountRupees" min="1"
                                 class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
-                        <span class="text-[10px] text-slate-500 block mt-1">Receipt will post directly to the authoritative ledger.</span>
+                    </div>
+
+                    <div>
+                        <label for="payment-advance-mode" class="block text-xs font-bold text-slate-700 mb-1.5">Tender Mode</label>
+                        <select id="payment-advance-mode" wire:model="paymentMode"
+                            class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="cash">💵 Cash (Front Desk Till Drawer)</option>
+                            <option value="upi">📱 Digital UPI (Counter QR / POS Terminal)</option>
+                            <option value="wallet">💳 Member Prepaid Wallet (Server Ledger Debit)</option>
+                        </select>
+                        <span class="text-[10px] text-slate-500 block mt-1">Generates an official Bill &amp; Payment Receipt posted directly to Account 4030.</span>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-2">

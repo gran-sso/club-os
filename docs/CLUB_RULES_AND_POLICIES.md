@@ -1,193 +1,176 @@
-# Malabar Club — Operational Bylaws, Financial Rules & System Integrity Manual
+# Malabar Club — Codified Operational Bylaws & System Rules Manual
 
-**Malabar Club, Vadakkencherry, Palakkad, Kerala**  
-*Comprehensive Policy Manual for Committee Members, Management, Front-Desk Staff, Accountants & Auditors*  
-*Version 1.0 • Formally Approved & Codified*
-
----
-
-## 1. Executive Summary & Operating Philosophy
-
-Malabar Club operates as a private, staff-managed hospitality and recreational institution. To guarantee long-term financial stability, transparent governance, and seamless member service, the club operates under a **Real-Time Prepaid and Immediate Settlement Model**.
-
-### The Traditional Club Problem
-In conventional private clubs, members run monthly "credit tabs" for food, bar drinks, room stays, and sports. This traditional approach creates critical financial liabilities:
-1. **Unpaid Arrears & Bad Debts**: Significant working capital is tied up in member dues, requiring uncomfortable collection follow-ups.
-2. **Reconciliation Disputes**: Members dispute bill items on monthly statements weeks after consumption.
-3. **Contractor Settlement Strain**: Third-party catering contractors and liquor suppliers cannot be paid on time if member payments remain uncollected.
-
-### The Malabar Club Solution
-Malabar Club eliminates credit risks entirely:
-* **Prepaid Smartcards / Wallets**: Members top up their club accounts in advance using Cash, UPI, or Card.
-* **Immediate Counter Billing**: Every meal, drink, court booking, and guest pass is verified against available ledger funds or settled on the spot.
-* **Guaranteed Solvency**: Club bank accounts and cash drawers hold collected money *before* services are delivered, ensuring food contractors and suppliers are paid reliably.
+**Malabar Club, Vadakkencherry, Palakkad District, Kerala — 678683**  
+*Official Policy Manual for the Managing Committee, Executive Officers, Management & Internal Auditors*  
+*Prepared by Skysys Infosolutions • Version 2.0 • Formally Adopted for Club OS Deployment*
 
 ---
 
-## 2. Financial & Billing Bylaws
+## Executive Overview: The Operating Philosophy
 
-### Rule 1: Strict Zero-Credit Policy (No Overdrafts)
-*(Internal Reference: Decision D02, Scenario F08)*
+Traditional private social and sports clubs across India face three persistent administrative and financial liabilities:
+1. **Unpaid Arrears & Bad Debts**: Allowing members, dependents, and guests to run monthly "credit tabs" for dining, bar, rooms, and sports ties up millions in working capital and leads to painful recovery follow-ups.
+2. **Billing Disputes**: Members frequently dispute individual food, liquor, or guest charges on monthly statements received weeks after consumption.
+3. **Vendor & Contractor Strain**: When member collections lag, the club struggles to pay third-party food caterers, beverage distributors, and staff on time.
 
-* **Core Mandate**: No member, dependent, visiting guest, or affiliated reciprocal club member may receive goods, liquor, food, sports access, or room stays on credit or with a negative account balance.
-* **No Administrative Override**: No staff user, cashier, front-desk executive, manager, or club administrator possesses the authority or software bypass to issue a bill against an overdrawn wallet.
-* **Prepaid Ledger Verification**: When paying via Prepaid Wallet, the server ledger checks that `Available Balance ≥ Bill Amount`. If the balance is insufficient, the transaction is rejected immediately.
-* **Alternative Settlement**: If wallet balance is insufficient, the transaction can be fulfilled instantly using **Cash Drawer** or **Digital UPI / Card POS**.
+### The Malabar Club Solution: Real-Time Prepaid & Guaranteed Solvency
+Malabar Club eliminates these risks entirely through a **Prepaid and Immediate Settlement Model**:
+* **Prepaid Member Wallets**: Members fund their club accounts in advance via Cash, UPI QR, or Bank Transfer.
+* **Instant Verification**: Every meal, drink, court booking, room stay, and guest pass is debited against confirmed ledger funds or paid on the spot.
+* **Guaranteed Liquidity**: Collected funds sit safely in club bank accounts and cashier tills *before* goods or services are dispensed, ensuring total institutional solvency.
+
+```mermaid
+flowchart LR
+    A["Member / Guest"] -->|"Funds Account (Cash / UPI / Bank)"| B["Club Vault & Bank (1010/1020)"]
+    B -->|"Prepaid Wallet Balance (2010)"| C["Authoritative Server Ledger"]
+    C -->|"Instant POS / Deck Verification"| D["Fulfilment: Bar, Dining, Rooms, Sports"]
+    D -->|"Daily Next-Day Settlement"| E["Food Contractor & Suppliers (100% On-Time)"]
+```
 
 ---
+
+## Section I: Financial & Revenue Integrity Bylaws
+
+### Rule 1: Strict Zero-Credit Policy (No Overdrafts or Credit Tabs)
+* **The Mandate**: No member, dependent, visiting guest, reciprocal club member, or staff member may receive goods, liquor, food, room accommodation, or sports access on credit or with a negative account balance.
+* **Zero Administrative Override**: Neither the Cashier, Front Desk Executive, General Manager, nor Club Administrator possesses the authority or software bypass to approve an unbacked transaction.
+* **Tender Fallback**: If a member’s prepaid balance is insufficient, the transaction must be settled immediately using physical **Cash** or **Digital UPI**.
 
 ### Rule 2: Centralized Authoritative Server Ledger
-*(Internal Reference: Decisions D06 & D09, Scenario F01 & F02)*
+* **Smartcards are Tokens, Not Cash**: A member’s contactless RFID smartcard holds only an encrypted identifier linked to the club’s central server ledger. No monetary balance is stored on the card chip.
+* **Pessimistic Concurrency Locks**: When a transaction is submitted, the server applies immediate database row-level locking. If two simultaneous spends are attempted (e.g., at the bar and the front desk), they are serialized atomically. Overdrafts are mathematically impossible.
+* **Offline Spending Disabled**: Prepaid debits require live communication with the central ledger. If clubhouse internet drops, offline prepaid spending is blocked to prevent untraceable debit accumulation.
+* **Paise Precision**: All accounting is calculated in signed 64-bit integer paise (₹1.00 = 100 paise). Binary floating-point arithmetic is prohibited to prevent fractional rounding drift.
 
-* **Cards are Tokens, Not Cash**: A member's RFID contactless smartcard does not store money. It stores a secure, unique identifier that links to the club's central database ledger.
-* **Atomic Balance Locks**: To prevent concurrent spending (e.g., using a physical card at the bar while a court is booked at reception), the system applies pessimistic database row locks during transaction processing.
-* **Offline Spending Disabled**: If local counter connectivity to the central server is interrupted, prepaid wallet spending is automatically disabled until online connection is restored, preventing untraceable negative balances.
-* **Paise Precision**: All monetary values are recorded as exact 64-bit signed integers in Indian Paise (₹1.00 = 100 paise), preventing floating-point rounding discrepancies.
+### Rule 3: External Food Catering Pass-Through & Daily Settlement Batches
+* **Contractor Operational Segregation**: Kitchen and food preparation are managed by an external catering contractor.
+* **100% Net Food Revenue Pass-Through**: All food bill lines—whether settled via Cash, UPI, or Member Wallet—feed the contractor's qualifying settlement ledger.
+* **Prepaid Recharges Are Not Food Revenue**: General wallet top-ups are held in trust as a club liability (`Account 2010`). They are **never** remitted to the food contractor until food items are ordered and consumed.
+* **Next-Day Settlement Batches**: Every morning, yesterday’s food sales are compiled into an immutable Settlement Batch requiring Manager sign-off before electronic banking payout (NEFT/RTGS/Cheque).
+* **Post-Settlement Adjustments**: If a food item is refunded after its settlement batch was already disbursed, a negative adjustment is carried forward and automatically deducted from the subsequent day’s batch.
 
----
+### Rule 4: Immutable Accounting Ledgers & Linked Reversals (No Deletions)
+* **Permanent Record Retention**: Once a tax invoice, receipt, wallet top-up, or stock movement is posted, it is permanently locked in the database.
+* **Destructive Edits Prohibited**: Posted records cannot be updated, altered, or deleted under any circumstance.
+* **Linked Reversals**: Mistakes are corrected solely by authorized managers issuing a linked credit note, refund voucher, or reversing journal. Both the original entry and the corrective entry remain permanently visible in the audit trail.
+* **Balanced General Ledger**: Every transaction automatically generates balanced double-entry journals ($\text{Debits} = \text{Credits}$) mapped to the club’s Chart of Accounts.
 
-### Rule 3: External Food Catering Pass-Through & Daily Settlement
-*(Internal Reference: Decisions D03 & D15, Scenarios C01–C05)*
+### Rule 5: Fiscal Period Closing Locks & Backdating Controls
+* **Audit Period Closure**: Monthly and annual accounting periods are formally reviewed by the Treasurer/Auditor and marked as "Closed".
+* **Backdating Prohibited**: The system strictly forbids posting backdated invoices, receipts, expenses, or inventory adjustments into a closed fiscal period.
+* **Audit Transparency**: Any retrospective financial adjustment must be posted in the currently active fiscal period with explicit audit justification notes.
 
-* **Contractor Segregation**: Dining kitchen operations are managed by an independent third-party catering contractor.
-* **100% Net Food Revenue Pass-Through**: All food bill items—whether settled via Cash, UPI, or Member Prepaid Wallet—feed into the contractor's qualifying settlement ledger.
-* **Prepaid Recharges are Not Food Sales**: General member wallet top-ups are liabilities held in trust by the club. They are **never** remitted to the food contractor until the member actually orders and consumes food items.
-* **Next-Day Settlement Batches**: Every morning, the system compiles the preceding business day's food sales into an immutable Settlement Batch.
-* **Management Sign-Off & Banking Payout**: Settlement batches require General Manager approval before being disbursed through Indian banking instruments (NEFT, RTGS, or Cheque) with recorded transaction reference numbers.
-* **Post-Settlement Adjustments**: If a food item is refunded after its settlement batch has already been paid out to the contractor, the negative adjustment is carried forward and automatically deducted from the subsequent day's batch.
+### Rule 6: Cashier Shift Accountability & Drawer Float Management
+* **Cashier Shift Gateway**: Cashiers and front-desk operators cannot access billing screens without opening an active shift on an assigned counter with a verified opening cash float.
+* **Live Drawer Tracking**: The system continuously tracks expected drawer cash:
+  $$\text{Expected Cash} = \text{Opening Float} + \text{Cash Bills} + \text{Cash Recharges} - \text{Cash Drops}$$
+* **Exclusion of Non-Cash Tenders**: Member wallet debits and UPI digital payments are tracked independently and never mixed into the physical cash drawer calculation.
+* **Blind Balancing at Shift Close**: Upon closing a shift, the cashier enters their physical cash count. Any variance (overage or shortage) is permanently logged for manager audit.
 
----
-
-### Rule 4: Immutable Ledgers, Anti-Tamper Records & Adjustments
-*(Internal Reference: Decisions D08 & D41, Scenario F14)*
-
-* **No Deletion of Financial History**: Once an official tax invoice, wallet recharge, stock receipt, or journal voucher is posted, it is permanently locked in the database.
-* **Destructive Edits Prohibited**: Posted records cannot be updated, edited, or deleted under any circumstance.
-* **Linked Reversals**: To correct an erroneous transaction, an authorized manager must issue a linked credit note, refund voucher, or reversing journal. Both the original entry and the corrective entry remain permanently visible in the audit trail.
-* **External Accounting Integrity**: Every financial transaction generates balanced double-entry journals (Debits === Credits) synchronized to the club's Tally Prime accounting system.
-
----
-
-### Rule 5: Financial Period Locks & Backdating Controls
-*(Internal Reference: Decision D41, Scenario R04)*
-
-* **Fiscal Period Auditing**: The club's accounting periods (monthly and annual) are formally audited and locked.
-* **Strict Backdating Block**: Once an accounting period is marked as "Closed", the system strictly forbids posting backdated bills, refunds, purchase receipts, or expense vouchers into that date range.
-* **Audit Trail Protection**: Any retrospective financial adjustment must be posted in the currently open fiscal period with explanatory audit notes.
+### Rule 7: Club Treasury Management & Cash-to-Bank Contra Vouchers
+* **Separation of Cash & Bank**: Cash collected at counter tills sits in `Account 1010 (Cash in Hand)`. Club bank accounts sit in `Account 1020 (Bank Operating Accounts)`.
+* **Contra Vouchers**: Remitting physical clubhouse cash to the club’s bank account (SBI, Federal Bank, etc.) requires an approved Contra Voucher, ensuring the physical drawer decrements and the bank ledger increments simultaneously.
 
 ---
 
-### Rule 6: Cashier Shift Reconciliation & Indian Drawer Float Management
-*(Internal Reference: Decisions D27, D31, D32, D33, Scenario F12)*
+## Section II: Membership, Access Control & Family Bylaws
 
-* **Opening Cash Float**: Cashiers must record their verified drawer float before beginning a counter shift.
-* **Distraction-Free Shift Gateway**: If a cashier has no active shift, the billing screen is locked, presenting only the Open Shift dialogue.
-* **Expected Drawer Calculation**: The system continuously computes expected cash:  
-  `Expected Cash = Opening Float + Cash Recharges + Cash Bills - Cash Transfers`  
-  *(Non-cash tenders like Prepaid Wallet debits and Digital UPI payments are tracked separately and excluded from drawer cash).*
-* **Shift Handover & Blind Balancing**: Upon closing a shift, the cashier enters the physical cash count. Any discrepancy (overage or shortage) is recorded in the permanent audit log.
+### Rule 8: Primary Member Standing Prerequisite (Dual Expiry Protection)
+* **Good Standing Required**: A member must hold an active, non-suspended, non-expired membership to access the clubhouse, reserve rooms, book courts, or sponsor visiting guests.
+* **Dual Expiration Protection**: If a member’s base club membership expires, secondary sports subscriptions (gym or badminton) are automatically paused at turnstiles/gates, even if the sports plan duration has remaining validity.
 
----
+### Rule 9: Two-Tier Statutory Membership Fee Structure
+* **Entrance Fee vs. Annual Dues**: Membership categories govern two distinct financial components:
+  1. **One-Time Admission / Entrance Fee**: Capital reserve receipt, non-recurring, charged once in a member’s lifetime upon joining.
+  2. **Annual Subscription Dues**: Operational revenue charge recurring every 12 months for club maintenance.
+* **Lifetime Admission Protection**: Subsequent renewals charge *only* the recurring annual dues, guaranteeing that existing members are never billed entrance admission twice.
 
-### Rule 7: Club Treasury & Cash-to-Bank Contra Remittances
-*(Internal Reference: Decision D42)*
+### Rule 10: Family Dependents & Spending Safeguards
+* **Default Spending Block**: Dependents (spouses, children, parents) registered under a primary member's roster have **zero debit access** to the primary member's prepaid wallet by default.
+* **Explicit Written Consent**: Counter wallet debit access is enabled *only* upon documented authorization from the primary member.
+* **Independent Identity**: Dependents carry their own identification and access privileges, but cannot deplete family balances without explicit consent.
 
-* **Segregated Chart of Accounts**: Cash collected at counter tills resides in account `1010 (Cash in Hand)`. Club bank accounts reside in `1020 (Bank Operating Account)`.
-* **Contra Vouchers**: Transferring physical cash from the clubhouse safe to the club's bank account (SBI, Federal Bank, etc.) requires an approved Contra Voucher, incrementing the verified bank ledger balance.
+### Rule 11: Mandatory Sponsoring for Visiting Guests & Regulated Entry
+* **Mandatory Sponsorship**: No guest may enter the bar, card room, dining hall, or sports courts without an active club member or reciprocal affiliated member as an identified sponsor.
+* **Paid Access Passes**: Guests must settle statutory guest entry fees prior to entering regulated zones.
+* **Zero Complimentary Entry**: Cashiers and managers cannot issue zero-fee complimentary guest passes without Executive Committee authorization.
+* **Unused Pass Refund**: If an entry pass is cancelled before physical admission, the fee is refunded and the pass is revoked atomically.
 
----
+### Rule 12: RFID Smartcard Tokens & Balance Continuity
+* **Lost Card Protocol**: When a member reports a lost or damaged card, management issues a replacement card immediately.
+* **Instant Deactivation**: The lost card UID is permanently revoked, preventing unauthorized entry or spending.
+* **Complete Asset Continuity**: 100% of the member’s wallet balance, sports plans, room bookings, and invoice history remain intact on their central account.
 
-## 3. Membership, Access Control & Family Bylaws
-
-### Rule 8: Primary Member Standing Prerequisite
-*(Internal Reference: Decision D44, Scenario A03)*
-
-* **Active Standing Required**: A member must possess an active, non-expired, non-suspended club membership to access facilities, book courts, reserve rooms, or sponsor guests.
-* **Dual Expiration Protection**: If a member's primary club membership expires, sports subscriptions (gym or badminton) are automatically paused at the gate, even if the sports plan duration has remaining days.
-* **Annual Dues Tracking**: Member profiles display real-time statutory dues countdowns with 1-click renewal options (via Prepaid Wallet, Cash, Digital UPI, or Bank Remittance).
-
----
-
-### Rule 9: Family Dependents & Spending Safeguards
-*(Internal Reference: Decisions D38 & D43, Scenario A07)*
-
-* **Default Restriction**: Dependents (spouses, sons, daughters, parents) registered under a primary member's roster have **no default access** to debit the primary member's prepaid wallet.
-* **Written Authorization Required**: Counter debit permissions are disabled by default. Management will only toggle `Authorize Counter Wallet Debits` upon receiving a signed written authorization request from the primary member.
-* **Independent Access**: Dependents can identify themselves for facility access, but cannot deplete family funds without documented consent.
+### Rule 13: Statutory KYC Vault & Document Confidentiality
+* **Mandatory Government ID**: In compliance with Indian hospitality and association laws, verified government identification (Aadhaar, Passport, Driving Licence, Voter ID, PAN) is maintained on file.
+* **Private Encrypted Storage**: Identity documents are stored outside the public web root.
+* **Restricted Access**: Counter cashiers cannot browse member documents. Private file streaming requires manager/admin credentials and enforces strict non-cached HTTP headers.
 
 ---
 
-### Rule 10: Guest Entry Passes & Sponsorship Responsibility
-*(Internal Reference: Decisions D04 & D38, Scenarios A04–A06, A10)*
+## Section III: Hospitality, Facilities & Operational Deck Rules
 
-* **Mandatory Sponsorship**: No guest may enter the bar, card room, or sports facilities without an active primary member or affiliated reciprocal club member as an identified sponsor.
-* **Paid Entry Passes**: Guests must pay applicable statutory entry fees before entering regulated zones.
-* **No Unauthorised Free Entry**: Cashiers and managers cannot issue zero-fee complimentary guest passes without committee authorization.
-* **Unused Pass Refund**: If a guest pass is cancelled before entry, the fee is refunded and the pass is revoked atomically.
+### Rule 14: Accommodation 100% Advance Funding
+* **Pre-Stay Full Payment**: All room stays must be fully funded (via Cash, UPI, or Member Wallet) prior to key handover and check-in. Post-stay discretionary billing or credit checkout is strictly prohibited.
+* **Standard Timings**: Check-in is at **14:00**; Check-out is at **11:00**.
+* **Half-Open Interval Scheduling**: Room reservations are scheduled on half-open boundaries $[T_{\text{check-in}}, T_{\text{check-out}})$. This guarantees that a departing guest checking out at 11:00 and an arriving guest checking in at 14:00 on the same calendar date never collide.
 
----
+### Rule 15: Front-Desk Accommodation Billing & Cash Reconciliation
+* **Unified Lifecycle**: The Front Desk Operator / Receptionist manages the full accommodation lifecycle from the Accommodation Deck (`/admin/room-rack`): Room Reservation $\rightarrow$ Advance Collection $\rightarrow$ Check-In $\rightarrow$ Key Handover $\rightarrow$ Check-Out $\rightarrow$ Housekeeping (`Dirty`/`Clean`).
+* **Direct Revenue Posting**: Whenever stay charges or advance payments are collected on the Accommodation Deck, the system records the money directly against the Reception Cashier Shift and credits General Ledger `Account 4030 (Room Accommodation Revenue)`.
 
-### Rule 11: RFID Smartcard Replacement & Balance Continuity
-*(Internal Reference: Decision D38, Scenario A08)*
+### Rule 16: Badminton Court & Gym Subscription Boundaries
+* **Serialized 60-Minute Slots**: Badminton court play is scheduled in strict 60-minute blocks to eliminate court hogging and timing disputes.
+* **Automatic Plan Waiver**: If a member holds an active Badminton Subscription, the system automatically detects entitlement and waives the hourly court booking fee.
+* **Precise Expiry Boundaries**: Monthly and annual sports plans expire cleanly at 23:59:59 on the final covered day.
 
-* **Lost / Damaged Cards**: When a member reports a lost, stolen, or damaged card, management issues a replacement card.
-* **Instant Deactivation**: The previous card UID is permanently revoked, preventing unauthorized entry or spending.
-* **Balance Preservation**: 100% of the member's wallet balance, active sports plans, room bookings, and historical receipts remain attached to the member's permanent ledger account.
-
----
-
-### Rule 12: Statutory KYC Document Vault & Confidentiality
-*(Internal Reference: Decisions D38 & D43, Scenario A09)*
-
-* **Mandatory KYC**: Indian statutory norms require valid identification (Aadhaar, Passport, Driving Licence, Voter ID, or PAN) on file for all members.
-* **Private Encrypted Storage**: Identity documents are stored in a private directory outside the public web root.
-* **Role-Based Access Control**: Front-line staff cannot view private files. Document viewing routes require authenticated administrative permissions with strict non-cached HTTP headers.
+### Rule 17: Wholesale Beverage Procurement & Moving-Average Costing
+* **Verified Wholesale Suppliers**: Bulk purchases (e.g. KSBC Wholesale Depot, beverage distributors) require valid trade names and 15-character statutory GSTINs.
+* **Weighted-Average Costing**: Inventory uses moving weighted-average valuation. Liquor dispensing is tracked down to the exact milliliter (ml).
+* **No Fabricated Stock Returns**: If a drink or food item is refunded after consumption for service recovery, the financial refund is posted without fabricating a physical return to inventory.
 
 ---
 
-## 4. Facilities, Sports & Accommodations Bylaws
+## Section IV: Governance, Security & System Safeguards
 
-### Rule 13: Accommodation Advance Payment & Interval Boundaries
-*(Internal Reference: Decisions D11, D21, D23)*
+### Rule 18: Segregation of Duties & Role-Based Access Control (RBAC)
+* **Front-Line Cashier Isolation**: Cashiers operate exclusively in the Counter POS interface (`/pos`) and cannot access executive back-office ledgers, member KYC vaults, or contractor agreements.
+* **Administrative Separation**: Administrative personnel cannot operate a cashier drawer without opening a formal cashier shift.
+* **Auditor Role**: Internal auditors have read-only access across all general ledger vouchers, shift balancing logs, and contractor remittance audits.
 
-* **100% Advance Payment**: Guest rooms must be fully paid (via Cash, Digital, or Prepaid) before key handover. Discretionary post-stay billing is prohibited.
-* **Standard Clubhouse Timings**: Check-in is at **14:00**; Check-out is at **11:00**.
-* **Half-Open Interval Scheduling**: Room reservations are scheduled on half-open boundaries `[check_in, check_out)`. This allows a departing guest to check out at 11:00 and an arriving guest to check in on the same calendar date at 14:00 without booking collisions.
+### Rule 19: Offline Outbox & Tally Prime Integration Resilience
+* **Durable Outbox Architecture**: Financial journals and vouchers destined for Tally Prime are staged in a retryable database outbox with unique idempotency keys.
+* **Non-Blocking Operations**: If Tally Prime or the network bridge is temporarily unreachable, counter billing and room check-ins proceed without interruption. Queued vouchers synchronize automatically once connectivity resumes.
 
----
-
-### Rule 14: Badminton Court & Gym Subscription Boundaries
-*(Internal Reference: Decisions D05, D12, D40)*
-
-* **60-Minute Court Slots**: Badminton court play is scheduled in strict 60-minute serialized intervals to prevent scheduling disputes.
-* **Automatic Plan Coverage**: If a member holds an active Badminton Subscription, the system automatically detects entitlement and waives the hourly court booking fee.
-* **Exclusive Expiration Boundaries**: Monthly and annual sports plans expire cleanly at 23:59:59 on the final covered day.
+### Rule 20: Tamper-Proof Audit Trail & Action Logs
+* **Comprehensive Event Logging**: Critical actions—card replacements, manager refund approvals, shift discrepancy overrides, gate unblocks, and committee notes—are permanently recorded with timestamp, operator ID, and client IP address.
 
 ---
 
-## 5. Technical Architecture & Compliance Cross-Reference Index
+## Executive Summary Matrix: Club Rules Quick Reference
 
-For engineers, external auditors, and technical personnel, this matrix maps the friendly club policies to internal specification codes and codebase service modules:
-
-| Friendly Club Policy Name | Decision ID | Test Scenario | Primary Codebase Service |
-| :--- | :--- | :--- | :--- |
-| **Strict Zero-Credit Policy** | `D02` | `F08`, `F03` | `WalletService::debit`, `BillingService::settleBill` |
-| **Authoritative Server Ledger** | `D06`, `D09` | `F01`, `F02`, `F04` | `WalletService::recharge`, `CardService::issueCard` |
-| **Food Contractor Pass-Through** | `D03`, `D15` | `C01`–`C05` | `ContractorSettlementService::createDailyBatch` |
-| **Contractor Bank Payouts** | `D35`, `D42` | `C04` | `ContractorSettlementService::confirmSettlementPayment` |
-| **Immutable Accounting Journals** | `D08`, `D41` | `F14` | `AccountingService::postJournal`, `Bill::boot` triggers |
-| **Fiscal Period Closing Locks** | `D41` | `R04` | `PeriodClosingService::closePeriod` |
-| **Cash Float & Shift Auditing** | `D27`, `D31`–`D33`| `F12` | `ShiftService::openShift`, `ShiftService::closeShift` |
-| **Club Bank Accounts & Contras** | `D42` | `F01`, `R04` | `BankingService::depositCash`, `BankAccountResource` |
-| **Member Active Standing Rule** | `D44` | `A03` | `SubscriptionService::createSubscription`, `ViewMember` |
-| **Dependent Spending Restriction** | `D38`, `D43` | `A07` | `MemberService::registerDependent`, `ViewMember::toggleDependentWalletDebit` |
-| **Guest Sponsoring & Paid Entry** | `D04`, `D38` | `A04`–`A06`, `A10` | `GuestService::registerGuest`, `GuestService::issuePass` |
-| **RFID Card Balance Continuity** | `D38` | `A08` | `CardService::replaceCard`, `MembersTable::actions` |
-| **Statutory KYC Document Vault** | `D38`, `D43` | `A09` | `DocumentController::streamDocument` |
-| **Room Booking Half-Open Interval**| `D11`, `D23` | `B01`–`B03` | `AccommodationService::createReservation`, `RoomRackPage` |
-| **Badminton Slot Serialization** | `D05`, `D40` | `B06`, `B07` | `BookingService::bookCourt`, `CourtSchedulePage` |
-| **Tally Prime Outbox Resilience** | `D26` | `X01`–`X03` | `TallySyncService::dispatchOutbox`, `TallyPrimeHttpConnector` |
+| # | Policy Name | Key Mandate | Staff Authority | System Enforcement |
+|:---:|:---|:---|:---|:---|
+| **1** | **Strict Zero-Credit Policy** | No credit tabs, overdrafts, or negative balances for any person | No override permitted for any role | Blocked by server ledger validation |
+| **2** | **Central Server Ledger** | RFID cards are identifiers; balance stays on central server | Cannot manually edit card balances | Pessimistic DB locking & integer paise |
+| **3** | **Food Contractor Pass-Through** | 100% net food sales remitted next-day; top-ups excluded | Manager approval on daily batch | Batch-allocated GL remittances |
+| **4** | **Immutable Financial Records** | Posted bills, receipts, and journals cannot be edited/deleted | Reversals via linked credit notes only | Read-only vouchers & delete blockers |
+| **5** | **Fiscal Period Locks** | Closed accounting periods cannot receive backdated entries | Treasurer/Auditor period closing | DB rejection on closed date ranges |
+| **6** | **Cashier Shift Balancing** | All cash must belong to an open shift; blind reconciliation | Cashier opens/closes with float count | POS gateway locked without shift |
+| **7** | **Treasury Contra Remittances** | Cash-to-bank deposits require approved Contra Vouchers | Accountant & Manager verification | Dual-leg journal (1010 $\rightarrow$ 1020) |
+| **8** | **Member Standing Prerequisite** | Active base membership required for all facilities and guests | Reception verifies standing | Gate & turnstile automatic lockout |
+| **9** | **Two-Tier Membership Fees** | Lifetime admission fee charged once; annual dues recurring | Staff collects via registration/profile | Lifetime flag prevents duplicate entrance fee |
+| **10** | **Dependent Spending Safeguards**| Dependents cannot debit member wallet without written consent | Manager toggles upon written letter | Default false on wallet spending |
+| **11** | **Mandatory Guest Sponsorship** | All guests require an active member sponsor & paid entry pass | Staff registers sponsor & collects fee | Unpaid passes cannot open gates |
+| **12** | **Smartcard Replacement** | Lost card UID revoked; 100% balance preserved on member | Staff issues replacement token | Instant old UID blacklist |
+| **13** | **Statutory KYC Vault** | Government IDs kept in private vault outside public web | Admin/Manager role only | Private streaming with no-cache headers |
+| **14** | **100% Advance Room Funding** | Accommodation fully paid before check-in; 14:00/11:00 slots | Front desk verifies settlement | Check-in blocked if unpaid |
+| **15** | **Deck Room Billing** | Room booking collections post directly to Reception Shift & GL | Front desk collects via cash/UPI/wallet | Auto-generates Bill & Journal (4030) |
+| **16** | **Badminton Court Slots** | 60-min serialized play; fees waived for active subscribers | Front desk books on schedule deck | Overlap prevention & plan detection |
+| **17** | **Wholesale Stock & Costing** | Moving-average valuation; no fake returns on consumed goods | Receiving staff verifies GSTIN | Weighted ml consumption tracking |
+| **18** | **Segregation of Duties** | Cashiers cannot edit back-office ledgers or view audit files | Role-gated Filament admin panel | HTTP 403 Forbidden on unauthorized URLs |
+| **19** | **Resilient Tally Outbox** | Accounting bridge outage never stalls clubhouse sales | Automated background worker | Durable queue with idempotency keys |
+| **20** | **Tamper-Proof Audit Trail** | Sensitive overrides & approvals logged permanently | Viewable by Auditors & President | Append-only event and shift logs |
 
 ---
-*Document maintained by Skysys Infosolutions for Malabar Club, Vadakkencherry.*
-
+*Official Policy Manual maintained by Skysys Infosolutions OPC Pvt. Ltd. for Malabar Club, Vadakkencherry, Kerala.*
