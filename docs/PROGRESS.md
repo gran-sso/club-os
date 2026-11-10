@@ -1905,6 +1905,40 @@ For environments where full browser automation is unavailable, operators should 
   - `php artisan test tests/Feature/RoomRackCheckInWorkflowTest.php tests/Feature/FacilityAndBookingTest.php`: **11 passed, 71 assertions, 0 failures**.
   - `php artisan test tests/Feature/RealTallyAndPwaTest.php`: **7 passed, 36 assertions, 0 failures**.
 
+### 21.10 Operational Database Cleanup Command (`club:clean-test-data`)
+- **Safety Protocol**:
+  - Built dedicated Artisan command [`CleanOperationalDataCommand.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Console/Commands/CleanOperationalDataCommand.php) allowing controlled purging of test transactional data prior to user testing.
+  - Temporarily suspends MySQL financial immutability triggers (`trg_bills_no_update_or_delete`, `trg_journal_headers_no_update_or_delete`, `trg_wallet_transactions_no_update_or_delete`), performs surgical cascading deletion of test transactions, resets member wallet balances to ₹0.00, and restores all 10 triggers.
+  - **Preserved Core Assets**:
+    - 13 Staff Users & Spatie Roles / Permissions
+    - 6 Members, 9 Persons, 6 Smartcards, 6 Wallet Accounts
+    - 7 Departments, 3 Counters, 7 Facilities (Rooms & Courts)
+    - 17 Tariffs, 27 General Ledger Accounts, 5 Suppliers, 3 Contractors
+  - **Safely Purged Test Data**:
+    - 5 Room/Court Reservations, 4 Bills & Lines, 4 Payment Receipts, 3 Journal Headers & Lines, 2 Cashier Shifts, 1 Guest Pass, 2 Temporary Guests, 6 Outbox messages.
+
+### 21.11 POS Resident Room Guest Counter Sales & Strict Zero-Credit Policy (Decision D58)
+- **Problem & Requirement**:
+  - Front desk and POS cashiers (dining, bar, sports counter) need to sell items to guests staying in club rooms without forcing them to register as an external day visitor or requiring a physical member card swipe.
+  - In strict compliance with Malabar Club Rule 1 (Zero-Credit), room guests cannot "charge to room folio" as unpaid tabs to pay upon checkout. Every counter sale requires immediate confirmed payment (Cash, Digital UPI) or the sponsoring member's prepaid wallet.
+- **Implementation Highlights**:
+  - **Live Room & Occupant Search ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php))**:
+    - Extended customer search query to actively scan checked-in `RoomReservation` records by Room Code/Number (`101`, `Room 101`, `ROOM-101`), Guest Name (`Rahul Verma`), or Guest Phone.
+    - Autocomplete dropdown displays distinct room badges (`🏨 Deluxe Room 101 • Rahul Verma` with green `Checked-In` indicator).
+  - **Resident Room Guest Profile Card ([`counter-pos.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/counter-pos.blade.php))**:
+    - Renders a styled emerald/teal Resident Room Guest card showing room number, guest name, stay dates (`Check-in -> Check-out`), reservation reference, and sponsoring member name.
+    - If the sponsoring member has an active wallet balance, displays available prepaid balance.
+    - Explicitly surfaces warning: `⚠️ Zero-Credit Policy (Rule 1): Room-folio post-payment is prohibited. Settle order immediately via Cash or Digital UPI (or Sponsor Wallet).`
+  - **Atomic Checkout & Narration Snapshot ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php))**:
+    - Checkout records the sale against the guest with bill notes: `Counter sale for Deluxe Room 101 (Resident: Rahul Verma)`.
+    - Generates official `Bill`, `PaymentReceipt`, and GL double-entry journal.
+    - Updated thermal receipt printer ([`ThermalReceiptPrinter.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Integrations/Adapters/ThermalReceiptPrinter.php)) to print room reference lines on 80mm receipts (`Ref: Counter sale for Deluxe Room 101 (Resident: Rahul Verma)`).
+- **Automated Verification**:
+  - Created [`CounterPosRoomGuestSaleTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosRoomGuestSaleTest.php):
+    - `test_pos_can_search_and_sell_to_checked_in_room_guest_via_cash`: **Passed** (Room 101 found, Cash tender recorded, receipt ₹380, stock deducted, GL journal balanced).
+    - `test_pos_can_search_and_sell_to_checked_in_room_guest_via_digital_upi`: **Passed** (Guest name found, Digital UPI tender recorded, receipt ₹380, GL journal balanced).
+  - Full POS test suite verified: `php artisan test tests/Feature/CounterPosTest.php tests/Feature/CounterPosKeyboardTest.php tests/Feature/CounterPosRoomGuestSaleTest.php`: **23 passed, 138 assertions, 0 failures**.
+
 
 
 

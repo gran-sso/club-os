@@ -304,3 +304,4 @@ class CleanOperationalDataCommand extends Command
         ");
     }
 }
+

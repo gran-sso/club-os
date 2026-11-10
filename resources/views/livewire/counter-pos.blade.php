@@ -354,8 +354,8 @@
                         wire:keydown.arrow-down.prevent="navigateCustomerResults('down')"
                         wire:keydown.arrow-up.prevent="navigateCustomerResults('up')"
                         wire:keydown.enter.prevent="selectHighlightedCustomer"
-                        placeholder="Scan card, type membership #, name, or phone..."
-                        aria-label="Search members by card number, membership ID, name, or phone"
+                        placeholder="Scan card, type membership #, room # (e.g. 101), name, or phone..."
+                        aria-label="Search members or room guests by card number, membership ID, room number, name, or phone"
                         class="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-20 py-3 text-slate-900 placeholder-slate-400 font-mono text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none">
                     
                     <div class="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none">
@@ -375,22 +375,41 @@
                 @if (!empty($customerSearchResults))
                     <div class="absolute left-5 right-5 top-[92px] z-40 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100">
                         @foreach ($customerSearchResults as $idx => $cMatch)
-                            <div wire:click="selectCustomerById({{ $cMatch['id'] }})"
-                                class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedCustomerIndex === $idx ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500' : 'text-slate-700 hover:bg-slate-50' }}">
-                                <div>
-                                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                                        <span>{{ $cMatch['name'] }}</span>
-                                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-amber-800 border border-slate-200 font-semibold">{{ $cMatch['membership_number'] }}</span>
+                            @if (($cMatch['type'] ?? 'member') === 'room_guest')
+                                <div wire:click="selectRoomGuest({{ $cMatch['id'] }})"
+                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedCustomerIndex === $idx ? 'bg-teal-50 text-teal-950 border-l-4 border-teal-500' : 'text-slate-700 hover:bg-slate-50' }}">
+                                    <div>
+                                        <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                            <span class="text-teal-700 font-extrabold">🏨 {{ $cMatch['room_name'] }}</span>
+                                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-100 text-teal-900 border border-teal-200 font-bold">{{ $cMatch['guest_name'] }}</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 mt-0.5">
+                                            Resident Guest • Sponsor: <strong class="text-slate-700">{{ $cMatch['sponsor_name'] }}</strong> • Phone: {{ $cMatch['phone'] }}
+                                        </div>
                                     </div>
-                                    <div class="text-[10px] text-slate-500 mt-0.5">
-                                        Card: <span class="font-mono">{{ $cMatch['card_number'] }}</span> • Phone: {{ $cMatch['phone'] }}
+                                    <div class="text-right">
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Checked-In</span>
+                                        <span class="block text-[9px] uppercase font-semibold text-slate-400">Room Occupant</span>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <span class="font-mono font-bold text-amber-700">₹{{ number_format($cMatch['balance_paise'] / 100, 2) }}</span>
-                                    <span class="block text-[9px] uppercase font-semibold text-slate-400">{{ $cMatch['category'] }}</span>
+                            @else
+                                <div wire:click="selectCustomerById({{ $cMatch['id'] }})"
+                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedCustomerIndex === $idx ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500' : 'text-slate-700 hover:bg-slate-50' }}">
+                                    <div>
+                                        <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                            <span>{{ $cMatch['name'] }}</span>
+                                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-amber-800 border border-slate-200 font-semibold">{{ $cMatch['membership_number'] }}</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 mt-0.5">
+                                            Card: <span class="font-mono">{{ $cMatch['card_number'] }}</span> • Phone: {{ $cMatch['phone'] }}
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="font-mono font-bold text-amber-700">₹{{ number_format($cMatch['balance_paise'] / 100, 2) }}</span>
+                                        <span class="block text-[9px] uppercase font-semibold text-slate-400">{{ $cMatch['category'] }}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @endforeach
                     </div>
                 @endif
@@ -404,8 +423,59 @@
                 </div>
             </div>
 
-            <!-- Active Member Details Card & Authoritative Wallet Balance -->
-            @if ($selectedMember)
+            <!-- Active Customer Details: Room Guest OR Member -->
+            @if ($selectedRoomReservation)
+                <div class="bg-white border border-teal-200 rounded-3xl p-5 shadow-xs animate-fade-in ring-1 ring-teal-500/20">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center font-bold text-white text-2xl shadow-md shadow-teal-500/20">
+                                🏨
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900 tracking-tight">
+                                    {{ $selectedRoomReservation->guest?->name ?? $selectedRoomReservation->sponsorMember?->name ?? 'Resident Guest' }}
+                                </h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs font-mono font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">{{ $selectedRoomReservation->facility->name }}</span>
+                                    <span class="text-xs text-slate-500 font-medium">Room Occupant</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold capitalize flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Checked-In
+                        </span>
+                    </div>
+
+                    <!-- Room Stay & Sponsor Details Box -->
+                    <div class="mt-4 p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 text-xs space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Reservation Reference:</span>
+                            <span class="font-mono font-bold text-slate-800">{{ $selectedRoomReservation->reservation_number }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Stay Period:</span>
+                            <span class="font-mono font-semibold text-slate-700">{{ $selectedRoomReservation->check_in_date->format('d M') }} &rarr; {{ $selectedRoomReservation->check_out_date->format('d M Y') }}</span>
+                        </div>
+                        <div class="flex justify-between border-t border-teal-200/60 pt-1.5">
+                            <span class="text-slate-500">Sponsoring Member:</span>
+                            <span class="font-bold text-slate-900">{{ $selectedRoomReservation->sponsorMember ? ($selectedRoomReservation->sponsorMember->name . ' (' . $selectedRoomReservation->sponsorMember->membership_number . ')') : 'Direct Booking' }}</span>
+                        </div>
+                        @if ($selectedRoomReservation->sponsorMember && $memberWalletBalancePaise > 0)
+                            <div class="flex justify-between items-center bg-white/70 p-2 rounded-xl border border-teal-200/60 mt-1">
+                                <span class="text-amber-900 font-semibold flex items-center gap-1">
+                                    <span>💳</span> Sponsor Wallet Available:
+                                </span>
+                                <span class="font-mono font-extrabold text-amber-950 text-sm">₹{{ number_format($memberWalletBalancePaise / 100, 2) }}</span>
+                            </div>
+                        @endif
+                        <div class="pt-1.5 text-[10px] text-teal-900 font-medium leading-tight border-t border-teal-200/60">
+                            ⚠️ <strong>Zero-Credit Policy (Rule 1)</strong>: Room-folio post-payment is prohibited. Settle order immediately via Cash or Digital UPI (or Sponsor Wallet).
+                        </div>
+                    </div>
+                </div>
+            @elseif ($selectedMember)
                 <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs animate-fade-in">
                     <div class="flex items-start justify-between">
                         <div class="flex items-center space-x-3">

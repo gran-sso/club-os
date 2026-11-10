@@ -69,6 +69,8 @@ TXT;
                 : ($bill->customer->name ?? 'Member');
         }
 
+        $notesLine = $bill?->notes ? "Ref:      {$bill->notes}\n" : "";
+
         return <<<TXT
 ================================================
                {$clubName}
@@ -78,7 +80,7 @@ Receipt: {$bill?->bill_number}
 Date:    {$dateStr}
 Customer: {$customerName}
 Counter:  {$bill?->shift?->counter?->name}
-------------------------------------------------
+{$notesLine}------------------------------------------------
 Item                  Qty    Price    Total(INR)
 ------------------------------------------------
 {$linesText}------------------------------------------------

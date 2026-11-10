@@ -9,6 +9,7 @@ use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Billing\Services\BillingService;
 use App\Domain\Billing\Services\ShiftService;
+use App\Domain\Facility\Models\RoomReservation;
 use App\Domain\Integrations\Contracts\ReceiptPrinterInterface;
 use App\Domain\Inventory\Models\InventoryItem;
 use App\Domain\Inventory\Models\ServingMapping;
@@ -41,6 +42,11 @@ class CounterPos extends Component
     public ?Member $selectedMember = null;
     public ?Card $activeCard = null;
     public int $memberWalletBalancePaise = 0;
+
+    // Resident Room Guest state
+    public ?RoomReservation $selectedRoomReservation = null;
+    public ?Guest $selectedGuest = null;
+    public string $customerType = 'member'; // 'member' or 'room_guest'
 
     // View Mode: 'grid' (Touch Cards) or 'compact' (Searchable List)
     public string $viewMode = 'grid';
@@ -160,7 +166,54 @@ class CounterPos extends Component
             return;
         }
 
-        // Search by card, membership_number, name, or phone
+        $results = [];
+
+        // 1. Search Active Checked-In Room Occupants (Resident Guests & Staying Members)
+        $cleanNum = preg_replace('/[^0-9]/', '', $query);
+        $roomReservations = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person', 'sponsorMember.wallet'])
+            ->where('status', 'checked_in')
+            ->where(function ($q) use ($query, $cleanNum) {
+                $q->whereHas('facility', function ($f) use ($query, $cleanNum) {
+                    $f->where('code', 'LIKE', "%{$query}%")
+                        ->orWhere('name', 'LIKE', "%{$query}%");
+                    if (!empty($cleanNum)) {
+                        $f->orWhere('code', 'LIKE', "%{$cleanNum}%");
+                    }
+                })
+                ->orWhereHas('guest.person', function ($p) use ($query) {
+                    $p->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('phone', 'LIKE', "{$query}%");
+                })
+                ->orWhereHas('sponsorMember.person', function ($p) use ($query) {
+                    $p->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('phone', 'LIKE', "{$query}%");
+                });
+            })
+            ->take(3)
+            ->get();
+
+        foreach ($roomReservations as $rRes) {
+            $guestName = $rRes->guest?->name ?? $rRes->sponsorMember?->name ?? 'Resident Guest';
+            $results[] = [
+                'type' => 'room_guest',
+                'id' => $rRes->id,
+                'room_code' => $rRes->facility->code,
+                'room_name' => $rRes->facility->name,
+                'guest_name' => $guestName,
+                'phone' => $rRes->guest?->phone ?? $rRes->sponsorMember?->phone ?? '—',
+                'sponsor_name' => $rRes->sponsorMember ? ($rRes->sponsorMember->name . ' (' . $rRes->sponsorMember->membership_number . ')') : 'Direct Booking',
+                'card_number' => $rRes->facility->code,
+                'membership_number' => 'ROOM ' . str_replace('ROOM-', '', $rRes->facility->code),
+                'name' => "{$guestName} ({$rRes->facility->name})",
+                'category' => 'Resident Room Guest',
+                'status' => 'checked_in',
+                'balance_paise' => (int) ($rRes->sponsorMember?->wallet?->balance_paise ?? 0),
+            ];
+        }
+
+        // 2. Search Members by card, membership_number, name, or phone
         $members = Member::with(['person', 'category', 'wallet', 'activeCard'])
             ->where('membership_number', 'LIKE', "{$query}%")
             ->orWhereHas('person', function ($q) use ($query) {
@@ -171,11 +224,12 @@ class CounterPos extends Component
             ->orWhereHas('cards', function ($q) use ($query) {
                 $q->where('card_number', 'LIKE', "{$query}%");
             })
-            ->take(6)
+            ->take(5)
             ->get();
 
-        $this->customerSearchResults = $members->map(function (Member $m) {
-            return [
+        foreach ($members as $m) {
+            $results[] = [
+                'type' => 'member',
                 'id' => $m->id,
                 'membership_number' => $m->membership_number,
                 'name' => ($m->person->first_name ?? '') . ' ' . ($m->person->last_name ?? ''),
@@ -185,8 +239,9 @@ class CounterPos extends Component
                 'status' => $m->status->value,
                 'balance_paise' => (int) ($m->wallet?->balance_paise ?? 0),
             ];
-        })->toArray();
+        }
 
+        $this->customerSearchResults = $results;
         $this->highlightedCustomerIndex = 0;
     }
 
@@ -207,7 +262,12 @@ class CounterPos extends Component
     public function selectHighlightedCustomer(): void
     {
         if (isset($this->customerSearchResults[$this->highlightedCustomerIndex])) {
-            $this->selectCustomerById($this->customerSearchResults[$this->highlightedCustomerIndex]['id']);
+            $match = $this->customerSearchResults[$this->highlightedCustomerIndex];
+            if (($match['type'] ?? 'member') === 'room_guest') {
+                $this->selectRoomGuest($match['id']);
+            } else {
+                $this->selectCustomerById($match['id']);
+            }
         } else {
             $this->searchMember(app(CardService::class));
         }
@@ -218,7 +278,28 @@ class CounterPos extends Component
         $this->clearMessages();
         $member = Member::find($memberId);
         if ($member) {
+            $this->selectedRoomReservation = null;
+            $this->selectedGuest = null;
+            $this->customerType = 'member';
             $this->selectMemberRecord($member);
+            $this->customerSearchResults = [];
+            $this->dispatch('focus-item-search');
+        }
+    }
+
+    public function selectRoomGuest(int $reservationId): void
+    {
+        $this->clearMessages();
+        $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.wallet', 'sponsorMember.person', 'sponsorMember.category'])->find($reservationId);
+        if ($res) {
+            $this->selectedRoomReservation = $res;
+            $this->customerType = 'room_guest';
+            $this->selectedGuest = $res->guest;
+            $this->selectedMember = $res->sponsorMember;
+            $this->activeCard = null;
+            $this->memberWalletBalancePaise = (int) ($res->sponsorMember?->wallet?->balance_paise ?? 0);
+            $guestName = $res->guest?->name ?? $res->sponsorMember?->name ?? 'Guest';
+            $this->searchQuery = "{$res->facility->name} - {$guestName}";
             $this->customerSearchResults = [];
             $this->dispatch('focus-item-search');
         }
@@ -236,20 +317,61 @@ class CounterPos extends Component
 
         // If results dropdown has highlighted item, use it
         if (!empty($this->customerSearchResults) && isset($this->customerSearchResults[$this->highlightedCustomerIndex])) {
-            $this->selectCustomerById($this->customerSearchResults[$this->highlightedCustomerIndex]['id']);
+            $match = $this->customerSearchResults[$this->highlightedCustomerIndex];
+            if (($match['type'] ?? 'member') === 'room_guest') {
+                $this->selectRoomGuest($match['id']);
+            } else {
+                $this->selectCustomerById($match['id']);
+            }
             return;
         }
 
         // 1. Try find exact card first
         $card = $cardService->findCard($query);
         if ($card && $card->cardable instanceof Member) {
+            $this->selectedRoomReservation = null;
+            $this->selectedGuest = null;
+            $this->customerType = 'member';
             $this->selectMemberRecord($card->cardable, $card);
             $this->customerSearchResults = [];
             $this->dispatch('focus-item-search');
             return;
         }
 
-        // 2. Exact or partial search by membership number, name, phone
+        // 2. Try match checked-in room number or resident guest
+        $cleanNum = preg_replace('/[^0-9]/', '', $query);
+        $roomRes = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.wallet', 'sponsorMember.person'])
+            ->where('status', 'checked_in')
+            ->where(function ($q) use ($query, $cleanNum) {
+                $q->whereHas('facility', function ($f) use ($query, $cleanNum) {
+                    $f->where('code', $query)
+                        ->orWhere('code', 'ROOM-' . $query)
+                        ->orWhere('name', 'LIKE', "%{$query}%");
+                    if (!empty($cleanNum)) {
+                        $f->orWhere('code', 'LIKE', "%{$cleanNum}%");
+                    }
+                })
+                ->orWhereHas('guest.person', function ($p) use ($query) {
+                    $p->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('phone', $query);
+                })
+                ->orWhereHas('sponsorMember.person', function ($p) use ($query) {
+                    $p->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('phone', $query);
+                });
+            })
+            ->first();
+
+        if ($roomRes) {
+            $this->selectRoomGuest($roomRes->id);
+            $this->customerSearchResults = [];
+            $this->dispatch('focus-item-search');
+            return;
+        }
+
+        // 3. Exact or partial search by membership number, name, phone
         $member = Member::where('membership_number', $query)
             ->orWhereHas('person', function ($q) use ($query) {
                 $q->where('phone', $query)
@@ -259,11 +381,14 @@ class CounterPos extends Component
             ->first();
 
         if ($member) {
+            $this->selectedRoomReservation = null;
+            $this->selectedGuest = null;
+            $this->customerType = 'member';
             $this->selectMemberRecord($member);
             $this->customerSearchResults = [];
             $this->dispatch('focus-item-search');
         } else {
-            $this->errorMessage = "No active member found matching '{$query}'.";
+            $this->errorMessage = "No active member or checked-in room guest found matching '{$query}'.";
             $this->resetMember();
         }
     }
@@ -279,6 +404,9 @@ class CounterPos extends Component
     public function resetMember(): void
     {
         $this->selectedMember = null;
+        $this->selectedRoomReservation = null;
+        $this->selectedGuest = null;
+        $this->customerType = 'member';
         $this->activeCard = null;
         $this->memberWalletBalancePaise = 0;
         $this->searchQuery = '';
@@ -851,9 +979,15 @@ class CounterPos extends Component
                 }
             }
 
-            // Determine customer
-            $customer = $this->selectedMember;
-            if ($this->isGuestSale && !empty($this->guestFirstName)) {
+            // Determine customer & bill narration
+            $customer = null;
+            $notes = '';
+
+            if ($this->selectedRoomReservation) {
+                $customer = $this->selectedGuest ?? $this->selectedMember ?? Member::first();
+                $guestName = $this->selectedGuest?->name ?? $this->selectedRoomReservation->guest?->name ?? $this->selectedRoomReservation->sponsorMember?->name ?? 'Resident Guest';
+                $notes = "Counter sale for {$this->selectedRoomReservation->facility->name} (Resident: {$guestName})";
+            } elseif ($this->isGuestSale && !empty($this->guestFirstName)) {
                 if (!$this->selectedMember) {
                     throw new \RuntimeException("A sponsoring member is required for guest entry.");
                 }
@@ -867,8 +1001,12 @@ class CounterPos extends Component
                     sponsorId: $this->selectedMember->id
                 );
                 $customer = $guest;
-            } elseif (!$customer) {
-                throw new \RuntimeException("Please select a customer or provide guest registration details.");
+            } else {
+                $customer = $this->selectedMember;
+            }
+
+            if (!$customer) {
+                throw new \RuntimeException("Please select a customer, room guest, or provide guest registration details.");
             }
 
             $billItems = [];
@@ -895,6 +1033,7 @@ class CounterPos extends Component
                 departmentCode: $primaryDept,
                 items: $billItems,
                 idempotencyKey: $idempotencyKey,
+                notes: $notes,
                 userId: auth()->id()
             );
 
