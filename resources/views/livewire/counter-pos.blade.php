@@ -1,6 +1,9 @@
 <div x-data="{
         isSubmitting: false,
         showCloseShiftModal: false,
+        highlightedItemIdx: 0,
+        highlightedCustIdx: 0,
+        highlightedServingIdx: 0,
         getWire() {
             return this.$wire || (typeof $wire !== 'undefined' ? $wire : null);
         },
@@ -10,6 +13,116 @@
             if (typeof w.$get === 'function') return w.$get(name);
             if (typeof w.get === 'function') return w.get(name);
             return w[name];
+        },
+        navigateItems(direction) {
+            const results = this.getProp('itemSearchResults');
+            if (!results || results.length === 0) return;
+            const count = results.length;
+            if (direction === 'down') {
+                this.highlightedItemIdx = (this.highlightedItemIdx + 1) % count;
+            } else {
+                this.highlightedItemIdx = (this.highlightedItemIdx - 1 + count) % count;
+            }
+            this.getWire()?.set('highlightedItemIndex', this.highlightedItemIdx, false);
+            this.scrollActiveIntoView('item-result-' + this.highlightedItemIdx);
+        },
+        selectItem() {
+            const activeEl = document.getElementById('item-result-' + this.highlightedItemIdx);
+            if (activeEl) {
+                activeEl.click();
+                this.highlightedItemIdx = 0;
+                return;
+            }
+            const results = this.getProp('itemSearchResults');
+            if (results && results.length > 0) {
+                const item = results[this.highlightedItemIdx] || results[0];
+                if (item) {
+                    if (item.has_multiple_servings) {
+                        this.getWire()?.openServingModalForItem(item);
+                    } else {
+                        this.getWire()?.addToCart(item.tariff_id);
+                        this.getWire()?.set('itemSearch', '');
+                        this.getWire()?.set('itemSearchResults', []);
+                        this.highlightedItemIdx = 0;
+                    }
+                    return;
+                }
+            }
+            const query = this.getProp('itemSearch');
+            if (query && query.trim().length > 0) {
+                this.getWire()?.selectHighlightedItem();
+            }
+        },
+        navigateCustomers(direction) {
+            const results = this.getProp('customerSearchResults');
+            if (!results || results.length === 0) return;
+            const count = results.length;
+            if (direction === 'down') {
+                this.highlightedCustIdx = (this.highlightedCustIdx + 1) % count;
+            } else {
+                this.highlightedCustIdx = (this.highlightedCustIdx - 1 + count) % count;
+            }
+            this.getWire()?.set('highlightedCustomerIndex', this.highlightedCustIdx, false);
+            this.scrollActiveIntoView('cust-result-' + this.highlightedCustIdx);
+        },
+        selectCustomer() {
+            const activeEl = document.getElementById('cust-result-' + this.highlightedCustIdx);
+            if (activeEl) {
+                activeEl.click();
+                this.highlightedCustIdx = 0;
+                return;
+            }
+            const results = this.getProp('customerSearchResults');
+            if (results && results.length > 0) {
+                const match = results[this.highlightedCustIdx] || results[0];
+                if (match) {
+                    if ((match.type || 'member') === 'room_guest') {
+                        this.getWire()?.selectRoomGuest(match.id);
+                    } else {
+                        this.getWire()?.selectCustomerById(match.id);
+                    }
+                    this.getWire()?.set('customerSearchResults', []);
+                    this.highlightedCustIdx = 0;
+                    return;
+                }
+            }
+            this.getWire()?.searchMember();
+        },
+        navigateServings(direction) {
+            const options = this.getProp('servingItemOptions');
+            if (!options || options.length === 0) return;
+            const count = options.length;
+            if (direction === 'down') {
+                this.highlightedServingIdx = (this.highlightedServingIdx + 1) % count;
+            } else {
+                this.highlightedServingIdx = (this.highlightedServingIdx - 1 + count) % count;
+            }
+            this.getWire()?.set('highlightedServingIndex', this.highlightedServingIdx, false);
+            this.scrollActiveIntoView('serving-option-' + this.highlightedServingIdx);
+        },
+        selectServing() {
+            const activeEl = document.getElementById('serving-option-' + this.highlightedServingIdx);
+            if (activeEl) {
+                activeEl.click();
+                this.highlightedServingIdx = 0;
+                return;
+            }
+            const options = this.getProp('servingItemOptions');
+            if (options && options.length > 0) {
+                const opt = options[this.highlightedServingIdx] || options[0];
+                if (opt && opt.tariff_id) {
+                    this.getWire()?.selectServingAndAddToCart(opt.tariff_id);
+                    this.highlightedServingIdx = 0;
+                }
+            }
+        },
+        scrollActiveIntoView(id) {
+            this.$nextTick(() => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            });
         },
         handleGlobalKeydown(e) {
             const wire = this.getWire();
@@ -123,23 +236,87 @@
                 }
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    wire.navigateServingOptions('down');
+                    this.navigateServings('down');
                     return;
                 }
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    wire.navigateServingOptions('up');
+                    this.navigateServings('up');
                     return;
                 }
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    wire.selectHighlightedServing();
+                    this.selectServing();
                     return;
                 }
                 return;
             }
 
-            // 4. ESCAPE KEY (Cascading Clear: Quantity Input -> Autocomplete/Search -> Cart Clear -> Messages)
+            // 4. ACTIVE ITEM AUTOCOMPLETE (Arrow Keys, Enter)
+            const itemResults = this.getProp('itemSearchResults');
+            if (itemResults && itemResults.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.navigateItems('down');
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.navigateItems('up');
+                    return;
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.selectItem();
+                    return;
+                }
+            }
+
+            // 5. ACTIVE CUSTOMER AUTOCOMPLETE (Arrow Keys, Enter)
+            const custResults = this.getProp('customerSearchResults');
+            if (custResults && custResults.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.navigateCustomers('down');
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.navigateCustomers('up');
+                    return;
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.selectCustomer();
+                    return;
+                }
+            }
+
+            // 6. CART QUANTITY ROW NAVIGATION (When focused in a .cart-qty-input)
+            if (document.activeElement?.classList?.contains('cart-qty-input')) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const inputs = Array.from(document.querySelectorAll('.cart-qty-input'));
+                    const idx = inputs.indexOf(document.activeElement);
+                    if (idx !== -1 && idx < inputs.length - 1) {
+                        inputs[idx + 1].focus();
+                        inputs[idx + 1].select();
+                    }
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const inputs = Array.from(document.querySelectorAll('.cart-qty-input'));
+                    const idx = inputs.indexOf(document.activeElement);
+                    if (idx > 0) {
+                        inputs[idx - 1].focus();
+                        inputs[idx - 1].select();
+                    }
+                    return;
+                }
+            }
+
+            // 7. ESCAPE KEY (Cascading Clear: Quantity Input -> Autocomplete/Search -> Cart Clear -> Messages)
             if (e.key === 'Escape') {
                 e.preventDefault();
 
@@ -152,19 +329,19 @@
                 }
 
                 // If item search autocomplete or search query has text, clear it
-                const itemResults = this.getProp('itemSearchResults');
                 const itemSearch = this.getProp('itemSearch');
                 if ((itemResults && itemResults.length > 0) || (itemSearch && itemSearch.length > 0)) {
                     wire.set('itemSearchResults', []);
                     wire.set('itemSearch', '');
+                    this.highlightedItemIdx = 0;
                     return;
                 }
 
                 // If customer search autocomplete or search query has text, clear it
-                const custResults = this.getProp('customerSearchResults');
                 const custQuery = this.getProp('searchQuery');
                 if (custResults && custResults.length > 0) {
                     wire.set('customerSearchResults', []);
+                    this.highlightedCustIdx = 0;
                     return;
                 }
                 if (custQuery && custQuery.length > 0) {
@@ -195,7 +372,7 @@
                 return;
             }
 
-            // 5. FUNCTION KEYS (Standard Ready Billing State)
+            // 8. FUNCTION KEYS (Standard Ready Billing State)
             if (e.key === 'F2') {
                 e.preventDefault();
                 const input = this.$refs.customerSearchInput || document.getElementById('customer-search-input');
@@ -240,7 +417,7 @@
                 return;
             }
 
-            // 6. DELETE KEY (Reset selected member when not actively typing in a text field)
+            // 9. DELETE KEY (Reset selected member when not actively typing in a text field)
             if (e.key === 'Delete' && !['INPUT', 'TEXTAREA'].includes(e.target?.tagName)) {
                 if (this.getProp('selectedMember')) {
                     e.preventDefault();
@@ -250,6 +427,12 @@
             }
         }
     }"
+    x-init="
+        $watch('$wire.itemSearchResults', () => { highlightedItemIdx = 0; });
+        $watch('$wire.customerSearchResults', () => { highlightedCustIdx = 0; });
+        $watch('$wire.servingItemOptions', () => { highlightedServingIdx = 0; });
+        $watch('$wire.showServingModal', value => { if (value) highlightedServingIdx = 0; });
+    "
     x-on:keydown.window="handleGlobalKeydown($event)"
     x-on:focus-item-search.window="$nextTick(() => { $refs.itemSearchInput?.focus(); $refs.itemSearchInput?.select(); })"
     x-on:focus-customer-search.window="$nextTick(() => { $refs.customerSearchInput?.focus(); $refs.customerSearchInput?.select(); })"
@@ -453,9 +636,9 @@
                         id="customer-search-input"
                         x-ref="customerSearchInput"
                         wire:model.live.debounce.150ms="searchQuery"
-                        wire:keydown.arrow-down.prevent="navigateCustomerResults('down')"
-                        wire:keydown.arrow-up.prevent="navigateCustomerResults('up')"
-                        wire:keydown.enter.prevent="selectHighlightedCustomer"
+                        @keydown.arrow-down.prevent.stop="navigateCustomers('down')"
+                        @keydown.arrow-up.prevent.stop="navigateCustomers('up')"
+                        @keydown.enter.prevent.stop="selectCustomer()"
                         placeholder="Scan card, type membership #, room # (e.g. 101), name, or phone..."
                         aria-label="Search members or room guests by card number, membership ID, room number, name, or phone"
                         class="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-20 py-3 text-slate-900 placeholder-slate-400 font-mono text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none">
@@ -475,11 +658,14 @@
 
                 <!-- Floating Customer Autocomplete Results Dropdown -->
                 @if (!empty($customerSearchResults))
-                    <div class="absolute left-5 right-5 top-[92px] z-40 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100">
+                    <div class="absolute left-5 right-5 top-[92px] z-40 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto">
                         @foreach ($customerSearchResults as $idx => $cMatch)
                             @if (($cMatch['type'] ?? 'member') === 'room_guest')
-                                <div wire:click="selectRoomGuest({{ $cMatch['id'] }})"
-                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedCustomerIndex === $idx ? 'bg-teal-50 text-teal-950 border-l-4 border-teal-500' : 'text-slate-700 hover:bg-slate-50' }}">
+                                <div id="cust-result-{{ $idx }}"
+                                    wire:click="selectRoomGuest({{ $cMatch['id'] }})"
+                                    @mouseenter="highlightedCustIdx = {{ $idx }}"
+                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                                    :class="highlightedCustIdx === {{ $idx }} ? 'bg-teal-50 text-teal-950 border-l-4 border-teal-500 font-medium' : 'text-slate-700 hover:bg-slate-50'">
                                     <div>
                                         <div class="font-bold text-slate-900 flex items-center gap-1.5">
                                             <span class="text-teal-700 font-extrabold">🏨 {{ $cMatch['room_name'] }}</span>
@@ -495,8 +681,11 @@
                                     </div>
                                 </div>
                             @else
-                                <div wire:click="selectCustomerById({{ $cMatch['id'] }})"
-                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedCustomerIndex === $idx ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500' : 'text-slate-700 hover:bg-slate-50' }}">
+                                <div id="cust-result-{{ $idx }}"
+                                    wire:click="selectCustomerById({{ $cMatch['id'] }})"
+                                    @mouseenter="highlightedCustIdx = {{ $idx }}"
+                                    class="p-3 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                                    :class="highlightedCustIdx === {{ $idx }} ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500 font-medium' : 'text-slate-700 hover:bg-slate-50'">
                                     <div>
                                         <div class="font-bold text-slate-900 flex items-center gap-1.5">
                                             <span>{{ $cMatch['name'] }}</span>
@@ -712,9 +901,9 @@
                         id="item-search-input"
                         x-ref="itemSearchInput"
                         wire:model.live.debounce.150ms="itemSearch"
-                        wire:keydown.arrow-down.prevent="navigateItemResults('down')"
-                        wire:keydown.arrow-up.prevent="navigateItemResults('up')"
-                        wire:keydown.enter.prevent="selectHighlightedItem"
+                        @keydown.arrow-down.prevent.stop="navigateItems('down')"
+                        @keydown.arrow-up.prevent.stop="navigateItems('up')"
+                        @keydown.enter.prevent.stop="selectItem()"
                         placeholder="Type item name, code or barcode (e.g. Beer, Meals, 890123400001)..."
                         aria-label="Search saleable items by name, item code and barcode"
                         class="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-24 py-3.5 text-slate-900 placeholder-slate-400 font-mono text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none">
@@ -738,8 +927,11 @@
                 @if (!empty($itemSearchResults))
                     <div class="absolute left-5 right-5 top-[95px] z-50 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto">
                         @foreach ($itemSearchResults as $idx => $itemMatch)
-                            <div wire:click="{{ $itemMatch['has_multiple_servings'] ? 'openServingModalForItem(' . json_encode($itemMatch) . ')' : 'addToCart(' . $itemMatch['tariff_id'] . ')' }}"
-                                class="p-3.5 cursor-pointer flex items-center justify-between text-xs transition-colors {{ $highlightedItemIndex === $idx ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500' : 'text-slate-700 hover:bg-slate-50' }}">
+                            <div id="item-result-{{ $idx }}"
+                                wire:click="{{ $itemMatch['has_multiple_servings'] ? 'openServingModalForItem(' . json_encode($itemMatch) . ')' : 'addToCart(' . $itemMatch['tariff_id'] . ')' }}"
+                                @mouseenter="highlightedItemIdx = {{ $idx }}"
+                                class="p-3.5 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                                :class="highlightedItemIdx === {{ $idx }} ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500 font-medium' : 'text-slate-700 hover:bg-slate-50'">
                                 <div class="flex-1 min-w-0 pr-4">
                                     <div class="font-bold flex items-center gap-2 truncate">
                                         <span class="text-sm text-slate-900">{{ $itemMatch['name'] }}</span>
@@ -984,6 +1176,16 @@
                                                         value="{{ $item['quantity'] }}"
                                                         wire:change="setCartQuantity({{ $index }}, $event.target.value)"
                                                         wire:keydown.enter.prevent="$wire.setCartQuantity({{ $index }}, $event.target.value); $dispatch('focus-item-search');"
+                                                        @keydown.arrow-down.prevent="
+                                                            const inputs = Array.from(document.querySelectorAll('.cart-qty-input'));
+                                                            const idx = inputs.indexOf($el);
+                                                            if (idx !== -1 && idx < inputs.length - 1) { inputs[idx + 1].focus(); inputs[idx + 1].select(); }
+                                                        "
+                                                        @keydown.arrow-up.prevent="
+                                                            const inputs = Array.from(document.querySelectorAll('.cart-qty-input'));
+                                                            const idx = inputs.indexOf($el);
+                                                            if (idx > 0) { inputs[idx - 1].focus(); inputs[idx - 1].select(); }
+                                                        "
                                                         class="cart-qty-input w-12 text-center bg-slate-50 border border-slate-300 rounded-lg py-1 font-mono text-slate-900 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                                         aria-label="Item quantity for {{ $item['name'] }}">
                                                     
@@ -1109,13 +1311,7 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="serving-modal-title">
-            <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative"
-                x-on:keydown.arrow-down.prevent="$wire.navigateServingOptions('down')"
-                x-on:keydown.arrow-up.prevent="$wire.navigateServingOptions('up')"
-                x-on:keydown.enter.prevent="$wire.selectHighlightedServing()"
-                x-on:keydown.1.prevent="$wire.selectServingAndAddToCart({{ $servingItemOptions[0]['tariff_id'] ?? 0 }})"
-                x-on:keydown.2.prevent="$wire.selectServingAndAddToCart({{ $servingItemOptions[1]['tariff_id'] ?? 0 }})"
-                x-on:keydown.3.prevent="$wire.selectServingAndAddToCart({{ $servingItemOptions[2]['tariff_id'] ?? 0 }})">
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative">
                 
                 <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4">
                     <div>
@@ -1132,8 +1328,11 @@
 
                 <div class="space-y-2.5 mb-6">
                     @foreach ($servingItemOptions as $sIdx => $sOpt)
-                        <div wire:click="selectServingAndAddToCart({{ $sOpt['tariff_id'] }})"
-                            class="p-3.5 rounded-2xl border cursor-pointer flex items-center justify-between text-xs transition-all {{ $highlightedServingIndex === $sIdx ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' }}">
+                        <div id="serving-option-{{ $sIdx }}"
+                            wire:click="selectServingAndAddToCart({{ $sOpt['tariff_id'] }})"
+                            @mouseenter="highlightedServingIdx = {{ $sIdx }}"
+                            class="p-3.5 rounded-2xl border cursor-pointer flex items-center justify-between text-xs transition-all"
+                            :class="highlightedServingIdx === {{ $sIdx }} ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'">
                             <div class="flex items-center space-x-3">
                                 <span class="w-6 h-6 rounded-lg bg-white text-amber-700 font-mono font-bold flex items-center justify-center text-xs border border-slate-300 shadow-2xs">
                                     {{ $sIdx + 1 }}
