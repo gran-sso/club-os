@@ -10,11 +10,13 @@
         getProp(name) {
             const w = this.getWire();
             if (!w) return null;
-            if (typeof w.$get === 'function') return w.$get(name);
-            if (typeof w.get === 'function') return w.get(name);
             return w[name];
         },
         navigateItems(direction) {
+            if (this.getProp('showServingModal')) {
+                this.navigateServings(direction);
+                return;
+            }
             const results = this.getProp('itemSearchResults');
             if (!results || results.length === 0) return;
             const count = results.length;
@@ -27,6 +29,10 @@
             this.scrollActiveIntoView('item-result-' + this.highlightedItemIdx);
         },
         selectItem() {
+            if (this.getProp('showServingModal')) {
+                this.selectServing();
+                return;
+            }
             const activeEl = document.getElementById('item-result-' + this.highlightedItemIdx);
             if (activeEl) {
                 activeEl.click();
@@ -54,6 +60,10 @@
             }
         },
         navigateCustomers(direction) {
+            if (this.getProp('showServingModal')) {
+                this.navigateServings(direction);
+                return;
+            }
             const results = this.getProp('customerSearchResults');
             if (!results || results.length === 0) return;
             const count = results.length;
@@ -66,6 +76,10 @@
             this.scrollActiveIntoView('cust-result-' + this.highlightedCustIdx);
         },
         selectCustomer() {
+            if (this.getProp('showServingModal')) {
+                this.selectServing();
+                return;
+            }
             const activeEl = document.getElementById('cust-result-' + this.highlightedCustIdx);
             if (activeEl) {
                 activeEl.click();
@@ -101,19 +115,26 @@
             this.scrollActiveIntoView('serving-option-' + this.highlightedServingIdx);
         },
         selectServing() {
-            const activeEl = document.getElementById('serving-option-' + this.highlightedServingIdx);
-            if (activeEl) {
-                activeEl.click();
-                this.highlightedServingIdx = 0;
-                return;
-            }
             const options = this.getProp('servingItemOptions');
             if (options && options.length > 0) {
                 const opt = options[this.highlightedServingIdx] || options[0];
                 if (opt && opt.tariff_id) {
                     this.getWire()?.selectServingAndAddToCart(opt.tariff_id);
                     this.highlightedServingIdx = 0;
+                    return;
                 }
+            }
+            const activeEl = document.getElementById('serving-option-' + this.highlightedServingIdx);
+            if (activeEl) {
+                activeEl.click();
+                this.highlightedServingIdx = 0;
+            }
+        },
+        selectServingByIndex(idx) {
+            const options = this.getProp('servingItemOptions');
+            if (options && options[idx] && options[idx].tariff_id) {
+                this.getWire()?.selectServingAndAddToCart(options[idx].tariff_id);
+                this.highlightedServingIdx = 0;
             }
         },
         scrollActiveIntoView(id) {
@@ -431,7 +452,16 @@
         $watch('$wire.itemSearchResults', () => { highlightedItemIdx = 0; });
         $watch('$wire.customerSearchResults', () => { highlightedCustIdx = 0; });
         $watch('$wire.servingItemOptions', () => { highlightedServingIdx = 0; });
-        $watch('$wire.showServingModal', value => { if (value) highlightedServingIdx = 0; });
+        $watch('$wire.showServingModal', value => {
+            if (value) {
+                highlightedServingIdx = 0;
+                $nextTick(() => {
+                    document.activeElement?.blur();
+                    const dlg = document.getElementById('serving-modal-dialog');
+                    dlg?.focus();
+                });
+            }
+        });
     "
     x-on:keydown.window="handleGlobalKeydown($event)"
     x-on:focus-item-search.window="$nextTick(() => { $refs.itemSearchInput?.focus(); $refs.itemSearchInput?.select(); })"
@@ -904,6 +934,15 @@
                         @keydown.arrow-down.prevent.stop="navigateItems('down')"
                         @keydown.arrow-up.prevent.stop="navigateItems('up')"
                         @keydown.enter.prevent.stop="selectItem()"
+                        @keydown="if (getProp('showServingModal')) {
+                            if (['1', '2', '3'].includes($event.key)) {
+                                $event.preventDefault();
+                                selectServingByIndex(parseInt($event.key) - 1);
+                            } else if ($event.key === 'Escape') {
+                                $event.preventDefault();
+                                $wire.closeServingModal();
+                            }
+                        }"
                         placeholder="Type item name, code or barcode (e.g. Beer, Meals, 890123400001)..."
                         aria-label="Search saleable items by name, item code and barcode"
                         class="w-full bg-slate-50 border border-slate-300 rounded-2xl pl-11 pr-24 py-3.5 text-slate-900 placeholder-slate-400 font-mono text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none">
@@ -1311,7 +1350,17 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="serving-modal-title">
-            <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative">
+            <div id="serving-modal-dialog"
+                tabindex="-1"
+                class="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative focus:outline-none"
+                x-init="$nextTick(() => $el.focus())"
+                @keydown.arrow-down.prevent.stop="navigateServings('down')"
+                @keydown.arrow-up.prevent.stop="navigateServings('up')"
+                @keydown.enter.prevent.stop="selectServing()"
+                @keydown.escape.prevent.stop="$wire.closeServingModal()"
+                @keydown.1.prevent.stop="selectServingByIndex(0)"
+                @keydown.2.prevent.stop="selectServingByIndex(1)"
+                @keydown.3.prevent.stop="selectServingByIndex(2)">
                 
                 <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4">
                     <div>
@@ -1332,9 +1381,10 @@
                             wire:click="selectServingAndAddToCart({{ $sOpt['tariff_id'] }})"
                             @mouseenter="highlightedServingIdx = {{ $sIdx }}"
                             class="p-3.5 rounded-2xl border cursor-pointer flex items-center justify-between text-xs transition-all"
-                            :class="highlightedServingIdx === {{ $sIdx }} ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'">
+                            :class="highlightedServingIdx === {{ $sIdx }} ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-400 text-slate-900 shadow-md font-semibold' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'">
                             <div class="flex items-center space-x-3">
-                                <span class="w-6 h-6 rounded-lg bg-white text-amber-700 font-mono font-bold flex items-center justify-center text-xs border border-slate-300 shadow-2xs">
+                                <span class="w-6 h-6 rounded-lg font-mono font-bold flex items-center justify-center text-xs border shadow-2xs transition-colors"
+                                    :class="highlightedServingIdx === {{ $sIdx }} ? 'bg-amber-500 text-slate-950 border-amber-600 font-extrabold' : 'bg-white text-amber-700 border-slate-300'">
                                     {{ $sIdx + 1 }}
                                 </span>
                                 <div>
