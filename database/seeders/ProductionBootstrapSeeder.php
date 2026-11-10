@@ -47,6 +47,7 @@ class ProductionBootstrapSeeder extends Seeder
             'rooms.manage_reservations',
             'courts.view_schedule',
             'courts.manage_bookings',
+            'notices.manage',
         ];
 
         foreach ($permissions as $perm) {
@@ -73,6 +74,7 @@ class ProductionBootstrapSeeder extends Seeder
             'rooms.manage_reservations',
             'courts.view_schedule',
             'courts.manage_bookings',
+            'notices.manage',
         ]);
 
         $cashierRole = Role::firstOrCreate(['name' => 'cashier']);
@@ -98,6 +100,7 @@ class ProductionBootstrapSeeder extends Seeder
             'rooms.manage_reservations',
             'courts.view_schedule',
             'courts.manage_bookings',
+            'notices.manage',
         ]);
 
         $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
@@ -105,6 +108,7 @@ class ProductionBootstrapSeeder extends Seeder
             'reports.view',
             'integrations.manage',
             'contractor.settle',
+            'notices.manage',
         ]);
 
         Role::firstOrCreate(['name' => 'auditor'])->syncPermissions(['reports.view']);

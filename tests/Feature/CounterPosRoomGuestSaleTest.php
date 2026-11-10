@@ -159,3 +159,4 @@ class CounterPosRoomGuestSaleTest extends TestCase
         $this->assertEquals(TenderType::DIGITAL, $receipt->tender_type);
     }
 }
+

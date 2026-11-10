@@ -3,23 +3,53 @@
 namespace App\Livewire\Member;
 
 use App\Domain\Billing\Models\Bill;
+use App\Domain\Communication\Services\NoticeService;
 use App\Domain\Membership\Models\Member;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.member')]
 class MemberDashboard extends Component
 {
-    public string $activeTab = 'card'; // 'card', 'wallet', 'plans', 'bookings', 'bills', 'family'
+    #[Url(as: 'tab')]
+    public string $activeTab = 'card'; // 'card', 'wallet', 'plans', 'bookings', 'bills', 'family', 'notices'
 
     public bool $showBillModal = false;
     public ?Bill $selectedBill = null;
 
     public function setTab(string $tab): void
     {
-        if (in_array($tab, ['card', 'wallet', 'plans', 'bookings', 'bills', 'family'])) {
+        if (in_array($tab, ['card', 'wallet', 'plans', 'bookings', 'bills', 'family', 'notices'])) {
             $this->activeTab = $tab;
+        }
+    }
+
+    public function markNoticeAsRead(int $noticeId, NoticeService $noticeService): void
+    {
+        /** @var Member $member */
+        $member = Auth::guard('member')->user();
+        if ($member) {
+            $noticeService->markAsRead($member, $noticeId);
+        }
+    }
+
+    public function dismissBanner(int $noticeId, NoticeService $noticeService): void
+    {
+        /** @var Member $member */
+        $member = Auth::guard('member')->user();
+        if ($member) {
+            $noticeService->dismissNotice($member, $noticeId);
+        }
+    }
+
+    public function markAllNoticesAsRead(NoticeService $noticeService): void
+    {
+        /** @var Member $member */
+        $member = Auth::guard('member')->user();
+        if ($member) {
+            $noticeService->markAllAsRead($member);
         }
     }
 
@@ -95,6 +125,11 @@ class MemberDashboard extends Component
             ->take(25)
             ->get();
 
+        $noticeService = app(NoticeService::class);
+        $unreadNoticesCount = $noticeService->getUnreadCount($member);
+        $activeBanners = $noticeService->getProminentBannersForMember($member);
+        $notices = $noticeService->getActiveNoticesForMember($member);
+
         return view('livewire.member.member-dashboard', [
             'member' => $member,
             'wallet' => $wallet,
@@ -105,6 +140,9 @@ class MemberDashboard extends Component
             'roomReservations' => $roomReservations,
             'bills' => $bills,
             'dependents' => $member->dependents,
+            'unreadNoticesCount' => $unreadNoticesCount,
+            'activeBanners' => $activeBanners,
+            'notices' => $notices,
         ]);
     }
 }

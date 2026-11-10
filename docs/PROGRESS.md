@@ -1939,6 +1939,36 @@ For environments where full browser automation is unavailable, operators should 
     - `test_pos_can_search_and_sell_to_checked_in_room_guest_via_digital_upi`: **Passed** (Guest name found, Digital UPI tender recorded, receipt ₹380, GL journal balanced).
   - Full POS test suite verified: `php artisan test tests/Feature/CounterPosTest.php tests/Feature/CounterPosKeyboardTest.php tests/Feature/CounterPosRoomGuestSaleTest.php`: **23 passed, 138 assertions, 0 failures**.
 
+### 21.12 Member PWA Bulletins, Notices & Dues Reminder System (Decision D59)
+- **Problem & Requirements**:
+  - Staff (Admin, Accounts, Reception, Management) need to communicate important bulletins, dues reminders, and facility updates directly to club members inside the Member PWA.
+  - Notices must support club-wide broadcasts, category targeting, specific member reminders, and dynamic targeting for members with overdue/pending annual dues.
+  - In-portal presentation requires prominent dashboard alert banners, persistent unread counters, and a dedicated bulletin archive with read tracking.
+  - Phase 2 readiness for external multichannel dispatch (WhatsApp & SMS) via the integrations outbox.
+- **Implementation Highlights**:
+  - **Data Model & Service ([`MemberNotice.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Communication/Models/MemberNotice.php) & [`NoticeService.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Communication/Services/NoticeService.php))**:
+    - Created `member_notices` table storing title, content, department, priority (`info`, `reminder`, `urgent`, `event`), audience scope (`all`, `category`, `dues_pending`, `individual`), optional action button, banner status, and scheduled dates.
+    - Created `member_notice_reads` tracking read receipts and per-member dismissals.
+    - Added multichannel outbox dispatcher generating `MEMBER_NOTICE_WHATSAPP` and `MEMBER_NOTICE_SMS` queued entries.
+    - Added 1-click `broadcastDuesReminders()` service method targeting members with `fee_status = 'pending'`.
+  - **Back-Office Filament Resource ([`MemberNoticeResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MemberNotices/MemberNoticeResource.php))**:
+    - Registered under `Membership & Guest Desk` with permission `'notices.manage'`.
+    - Equipped with rich audience targeting selectors, department filters, and sticky banner toggle.
+    - Added header action **"Broadcast Dues Reminder"** in [`ListMemberNotices.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MemberNotices/Pages/ListMemberNotices.php) with confirmation modal calculating total overdue members and dispatching instant notices.
+  - **Member PWA Experience ([`member-dashboard.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/member/member-dashboard.blade.php) & [`member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/layouts/member.blade.php))**:
+    - **Header Bell Icon**: Added notification bell to portal topbar displaying live unread counter (`🔔 (Unread)`).
+    - **Prominent Sticky Banners**: Renders high-priority notices at the top of the dashboard with department badges, action links, and one-click dismissal.
+    - **Dedicated Tab 7 (Club Notices)**: Full chronological bulletin list with department pills, unread status indicators, action buttons, and individual/bulk **"Mark All as Read"** controls.
+- **Automated Verification**:
+  - Created [`MemberNoticeTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberNoticeTest.php):
+    - `test_staff_can_create_club_wide_notice`: **Passed**
+    - `test_notice_service_targets_members_with_pending_dues_correctly`: **Passed**
+    - `test_member_pwa_dashboard_renders_prominent_dues_banner`: **Passed**
+    - `test_member_can_mark_notice_as_read_and_dismiss_banner`: **Passed**
+    - `test_outbox_messages_queued_when_whatsapp_or_sms_enabled`: **Passed**
+    - `test_filament_admin_can_access_and_broadcast_dues_notices`: **Passed**
+  - Full suite verified: `php artisan test tests/Feature/MemberNoticeTest.php tests/Feature/RealTallyAndPwaTest.php tests/Feature/AdminPanelTest.php`: **20 passed, 136 assertions, 0 failures**.
+
 
 
 

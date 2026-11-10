@@ -1,4 +1,61 @@
 <div class="space-y-6">
+    <!-- ============================================================= -->
+    <!-- PROMINENT STICKY ALERT BANNERS (DUES & URGENT CLUB NOTICES)   -->
+    <!-- ============================================================= -->
+    @if ($activeBanners->isNotEmpty())
+        <div class="space-y-3">
+            @foreach ($activeBanners as $banner)
+                @php
+                    $isUrgent = $banner->priority === 'urgent';
+                    $isReminder = $banner->priority === 'reminder';
+                    $isEvent = $banner->priority === 'event';
+                    $bannerBorder = $isUrgent ? 'border-rose-500/60' : ($isReminder ? 'border-amber-500/60' : ($isEvent ? 'border-emerald-500/60' : 'border-blue-500/60'));
+                    $bannerBg = $isUrgent ? 'from-rose-950/80 via-slate-900 to-slate-950' : ($isReminder ? 'from-amber-950/80 via-slate-900 to-slate-950' : ($isEvent ? 'from-emerald-950/80 via-slate-900 to-slate-950' : 'from-blue-950/80 via-slate-900 to-slate-950'));
+                    $bannerIcon = $isUrgent ? '🚨' : ($isReminder ? '⚠️' : ($isEvent ? '🎉' : '📢'));
+                    $bannerTextColor = $isUrgent ? 'text-rose-400' : ($isReminder ? 'text-amber-400' : ($isEvent ? 'text-emerald-400' : 'text-blue-400'));
+                @endphp
+                <div class="relative bg-gradient-to-r {{ $bannerBg }} border {{ $bannerBorder }} rounded-3xl p-4 sm:p-5 shadow-xl flex items-start justify-between gap-4 animate-fade-in ring-1 ring-white/5">
+                    <div class="flex items-start gap-3.5">
+                        <span class="text-2xl shrink-0 mt-0.5">{{ $bannerIcon }}</span>
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-extrabold text-sm sm:text-base text-white tracking-tight">
+                                    {{ $banner->title }}
+                                </h3>
+                                <span class="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-white/10 {{ $bannerTextColor }} border border-white/10">
+                                    {{ ucfirst($banner->priority) }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-medium">
+                                    &bull; {{ $banner->published_at->format('d M Y') }}
+                                </span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl whitespace-pre-line">
+                                {{ $banner->content }}
+                            </p>
+                            @if ($banner->action_url)
+                                <div class="pt-2">
+                                    <a href="{{ $banner->action_url }}"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer">
+                                        <span>{{ $banner->action_label ?: 'Take Action' }}</span>
+                                        <span>&rarr;</span>
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    <button wire:click="dismissBanner({{ $banner->id }})"
+                        type="button"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0 cursor-pointer"
+                        title="Dismiss banner from dashboard">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Welcome Header & Member Status Pill -->
     <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
@@ -121,6 +178,15 @@
         <button wire:click="setTab('family')" type="button"
             class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer {{ $activeTab === 'family' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
             <span>👨‍👩‍👦</span> Family
+        </button>
+        <button wire:click="setTab('notices')" type="button"
+            class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer {{ $activeTab === 'notices' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+            <span>🔔</span> Club Notices
+            @if($unreadNoticesCount > 0)
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold {{ $activeTab === 'notices' ? 'bg-slate-950 text-amber-400' : 'bg-rose-500 text-white animate-pulse' }}">
+                    {{ $unreadNoticesCount }}
+                </span>
+            @endif
         </button>
     </div>
 
@@ -547,6 +613,125 @@
                     </div>
                 @endif
             </div>
+        </div>
+    @endif
+
+    <!-- ============================================================= -->
+    <!-- TAB 7: CLUB BULLETINS & NOTICES                               -->
+    <!-- ============================================================= -->
+    @if ($activeTab === 'notices')
+        <div class="space-y-6 animate-fade-in">
+            <!-- Header with Title & Mark All as Read Action -->
+            <div class="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                        <span>🔔</span> Club Notices &amp; Bulletins
+                        @if($unreadNoticesCount > 0)
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-rose-500 text-white animate-pulse">
+                                {{ $unreadNoticesCount }} unread
+                            </span>
+                        @endif
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Official announcements, payment reminders, facility maintenance notices, and club events.</p>
+                </div>
+
+                @if ($unreadNoticesCount > 0)
+                    <button wire:click="markAllNoticesAsRead"
+                        type="button"
+                        class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                        <span>✓✓</span> Mark All as Read
+                    </button>
+                @endif
+            </div>
+
+            <!-- Notices List -->
+            @if ($notices->isEmpty())
+                <div class="bg-slate-900/50 border border-slate-800/60 rounded-3xl p-12 text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-800/80 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3">
+                        📭
+                    </div>
+                    <h4 class="text-sm font-bold text-white">No Notices at Present</h4>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">There are no active notices or announcements targeted to your membership account right now.</p>
+                </div>
+            @else
+                <div class="space-y-4">
+                    @foreach ($notices as $notice)
+                        @php
+                            $isRead = $notice->reads->isNotEmpty();
+                            $isUrgent = $notice->priority === 'urgent';
+                            $isReminder = $notice->priority === 'reminder';
+                            $isEvent = $notice->priority === 'event';
+
+                            $deptBadge = match ($notice->department) {
+                                'accounts' => ['label' => '💰 Accounts & Dues', 'color' => 'bg-amber-500/10 text-amber-400 border-amber-500/30'],
+                                'reception' => ['label' => '🏨 Reception Desk', 'color' => 'bg-blue-500/10 text-blue-400 border-blue-500/30'],
+                                'sports' => ['label' => '🏸 Sports & Fitness', 'color' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'],
+                                'food' => ['label' => '🍽️ Dining & F&B', 'color' => 'bg-rose-500/10 text-rose-400 border-rose-500/30'],
+                                default => ['label' => '🏛️ Administration', 'color' => 'bg-slate-500/10 text-slate-400 border-slate-500/30'],
+                            };
+
+                            $priorityBadge = match ($notice->priority) {
+                                'urgent' => ['label' => '🚨 Urgent Alert', 'color' => 'bg-rose-500/10 text-rose-400 border-rose-500/30'],
+                                'reminder' => ['label' => '⚠️ Due Reminder', 'color' => 'bg-amber-500/10 text-amber-400 border-amber-500/30'],
+                                'event' => ['label' => '🎉 Club Event', 'color' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'],
+                                default => ['label' => '📢 Notice', 'color' => 'bg-blue-500/10 text-blue-400 border-blue-500/30'],
+                            };
+                        @endphp
+                        <div class="bg-slate-900/90 border {{ $isRead ? 'border-slate-800/80 opacity-90' : 'border-amber-500/50 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20' }} rounded-3xl p-5 sm:p-6 transition-all space-y-3">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider border {{ $deptBadge['color'] }}">
+                                        {{ $deptBadge['label'] }}
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider border {{ $priorityBadge['color'] }}">
+                                        {{ $priorityBadge['label'] }}
+                                    </span>
+                                    @if (!$isRead)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span> NEW
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] text-slate-500 font-medium">✓ Read</span>
+                                    @endif
+                                </div>
+
+                                <span class="text-[11px] font-mono text-slate-400">
+                                    {{ $notice->published_at->format('d M Y, h:i A') }}
+                                </span>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <h4 class="text-base font-extrabold text-white tracking-tight">
+                                    {{ $notice->title }}
+                                </h4>
+                                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+                                    {{ $notice->content }}
+                                </p>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    @if ($notice->action_url)
+                                        <a href="{{ $notice->action_url }}"
+                                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer">
+                                            <span>{{ $notice->action_label ?: 'Open Link' }}</span>
+                                            <span>&rarr;</span>
+                                        </a>
+                                    @endif
+                                </div>
+
+                                @if (!$isRead)
+                                    <button wire:click="markNoticeAsRead({{ $notice->id }})"
+                                        type="button"
+                                        class="text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1 cursor-pointer">
+                                        <span>✓</span> Mark as Read
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     @endif
 
