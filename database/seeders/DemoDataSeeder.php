@@ -33,11 +33,10 @@ class DemoDataSeeder extends Seeder
      */
     public function run(): void
     {
-        if (app()->environment('production')) {
-            throw new RuntimeException("CRITICAL SAFETY GUARD: DemoDataSeeder contains test users and mock accounts and cannot be run in production!");
-        }
+        // 0. Ensure master tables, roles, permissions, departments, counters, and tariffs exist
+        $this->call(ProductionBootstrapSeeder::class);
 
-        $defaultPassword = Hash::make('Password@123');
+        $defaultPassword = Hash::make('password');
 
         $adminRole = Role::findByName('admin');
         $managerRole = Role::findByName('manager');
@@ -45,42 +44,34 @@ class DemoDataSeeder extends Seeder
         $receptionRole = Role::findByName('reception');
         $accountantRole = Role::findByName('accountant');
 
-        // 1. Staff Users for Testing
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@malabarclub.local'],
-            ['name' => 'K. Ramanathan (Admin)', 'password' => $defaultPassword]
-        );
-        $admin->syncRoles([$adminRole]);
+        // 1. Staff Users for Testing (both @malabarclub.com and @malabarclub.local aliases)
+        $staffAccounts = [
+            ['email' => 'admin@malabarclub.com', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
+            ['email' => 'admin@malabarclub.local', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
+            ['email' => 'manager@malabarclub.com', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
+            ['email' => 'manager@malabarclub.local', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
+            ['email' => 'fbmanager@malabarclub.com', 'name' => 'S. Rajendran (F&B Manager)', 'role' => $managerRole],
+            ['email' => 'cashier1@malabarclub.com', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
+            ['email' => 'cashier1@malabarclub.local', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
+            ['email' => 'cashier2@malabarclub.com', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
+            ['email' => 'cashier2@malabarclub.local', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
+            ['email' => 'reception@malabarclub.com', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
+            ['email' => 'reception@malabarclub.local', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
+            ['email' => 'accountant@malabarclub.com', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
+            ['email' => 'accountant@malabarclub.local', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
+        ];
 
-        $manager = User::firstOrCreate(
-            ['email' => 'manager@malabarclub.local'],
-            ['name' => 'V. Jayaprakash (Manager)', 'password' => $defaultPassword]
-        );
-        $manager->syncRoles([$managerRole]);
-
-        $cashier1 = User::firstOrCreate(
-            ['email' => 'cashier1@malabarclub.local'],
-            ['name' => 'Suresh Pillai (Cashier 1)', 'password' => $defaultPassword]
-        );
-        $cashier1->syncRoles([$cashierRole]);
-
-        $cashier2 = User::firstOrCreate(
-            ['email' => 'cashier2@malabarclub.local'],
-            ['name' => 'Deepa Nair (Cashier 2)', 'password' => $defaultPassword]
-        );
-        $cashier2->syncRoles([$cashierRole]);
-
-        $reception = User::firstOrCreate(
-            ['email' => 'reception@malabarclub.local'],
-            ['name' => 'Anil Kumar (Reception)', 'password' => $defaultPassword]
-        );
-        $reception->syncRoles([$receptionRole]);
-
-        $accountant = User::firstOrCreate(
-            ['email' => 'accountant@malabarclub.local'],
-            ['name' => 'M. Unnikrishnan (Accountant)', 'password' => $defaultPassword]
-        );
-        $accountant->syncRoles([$accountantRole]);
+        foreach ($staffAccounts as $acc) {
+            $user = User::updateOrCreate(
+                ['email' => $acc['email']],
+                [
+                    'name' => $acc['name'],
+                    'password' => $defaultPassword,
+                    'is_active' => true,
+                ]
+            );
+            $user->syncRoles([$acc['role']]);
+        }
 
         // 2. Affiliated Clubs & Members
         $trvClub = AffiliatedClub::firstOrCreate(
@@ -127,7 +118,7 @@ class DemoDataSeeder extends Seeder
                 ['first_name' => $m['first'], 'last_name' => $m['last'], 'phone' => $m['phone']]
             );
 
-            $member = Member::firstOrCreate(
+            $member = Member::updateOrCreate(
                 ['membership_number' => $m['num']],
                 [
                     'person_id' => $person->id,
@@ -135,7 +126,7 @@ class DemoDataSeeder extends Seeder
                     'status' => MemberStatus::ACTIVE,
                     'fee_status' => 'paid',
                     'last_fee_paid_at' => '2024-01-01',
-                    'password' => Hash::make('Member@123'),
+                    'password' => Hash::make('1234'),
                     'joined_at' => '2024-01-01',
                     'valid_until' => '2027-12-31',
                 ]

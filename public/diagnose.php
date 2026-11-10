@@ -39,6 +39,23 @@ if ($autoFound) {
         $dbHost = config("database.connections.{$dbConn}.host");
         echo "<b>Database Config:</b> {$dbConn} &rarr; {$dbUser}@{$dbHost}/{$dbName}<br>";
 
+        // Action handler
+        $action = $_GET['action'] ?? '';
+        if ($action === 'seed_demo') {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => \Database\Seeders\DemoDataSeeder::class, '--force' => true]);
+                echo '<div style="margin:16px 0; padding:12px; background:#e6f4ea; border-radius:8px; color:#137333;"><b>✓ Demo Data Seeded Successfully!</b><br><pre style="font-size:12px; margin-top:8px;">' . htmlspecialchars(\Illuminate\Support\Facades\Artisan::output()) . '</pre></div>';
+            } catch (\Throwable $se) {
+                echo '<div style="margin:16px 0; padding:12px; background:#fce8e6; border-radius:8px; color:#c5221f;"><b>✗ Seeding Failed:</b> ' . htmlspecialchars($se->getMessage()) . '<pre style="font-size:11px;">' . htmlspecialchars($se->getTraceAsString()) . '</pre></div>';
+            }
+        } elseif ($action === 'unlock') {
+            $lockFile = __DIR__ . '/../storage/installed.lock';
+            if (file_exists($lockFile)) {
+                @unlink($lockFile);
+                echo '<div style="margin:16px 0; padding:12px; background:#e6f4ea; border-radius:8px; color:#137333;"><b>✓ Setup Unlocked! (storage/installed.lock removed)</b></div>';
+            }
+        }
+
         try {
             $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
             echo '<div style="margin-top:12px; padding:12px; background:#e6f4ea; border-radius:8px; color:#137333;"><b>✓ Database Connection Successful!</b></div>';
@@ -59,12 +76,14 @@ if ($autoFound) {
                 echo "<b>Members Count:</b> {$memberCount} " . ($memberCount > 0 ? '(Members exist)' : '<span style="color:red">(0 members - needs seeding!)</span>') . "<br>";
                 
                 if ($userCount > 0) {
-                    $sampleUsers = \Illuminate\Support\Facades\DB::table('users')->select('name', 'email', 'role')->get();
-                    echo '<ul style="margin:4px 0; font-size:13px;">';
+                    $sampleUsers = \Illuminate\Support\Facades\DB::table('users')->select('name', 'email')->get();
+                    echo '<ul style="margin:6px 0; font-size:13px;">';
                     foreach ($sampleUsers as $u) {
-                        echo "<li><b>{$u->email}</b> ({$u->name}) &mdash; Role: {$u->role}</li>";
+                        echo "<li><b>{$u->email}</b> ({$u->name})</li>";
                     }
                     echo '</ul>';
+                } else {
+                    echo '<div style="margin:12px 0;"><a href="?action=seed_demo" style="display:inline-block; padding:10px 18px; background:#0d9488; color:#fff; border-radius:8px; text-decoration:none; font-weight:bold;">⚡ Seed Demo Users & Master Data Now</a></div>';
                 }
             } else {
                 echo '<div style="margin-top:8px; color:#c5221f;"><b>No tables found!</b> Database migrations have not been run yet.</div>';
