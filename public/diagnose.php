@@ -40,8 +40,35 @@ if ($autoFound) {
         echo "<b>Database Config:</b> {$dbConn} &rarr; {$dbUser}@{$dbHost}/{$dbName}<br>";
 
         try {
-            \Illuminate\Support\Facades\DB::connection()->getPdo();
+            $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
             echo '<div style="margin-top:12px; padding:12px; background:#e6f4ea; border-radius:8px; color:#137333;"><b>✓ Database Connection Successful!</b></div>';
+            
+            // Check tables
+            $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
+            $tableCount = count($tables);
+            echo "<b>Total Tables in DB:</b> {$tableCount}<br>";
+            
+            if ($tableCount > 0) {
+                $hasUsers = \Illuminate\Support\Facades\Schema::hasTable('users');
+                $hasMembers = \Illuminate\Support\Facades\Schema::hasTable('members');
+                
+                $userCount = $hasUsers ? \Illuminate\Support\Facades\DB::table('users')->count() : 0;
+                $memberCount = $hasMembers ? \Illuminate\Support\Facades\DB::table('members')->count() : 0;
+                
+                echo "<b>Users Count:</b> {$userCount} " . ($userCount > 0 ? '(Accounts exist)' : '<span style="color:red">(0 accounts - needs seeding!)</span>') . "<br>";
+                echo "<b>Members Count:</b> {$memberCount} " . ($memberCount > 0 ? '(Members exist)' : '<span style="color:red">(0 members - needs seeding!)</span>') . "<br>";
+                
+                if ($userCount > 0) {
+                    $sampleUsers = \Illuminate\Support\Facades\DB::table('users')->select('name', 'email', 'role')->get();
+                    echo '<ul style="margin:4px 0; font-size:13px;">';
+                    foreach ($sampleUsers as $u) {
+                        echo "<li><b>{$u->email}</b> ({$u->name}) &mdash; Role: {$u->role}</li>";
+                    }
+                    echo '</ul>';
+                }
+            } else {
+                echo '<div style="margin-top:8px; color:#c5221f;"><b>No tables found!</b> Database migrations have not been run yet.</div>';
+            }
         } catch (\Throwable $dbe) {
             echo '<div style="margin-top:12px; padding:12px; background:#fce8e6; border-radius:8px; color:#c5221f;"><b>✗ Database Connection Failed:</b> ' . htmlspecialchars($dbe->getMessage()) . '</div>';
         }
