@@ -79,6 +79,32 @@
                 return;
             }
 
+            // HOLD TAB CONFIRM MODAL (Enter to confirm hold, Esc to cancel)
+            if (this.getProp('showHoldTabModal')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.closeHoldTabModal();
+                    return;
+                }
+                if (e.key === 'Enter' && !this.isSubmitting) {
+                    e.preventDefault();
+                    this.isSubmitting = true;
+                    wire.holdCurrentCart().finally(() => { this.isSubmitting = false; });
+                    return;
+                }
+                return;
+            }
+
+            // HELD TABS LIST MODAL (Esc to close)
+            if (this.getProp('showHeldTabsListModal')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.closeHeldTabsListModal();
+                    return;
+                }
+                return;
+            }
+
             // 3. MULTI-SERVING SELECTION MODAL (1, 2, 3, Arrow Keys, Enter, Esc)
             if (this.getProp('showServingModal')) {
                 if (e.key === 'Escape') {
@@ -191,6 +217,11 @@
                     firstQty.focus();
                     firstQty.select();
                 }
+                return;
+            }
+            if (e.key === 'F6') {
+                e.preventDefault();
+                wire.openHoldTabModal();
                 return;
             }
             if (e.key === 'F8') {
@@ -324,6 +355,77 @@
             </div>
         </div>
     @else
+        <!-- ========================================== -->
+        <!-- RUNNING BAR TABS STRIP (MEMBER-FIRST TABS) -->
+        <!-- ========================================== -->
+        <div class="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs">
+            <div class="flex items-center justify-between gap-3 flex-wrap lg:flex-nowrap">
+                <!-- Left: Title & Indicator -->
+                <div class="flex items-center gap-2.5 shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-base font-bold shadow-2xs">
+                        🍸
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black uppercase tracking-wider text-slate-800">Running Tabs</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold {{ $heldTabs->count() > 0 ? 'bg-amber-500 text-slate-950 animate-pulse' : 'bg-slate-100 text-slate-500' }}">
+                                {{ $heldTabs->count() }} Open
+                            </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400">Parked in-session bills for Bar / Lounge</div>
+                    </div>
+                </div>
+
+                <!-- Center: Active Tabs Chips (Scrollable) -->
+                <div class="flex items-center gap-2 overflow-x-auto py-1 max-w-full flex-1">
+                    @forelse ($heldTabs as $tab)
+                        <button type="button"
+                            wire:click="loadHeldTab({{ $tab->id }})"
+                            class="px-3 py-1.5 rounded-xl text-xs shrink-0 transition-all flex items-center gap-2 border cursor-pointer {{ $activeHeldTabId === $tab->id ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm font-bold scale-[1.02]' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300 font-semibold' }}">
+                            <span class="truncate max-w-[120px]">{{ $tab->customer_display_name }}</span>
+                            @if ($tab->table_identifier)
+                                <span class="px-1.5 py-0.2 rounded text-[10px] font-mono {{ $activeHeldTabId === $tab->id ? 'bg-amber-600 text-white font-bold' : 'bg-slate-200 text-slate-600' }}">
+                                    {{ $tab->table_identifier }}
+                                </span>
+                            @endif
+                            <span class="font-mono text-[11px] {{ $activeHeldTabId === $tab->id ? 'text-slate-950 font-extrabold' : 'text-amber-800 font-bold' }}">
+                                ₹{{ number_format($tab->total_amount, 2) }}
+                            </span>
+                        </button>
+                    @empty
+                        <span class="text-xs text-slate-400 italic">No open tabs parked. Add drinks for a member and press <kbd class="px-1 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono border border-slate-200">F6</kbd> to hold.</span>
+                    @endforelse
+                </div>
+
+                <!-- Right: Controls -->
+                <div class="flex items-center gap-2 shrink-0">
+                    @if ($activeHeldTabId)
+                        <button type="button"
+                            wire:click="resetWorkspaceToNewBill"
+                            class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <span>＋ New Bill</span>
+                        </button>
+                    @endif
+
+                    <button type="button"
+                        wire:click="openHoldTabModal"
+                        class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                        <span>Hold Tab</span>
+                        <kbd class="px-1.5 py-0.2 rounded bg-white/70 text-slate-950 font-mono text-[10px] font-bold border border-amber-600/40">F6</kbd>
+                    </button>
+
+                    @if ($heldTabs->count() > 0)
+                        <button type="button"
+                            wire:click="openHeldTabsListModal"
+                            class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
+                            title="Manage all held tabs">
+                            <span>☰ All ({{ $heldTabs->count() }})</span>
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         <!-- MAIN TWO-COLUMN POS WORKSPACE -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
@@ -718,12 +820,56 @@
                         </span>
                         <kbd class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] border border-slate-300">F4 Focus Qty</kbd>
                     </div>
-                    @if (count($cart) > 0)
-                        <button wire:click="clearCart" type="button" class="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-transparent hover:border-rose-200 font-semibold transition-all focus:outline-none cursor-pointer">
-                            Clear Order [Del All]
-                        </button>
-                    @endif
+                    <div class="flex items-center gap-2">
+                        @if (count($cart) > 0 && ($selectedMember || $selectedRoomReservation))
+                            <button wire:click="openHoldTabModal" type="button" class="text-xs text-amber-900 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 font-bold transition-all focus:outline-none cursor-pointer flex items-center gap-1 shadow-2xs">
+                                <span>🍸 Hold Tab</span>
+                                <kbd class="px-1 text-[10px] font-mono bg-white border border-amber-300 rounded text-amber-900">F6</kbd>
+                            </button>
+                        @endif
+                        @if (count($cart) > 0)
+                            <button wire:click="clearCart" type="button" class="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-transparent hover:border-rose-200 font-semibold transition-all focus:outline-none cursor-pointer">
+                                Clear Order [Del All]
+                            </button>
+                        @endif
+                    </div>
                 </div>
+
+                @if ($activeHeldTabId)
+                    <div class="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-300 text-slate-900 flex items-center justify-between shadow-2xs animate-fade-in">
+                        <div class="flex items-center gap-2.5">
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-amber-500 text-slate-950 font-black text-sm">
+                                🍸
+                            </span>
+                            <div>
+                                <div class="text-xs font-black uppercase tracking-wide text-amber-950 flex items-center gap-2">
+                                    <span>Active Bar Tab</span>
+                                    @if ($tabTableIdentifier)
+                                        <span class="px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-mono text-[10px] font-bold">
+                                            Table: {{ $tabTableIdentifier }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="text-[11px] text-slate-600">
+                                    Editing parked bill • Adding items will update this tab. Settle when member leaves.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                wire:click="resetWorkspaceToNewBill"
+                                class="px-2.5 py-1 rounded-lg bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold border border-slate-300 shadow-2xs cursor-pointer">
+                                ＋ Park & New
+                            </button>
+                            <button type="button"
+                                wire:click="voidActiveHeldTab('Voided by cashier')"
+                                wire:confirm="Are you sure you want to void this open tab?"
+                                class="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-semibold cursor-pointer">
+                                Void Tab
+                            </button>
+                        </div>
+                    </div>
+                @endif
 
                 @if (empty($cart))
                     <!-- Empty Cart State with Cashier Quick-Guide -->
@@ -1213,6 +1359,206 @@
     @endif
 
     <!-- ========================================== -->
+    <!-- MODAL 5: Hold / Park Bar Tab Modal         -->
+    <!-- ========================================== -->
+    @if ($showHoldTabModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="hold-tab-dialog-title">
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative text-slate-900">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-base font-bold shadow-2xs">
+                            🍸
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-amber-700">Bar / Lounge Order</span>
+                            <h3 id="hold-tab-dialog-title" class="text-lg font-bold text-slate-900 mt-0.5">
+                                {{ $activeHeldTabId ? 'Update Held Tab' : 'Hold / Park Running Tab' }}
+                            </h3>
+                        </div>
+                    </div>
+                    <button wire:click="closeHoldTabModal" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer" aria-label="Close dialog">×</button>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Member / Guest Summary -->
+                    <div class="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200 text-xs text-slate-700 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-amber-800 block">Customer</span>
+                            <span class="font-bold text-slate-900 text-sm">
+                                @if ($selectedMember)
+                                    {{ $selectedMember->person->first_name }} {{ $selectedMember->person->last_name }} ({{ $selectedMember->membership_number }})
+                                @elseif ($selectedRoomReservation)
+                                    🏨 {{ $selectedRoomReservation->room->room_number }} • {{ $selectedRoomReservation->primaryGuest?->full_name }}
+                                @endif
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-amber-800 block">Current Amount</span>
+                            <span class="text-base font-extrabold font-mono text-amber-900">
+                                ₹{{ number_format($totalPaise / 100, 2) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Table / Stool Identifier -->
+                    <div>
+                        <label for="tab-table-identifier-input" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Table / Bar Stool / Area <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input type="text"
+                            id="tab-table-identifier-input"
+                            wire:model="tabTableIdentifier"
+                            placeholder="e.g. Table 4, Bar Stool 3, Poolside"
+                            autofocus
+                            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors">
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label for="tab-notes-input" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Staff Remark / Note <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input type="text"
+                            id="tab-notes-input"
+                            wire:model="tabNotes"
+                            placeholder="e.g. Round 1 drinks, waiting for starters"
+                            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors">
+                    </div>
+
+                    <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        🔒 <strong>Zero-Credit Policy:</strong> Held tabs are in-session draft orders. Stock and journals update only when settled by card, cash, or digital tender before the member leaves.
+                    </p>
+
+                    <!-- Buttons -->
+                    <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
+                        <button type="button"
+                            wire:click="closeHoldTabModal"
+                            class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer">
+                            Cancel [Esc]
+                        </button>
+                        <button type="button"
+                            wire:click="holdCurrentCart"
+                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer">
+                            <span>Hold Tab & Clear Workspace [Enter]</span>
+                            <kbd class="px-1.5 py-0.2 rounded bg-white/80 text-slate-950 border border-amber-600 font-mono text-[10px] font-bold">↵</kbd>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- MODAL 6: All Held Tabs Manager Modal       -->
+    <!-- ========================================== -->
+    @if ($showHeldTabsListModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="held-tabs-manager-dialog-title">
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 max-w-3xl w-full shadow-2xl relative text-slate-900 max-h-[85vh] flex flex-col">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4 shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-base font-bold shadow-2xs">
+                            🍸
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-amber-700">Bar Tabs Manager</span>
+                            <h3 id="held-tabs-manager-dialog-title" class="text-lg font-bold text-slate-900 mt-0.5">
+                                Active Running Tabs ({{ $heldTabs->count() }})
+                            </h3>
+                        </div>
+                    </div>
+                    <button wire:click="closeHeldTabsListModal" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer" aria-label="Close dialog">×</button>
+                </div>
+
+                <!-- Search Input for tabs -->
+                <div class="mb-4 shrink-0">
+                    <input type="text"
+                        wire:model.live.debounce.150ms="heldTabSearch"
+                        placeholder="Filter by member name, membership #, table #, tab #..."
+                        class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors">
+                </div>
+
+                <!-- Scrollable Grid of Tabs -->
+                <div class="overflow-y-auto flex-1 space-y-3 pr-1">
+                    @forelse ($heldTabs as $tab)
+                        <div class="p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 {{ $activeHeldTabId === $tab->id ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-400/40' : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200' }}">
+                            <div class="space-y-1 flex-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-extrabold text-sm text-slate-900">{{ $tab->customer_display_name }}</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-[10px] font-bold">
+                                        {{ $tab->tab_number }}
+                                    </span>
+                                    @if ($tab->table_identifier)
+                                        <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-950 font-mono text-[10px] font-bold">
+                                            📍 {{ $tab->table_identifier }}
+                                        </span>
+                                    @endif
+                                    @if ($activeHeldTabId === $tab->id)
+                                        <span class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase tracking-wide">
+                                            Currently Active
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                                    <span>{{ $tab->items_count }} items</span>
+                                    <span>•</span>
+                                    <span>Parked {{ $tab->held_at ? $tab->held_at->diffForHumans() : 'recently' }}</span>
+                                    @if ($tab->notes)
+                                        <span>•</span>
+                                        <span class="text-slate-600 italic">"{{ $tab->notes }}"</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                                <div class="text-right">
+                                    <div class="text-base font-mono font-black text-amber-900">
+                                        ₹{{ number_format($tab->total_amount, 2) }}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button"
+                                        wire:click="loadHeldTab({{ $tab->id }})"
+                                        class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-xs transition-all cursor-pointer">
+                                        Open Tab ↵
+                                    </button>
+                                    <button type="button"
+                                        wire:click="voidActiveHeldTab('Voided from manager')"
+                                        wire:confirm="Are you sure you want to void this open tab?"
+                                        class="px-2 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-semibold cursor-pointer">
+                                        Void
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8 text-slate-400">
+                            <span class="text-3xl block mb-2">🍸</span>
+                            <span class="text-xs font-medium">No held tabs found.</span>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 mt-4 flex items-center justify-between shrink-0">
+                    <span class="text-xs text-slate-500">
+                        Max capacity: {{ config('club.pos.max_held_tabs', 50) }} concurrent tabs
+                    </span>
+                    <button type="button"
+                        wire:click="closeHeldTabsListModal"
+                        class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer">
+                        Close [Esc]
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
     <!-- DOCKED CONTEXTUAL BOTTOM STATUS BAR -->
     <!-- ========================================== -->
     <footer class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-lg px-4 sm:px-6 lg:px-8 py-2 print:hidden no-print">
@@ -1289,6 +1635,26 @@
                         <span>Cancel</span>
                     </button>
 
+                @elseif ($showHoldTabModal)
+                    <!-- Context: Hold Tab Modal -->
+                    <span class="text-[11px] text-amber-800 font-sans font-semibold mr-1 hidden sm:inline">Hold Tab:</span>
+                    <button type="button" wire:click="holdCurrentCart" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs border border-amber-600 shadow-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-950 border border-amber-600 font-mono shadow-2xs">Enter ↵</kbd>
+                        <span>Confirm Hold</span>
+                    </button>
+                    <button type="button" wire:click="closeHoldTabModal" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs">Esc</kbd>
+                        <span>Cancel</span>
+                    </button>
+
+                @elseif ($showHeldTabsListModal)
+                    <!-- Context: Held Tabs Manager Modal -->
+                    <span class="text-[11px] text-amber-800 font-sans font-semibold mr-1 hidden sm:inline">Tabs Manager:</span>
+                    <button type="button" wire:click="closeHeldTabsListModal" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs">Esc</kbd>
+                        <span>Close</span>
+                    </button>
+
                 @elseif ($showServingModal)
                     <!-- Context: Serving Selection Modal -->
                     <span class="text-[11px] text-amber-800 font-sans font-semibold mr-1 hidden sm:inline">Unit:</span>
@@ -1354,6 +1720,13 @@
                             <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 font-bold text-[10px] border border-slate-300 shadow-2xs">F4</kbd>
                             <span>Qty</span>
                         </button>
+
+                        @if ($selectedMember || $selectedRoomReservation)
+                            <button type="button" wire:click="openHoldTabModal" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold transition-colors cursor-pointer" title="Hold Tab (F6)">
+                                <kbd class="px-1.5 py-0.2 rounded bg-white text-amber-800 font-bold text-[10px] border border-amber-300 shadow-2xs">F6</kbd>
+                                <span>Hold Tab</span>
+                            </button>
+                        @endif
 
                         <button type="button" wire:click="initiateCheckout('prepaid')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold transition-colors cursor-pointer" title="Prepaid Checkout (F8)">
                             <kbd class="px-1.5 py-0.2 rounded bg-white text-amber-800 font-bold text-[10px] border border-amber-300 shadow-2xs">F8</kbd>

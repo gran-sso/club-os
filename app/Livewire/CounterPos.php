@@ -17,6 +17,7 @@ use App\Domain\Membership\Models\Card;
 use App\Domain\Membership\Models\Member;
 use App\Domain\Membership\Services\CardService;
 use App\Domain\Prepaid\Services\WalletService;
+use App\Domain\Billing\Models\PosHeldTab;
 use App\Domain\Shared\Enums\ShiftStatus;
 use App\Domain\Shared\Enums\TenderType;
 use App\Domain\Tariff\Models\Tariff;
@@ -47,6 +48,14 @@ class CounterPos extends Component
     public ?RoomReservation $selectedRoomReservation = null;
     public ?Guest $selectedGuest = null;
     public string $customerType = 'member'; // 'member' or 'room_guest'
+
+    // Held Tabs / Running Bar Tabs State
+    public ?int $activeHeldTabId = null;
+    public ?string $tabTableIdentifier = null; // e.g. "Table 4", "Bar 2"
+    public ?string $tabNotes = null;
+    public bool $showHoldTabModal = false;
+    public bool $showHeldTabsListModal = false;
+    public string $heldTabSearch = '';
 
     // View Mode: 'grid' (Touch Cards) or 'compact' (Searchable List)
     public string $viewMode = 'grid';
@@ -134,6 +143,12 @@ class CounterPos extends Component
 
         if (!$this->activeShift) {
             $this->errorMessage = "No active shift to close.";
+            return;
+        }
+
+        $openTabsCount = PosHeldTab::forShift($this->activeShift->id)->open()->count();
+        if ($openTabsCount > 0) {
+            $this->errorMessage = "Cannot close shift: There are {$openTabsCount} unsettled running bar tab(s). Settle or void all open tabs before shift reconciliation.";
             return;
         }
 
@@ -879,6 +894,227 @@ class CounterPos extends Component
     }
 
     // ==========================================
+    // Running Bar & Table Tabs (Held Bills)
+    // ==========================================
+
+    public function openHoldTabModal(): void
+    {
+        $this->clearMessages();
+
+        if (!$this->activeShift) {
+            $this->errorMessage = "Cannot park bill without an active open shift.";
+            return;
+        }
+
+        if (empty($this->cart)) {
+            $this->errorMessage = "Cannot park an empty bill. Add items first.";
+            return;
+        }
+
+        if (!$this->selectedMember && !$this->selectedRoomReservation) {
+            $this->errorMessage = "Member-First Policy: Please identify a member or room guest before parking the tab.";
+            $this->dispatch('focus-customer-search');
+            return;
+        }
+
+        // If tab is already active, update it directly
+        if ($this->activeHeldTabId) {
+            $this->holdCurrentCart();
+            return;
+        }
+
+        $this->showHoldTabModal = true;
+    }
+
+    public function closeHoldTabModal(): void
+    {
+        $this->showHoldTabModal = false;
+        $this->dispatch('focus-item-search');
+    }
+
+    public function openHeldTabsListModal(): void
+    {
+        $this->showHeldTabsListModal = true;
+    }
+
+    public function closeHeldTabsListModal(): void
+    {
+        $this->showHeldTabsListModal = false;
+    }
+
+    public function holdCurrentCart(): void
+    {
+        $this->clearMessages();
+
+        if (!$this->activeShift) {
+            $this->errorMessage = "Cannot park bill without an active open shift.";
+            return;
+        }
+
+        if (empty($this->cart)) {
+            $this->errorMessage = "Cannot park an empty bill.";
+            return;
+        }
+
+        if (!$this->selectedMember && !$this->selectedRoomReservation) {
+            $this->errorMessage = "Member-First Policy: Please select a member or room guest to park the tab.";
+            $this->dispatch('focus-customer-search');
+            return;
+        }
+
+        $maxTabs = (int) config('club.pos.max_held_tabs', 50);
+        $currentOpenCount = PosHeldTab::forShift($this->activeShift->id)->open()->count();
+
+        if (!$this->activeHeldTabId && $currentOpenCount >= $maxTabs) {
+            $this->errorMessage = "Cannot hold bill: Limit of {$maxTabs} concurrent active tabs reached on this shift.";
+            return;
+        }
+
+        $grossPaise = (int) round($this->cartGross * 100);
+        $taxPaise = (int) round($this->cartTax * 100);
+        $netPaise = (int) round($this->cartNet * 100);
+
+        $customerName = $this->selectedRoomReservation
+            ? ($this->selectedGuest?->name ?? $this->selectedRoomReservation->facility->name . ' Resident')
+            : ($this->selectedMember->name ?? 'Member');
+
+        $customerIdentifier = $this->selectedRoomReservation
+            ? $this->selectedRoomReservation->facility->code
+            : ($this->selectedMember->membership_number ?? 'MEMBER');
+
+        if ($this->activeHeldTabId) {
+            $tab = PosHeldTab::find($this->activeHeldTabId);
+            if ($tab && $tab->status === 'open') {
+                $tab->update([
+                    'table_identifier' => $this->tabTableIdentifier,
+                    'notes' => $this->tabNotes,
+                    'cart_items' => $this->cart,
+                    'gross_amount_paise' => $grossPaise,
+                    'tax_amount_paise' => $taxPaise,
+                    'net_amount_paise' => $netPaise,
+                ]);
+
+                $this->successMessage = "Tab #{$tab->tab_number} for {$customerName} updated (₹" . number_format($this->cartNet, 2) . ").";
+            }
+        } else {
+            $nextSeq = PosHeldTab::where('shift_id', $this->activeShift->id)->count() + 1;
+            $tabNumber = sprintf('TAB-%02d', $nextSeq);
+
+            $tab = PosHeldTab::create([
+                'shift_id' => $this->activeShift->id,
+                'counter_id' => $this->selectedCounterId,
+                'tab_number' => $tabNumber,
+                'customer_type' => $this->customerType,
+                'member_id' => $this->selectedMember?->id,
+                'room_reservation_id' => $this->selectedRoomReservation?->id,
+                'guest_id' => $this->selectedGuest?->id,
+                'customer_name' => $customerName,
+                'customer_identifier' => $customerIdentifier,
+                'table_identifier' => $this->tabTableIdentifier,
+                'notes' => $this->tabNotes,
+                'cart_items' => $this->cart,
+                'gross_amount_paise' => $grossPaise,
+                'tax_amount_paise' => $taxPaise,
+                'net_amount_paise' => $netPaise,
+                'status' => 'open',
+                'created_by' => auth()->id(),
+            ]);
+
+            $this->successMessage = "Tab #{$tab->tab_number} parked for {$customerName} (₹" . number_format($this->cartNet, 2) . ").";
+        }
+
+        $this->showHoldTabModal = false;
+        $this->resetWorkspaceToNewBill();
+    }
+
+    public function loadHeldTab(int $tabId): void
+    {
+        $this->clearMessages();
+
+        $tab = PosHeldTab::with(['member.person', 'member.wallet', 'member.activeCard', 'member.category', 'roomReservation.facility', 'guest.person'])
+            ->find($tabId);
+
+        if (!$tab || $tab->status !== 'open') {
+            $this->errorMessage = "Held tab is no longer active or was settled.";
+            return;
+        }
+
+        // If current cart is dirty and not this tab, auto-save if on another tab or block
+        if (!empty($this->cart) && $this->activeHeldTabId !== $tabId) {
+            if ($this->activeHeldTabId) {
+                $currentTab = PosHeldTab::find($this->activeHeldTabId);
+                if ($currentTab && $currentTab->status === 'open') {
+                    $currentTab->update([
+                        'cart_items' => $this->cart,
+                        'gross_amount_paise' => (int) round($this->cartGross * 100),
+                        'tax_amount_paise' => (int) round($this->cartTax * 100),
+                        'net_amount_paise' => (int) round($this->cartNet * 100),
+                    ]);
+                }
+            } else {
+                $this->errorMessage = "Please park (<kbd>F6</kbd>) or clear your current bill before switching tabs.";
+                return;
+            }
+        }
+
+        $this->activeHeldTabId = $tab->id;
+        $this->tabTableIdentifier = $tab->table_identifier;
+        $this->tabNotes = $tab->notes;
+        $this->customerType = $tab->customer_type;
+
+        if ($tab->customer_type === 'room_guest' && $tab->roomReservation) {
+            $this->selectedRoomReservation = $tab->roomReservation;
+            $this->selectedGuest = $tab->guest;
+            $this->selectedMember = $tab->roomReservation->sponsorMember;
+            $this->activeCard = null;
+            $this->memberWalletBalancePaise = (int) ($this->selectedMember?->wallet?->balance_paise ?? 0);
+            $this->searchQuery = "{$tab->roomReservation->facility->name} - {$tab->customer_name}";
+        } elseif ($tab->member) {
+            $this->selectedRoomReservation = null;
+            $this->selectedGuest = null;
+            $this->customerType = 'member';
+            $this->selectMemberRecord($tab->member, $tab->member->activeCard);
+            $this->searchQuery = $tab->member->membership_number;
+        }
+
+        $this->cart = $tab->cart_items ?? [];
+        $this->recalculateCart();
+        $this->showHeldTabsListModal = false;
+        $this->successMessage = "Loaded Tab #{$tab->tab_number}: {$tab->customer_name} ({$tab->formatted_net_amount}).";
+        $this->dispatch('focus-item-search');
+    }
+
+    public function voidActiveHeldTab(?string $reason = null): void
+    {
+        if (!$this->activeHeldTabId) {
+            return;
+        }
+
+        $tab = PosHeldTab::find($this->activeHeldTabId);
+        if ($tab && $tab->status === 'open') {
+            $tab->update([
+                'status' => 'voided',
+                'notes' => trim(($tab->notes ?? '') . " [Voided: " . ($reason ?: 'Cancelled by staff') . "]"),
+            ]);
+            $this->successMessage = "Tab #{$tab->tab_number} for {$tab->customer_name} has been voided.";
+        }
+
+        $this->resetWorkspaceToNewBill();
+    }
+
+    public function resetWorkspaceToNewBill(): void
+    {
+        $this->activeHeldTabId = null;
+        $this->tabTableIdentifier = null;
+        $this->tabNotes = null;
+        $this->resetMember();
+        $this->cart = [];
+        $this->isGuestSale = false;
+        $this->recalculateCart();
+        $this->dispatch('focus-customer-search');
+    }
+
+    // ==========================================
     // Checkout & Payment Confirmation
     // ==========================================
 
@@ -1066,6 +1302,21 @@ class CounterPos extends Component
             $this->resetCustomerOnReceiptClose = true;
             $this->showReceiptModal = true;
 
+            // Settle active held tab if applicable
+            if ($this->activeHeldTabId) {
+                $tab = PosHeldTab::find($this->activeHeldTabId);
+                if ($tab && $tab->status === 'open') {
+                    $tab->update([
+                        'status' => 'settled',
+                        'settled_at' => now(),
+                        'settled_bill_id' => $bill->id,
+                    ]);
+                }
+                $this->activeHeldTabId = null;
+                $this->tabTableIdentifier = null;
+                $this->tabNotes = null;
+            }
+
             $this->successMessage = "Bill {$bill->bill_number} settled successfully via {$tenderType->label()}! Total: ₹" . number_format($this->cartNet, 2);
             $this->clearCart();
             $this->guestFirstName = '';
@@ -1104,9 +1355,8 @@ class CounterPos extends Component
         $this->showReceiptModal = false;
         $this->receiptContent = '';
         if ($this->resetCustomerOnReceiptClose) {
-            $this->resetMember();
+            $this->resetWorkspaceToNewBill();
             $this->resetCustomerOnReceiptClose = false;
-            $this->dispatch('focus-customer-search');
         } else {
             $this->dispatch('focus-item-search');
         }
@@ -1177,9 +1427,26 @@ class CounterPos extends Component
         $counters = Counter::where('is_active', true)->get();
         $tariffs = Tariff::where('is_active', true)->orderBy('department_code')->get();
 
+        $heldTabs = $this->activeShift
+            ? PosHeldTab::forShift($this->activeShift->id)
+                ->open()
+                ->when(!empty($this->heldTabSearch), function ($q) {
+                    $search = trim($this->heldTabSearch);
+                    $q->where(function ($sub) use ($search) {
+                        $sub->where('customer_name', 'LIKE', "%{$search}%")
+                            ->orWhere('customer_identifier', 'LIKE', "%{$search}%")
+                            ->orWhere('table_identifier', 'LIKE', "%{$search}%")
+                            ->orWhere('tab_number', 'LIKE', "%{$search}%");
+                    });
+                })
+                ->orderBy('updated_at', 'desc')
+                ->get()
+            : collect();
+
         return view('livewire.counter-pos', [
             'counters' => $counters,
             'tariffs' => $tariffs,
+            'heldTabs' => $heldTabs,
         ]);
     }
 }

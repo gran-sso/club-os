@@ -48,4 +48,16 @@ return [
     |
     */
     'financial_year_start' => env('CLUB_FINANCIAL_YEAR_START', '04-01'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | POS Multi-Bill / Running Bar Tabs
+    |--------------------------------------------------------------------------
+    |
+    | Maximum concurrent held/parked tabs per billing counter (default: 50).
+    |
+    */
+    'pos' => [
+        'max_held_tabs' => (int) env('CLUB_POS_MAX_HELD_TABS', 50),
+    ],
 ];

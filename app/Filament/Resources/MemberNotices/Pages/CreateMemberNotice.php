@@ -15,3 +15,4 @@ class CreateMemberNotice extends CreateRecord
         return $data;
     }
 }
+

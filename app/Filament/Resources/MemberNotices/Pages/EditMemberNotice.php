@@ -17,3 +17,4 @@ class EditMemberNotice extends EditRecord
         ];
     }
 }
+

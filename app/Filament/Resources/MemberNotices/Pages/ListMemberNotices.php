@@ -73,3 +73,4 @@ class ListMemberNotices extends ListRecords
         ];
     }
 }
+

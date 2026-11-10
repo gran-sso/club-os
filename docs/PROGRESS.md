@@ -1969,6 +1969,46 @@ For environments where full browser automation is unavailable, operators should 
     - `test_filament_admin_can_access_and_broadcast_dues_notices`: **Passed**
   - Full suite verified: `php artisan test tests/Feature/MemberNoticeTest.php tests/Feature/RealTallyAndPwaTest.php tests/Feature/AdminPanelTest.php`: **20 passed, 136 assertions, 0 failures**.
 
+### 21.13 Bar / Lounge Running Tabs & Concurrent Bill Parking (Decision D60)
+- **Problem & Requirements**:
+  - In the clubhouse bar/lounge area, 20–30+ members can be present simultaneously having drinks. The POS previously forced a strict single-customer checkout queue, creating an operational bottleneck when patrons order multiple rounds over a session.
+  - Required ability to park/hold bills concurrently (running tabs) and settle them individually when members leave.
+  - Confirmed requirements from management:
+    1. **Member-First Naming Policy**: Members roam between bar stools, lounge seating, and pool tables; tab must bind first to the member identity, with optional table/stool location note.
+    2. **KOT Provision**: Database and model architected to support future Kitchen/Bar Order Ticket dispatch without breaking current counter operations.
+    3. **Capacity**: Configurable concurrent active tabs up to 50 (`config('club.pos.max_held_tabs')`).
+    4. **Malabar Club Rule 1 (Zero-Credit)**: Held tabs are in-session draft orders within an active cashier shift—they are NOT credit tabs or accounts receivable. Shift close is strictly blocked if any unsettled tabs remain.
+- **Implementation Highlights**:
+  - **Database Migration & Model ([`PosHeldTab.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/PosHeldTab.php))**:
+    - Created migration `2026_11_10_181438_create_pos_held_tabs_table.php` (`pos_held_tabs` table).
+    - Tracks `shift_id`, `counter_id`, `tab_number`, `customer_type`, `member_id`, `room_reservation_id`, `guest_id`, `customer_name`, `customer_identifier`, `table_identifier`, `notes`, `cart_items`, `gross_amount_paise`, `tax_amount_paise`, `net_amount_paise`, `status` (`open`, `settled`, `voided`), `settled_at`, `settled_bill_id`, `created_by`.
+    - Added scopes `open()`, `forShift()`, `forCounter()`, and convenience accessors `total_amount`, `total_paise`, `items_count`, `customer_display_name`, `held_at`.
+  - **Counter POS Livewire Engine ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php))**:
+    - `openHoldTabModal()`: Validates active shift, non-empty cart, and member-first customer selection.
+    - `holdCurrentCart()`: Saves or updates running tab up to configured limit (`max_held_tabs`), clears workspace cleanly for next customer without wiping notification messages.
+    - `loadHeldTab(int $tabId)`: Seamlessly switches tabs; auto-saves dirty cart if cashier was editing another tab.
+    - `voidActiveHeldTab(?string $reason)`: Allows staff to cancel an open tab with logged audit remark.
+    - `closeShift()`: Enforces Zero-Credit policy by checking `PosHeldTab::forShift(...)->open()->count() > 0` and rejecting closure until all tabs are settled or voided.
+    - `confirmCheckout()`: Automatically transitions the active held tab to `settled`, stamping `settled_at` and `settled_bill_id`.
+  - **Intuitive Keyboard & Touch POS UI ([`counter-pos.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/counter-pos.blade.php))**:
+    - **Running Bar Tabs Strip**: Persistent card atop workspace displaying live open count badge, scrollable tab chips showing customer name, table badge, and live rupee total, with 1-click load and `+ New Bill` actions.
+    - **Active Bar Tab Indicator**: Prominent badge above order board when editing an open tab, with quick "Park & New" and "Void Tab" buttons.
+    - **Hold Tab [F6] Buttons**: High-visibility button on bill header and docked footer status bar.
+    - **Modal 5 (Hold / Park Tab)**: Captures optional table/stool identifier and staff remark; confirms with <kbd>Enter</kbd> or cancels with <kbd>Esc</kbd>.
+    - **Modal 6 (All Held Tabs Manager)**: Search filter and scrollable grid of all active tabs with direct "Open Tab ↵" and "Void" actions.
+    - **Alpine.js Hotkeys**: Integrated `<kbd>F6</kbd>` global key listener and modal lifecycle handlers.
+- **Automated Verification**:
+  - Created [`CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php):
+    - `test_cannot_hold_tab_with_empty_cart`: **Passed**
+    - `test_cannot_hold_tab_without_member_selected`: **Passed** (Member-First policy enforced)
+    - `test_can_park_cart_as_running_tab`: **Passed** (Stores tab in database with table and notes)
+    - `test_can_park_multiple_tabs_and_switch_between_them`: **Passed** (Multi-tab switching with dirty cart auto-save and incremental rounds)
+    - `test_settling_held_tab_updates_status_and_links_bill`: **Passed** (Status becomes `settled`, `settled_bill_id` recorded)
+    - `test_shift_close_is_blocked_if_open_tabs_remain`: **Passed** (Blocks till closure until settled or voided)
+    - `test_max_held_tabs_limit_is_enforced`: **Passed** (Configurable ceiling strictly respected)
+  - Full suite verified: `php artisan test tests/Feature/CounterPosTest.php tests/Feature/CounterPosKeyboardTest.php tests/Feature/CounterPosHeldTabsTest.php`: **28 passed, 152 assertions, 0 failures**.
+
+
 
 
 

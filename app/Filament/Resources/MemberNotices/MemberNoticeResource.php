@@ -74,3 +74,4 @@ class MemberNoticeResource extends Resource
         ];
     }
 }
+
