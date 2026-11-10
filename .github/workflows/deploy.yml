@@ -1,0 +1,58 @@
+name: Deploy Malabar Club to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy to Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, bcmath, fileinfo, zip, gd
+          coverage: none
+
+      - name: 3. Install Composer Dependencies (Production)
+        run: |
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-progress
+
+      - name: 4. Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: 5. Install NPM Packages & Compile Vite Assets
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: 6. Sync Files to Hostinger (via FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_DIR || 'public_html/malabar/' }}
+          protocol: ftps
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/tests/**
+            .env*
+            phpunit.xml
+            .editorconfig
+            .gitattributes
+

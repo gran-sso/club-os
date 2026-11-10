@@ -67,3 +67,8 @@ Route::get('/icons/{icon}', function ($icon) {
     return response(file_get_contents($path), 200, ['Content-Type' => 'image/svg+xml']);
 });
 
+// Web Setup & Deployment Wizard
+Route::get('/setup-club', [\App\Http\Controllers\SetupController::class, 'index'])->name('setup.index');
+Route::post('/setup-club', [\App\Http\Controllers\SetupController::class, 'execute'])->name('setup.execute');
+
+
