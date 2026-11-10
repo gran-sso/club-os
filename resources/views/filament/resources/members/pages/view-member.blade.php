@@ -41,6 +41,13 @@
                             <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border {{ $statusClasses }}">
                                 {{ ucfirst($statusVal) }}
                             </span>
+
+                            @if (($member->fee_status ?? 'pending') === 'pending')
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    <span>Fee Pending</span>
+                                </span>
+                            @endif
                         </div>
 
                         <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -584,27 +591,93 @@
                                     <span class="text-[10px] text-emerald-600 font-bold uppercase">Encrypted Storage</span>
                                 </dt>
                                 <dd class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <a href="/documents/members/{{ $member->id }}/id_proof.jpg" target="_blank"
-                                        class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-700 dark:text-slate-300">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                            </svg>
-                                            <span class="font-bold text-xs">{{ $member->person?->id_proof_type ?? 'Aadhaar Card' }}</span>
-                                        </div>
-                                        <span class="text-[10px] font-mono font-bold text-blue-600 hover:underline">View Proof &rarr;</span>
-                                    </a>
+                                    @php
+                                        $hasIdProof = !empty($member->person?->id_proof_path);
+                                        $hasAppForm = !empty($member->person?->application_form_path);
+                                        $editMemberUrl = \App\Filament\Resources\Members\MemberResource::getUrl('edit', ['record' => $member]);
+                                    @endphp
 
-                                    <a href="/documents/members/{{ $member->id }}/application_form.pdf" target="_blank"
-                                        class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-700 dark:text-slate-300">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                            </svg>
-                                            <span class="font-bold text-xs">Membership Application Form</span>
+                                    <!-- 1. Statutory Identity Proof -->
+                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-300">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="font-bold text-xs truncate">{{ $member->person?->id_proof_type ?? 'Statutory ID Proof' }}</div>
+                                                <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                                                    @if ($hasIdProof)
+                                                        <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                            Uploaded
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                            Not Uploaded
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
-                                        <span class="text-[10px] font-mono font-bold text-blue-600 hover:underline">View Form &rarr;</span>
-                                    </a>
+
+                                        @if ($hasIdProof)
+                                            <a href="/documents/members/{{ $member->id }}/id_proof.jpg" target="_blank"
+                                                class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-2xs hover:bg-slate-50 transition shrink-0 inline-flex items-center gap-1">
+                                                <span>View Proof</span>
+                                                <span aria-hidden="true">&rarr;</span>
+                                            </a>
+                                        @else
+                                            <a href="{{ $editMemberUrl }}"
+                                                class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition shrink-0 inline-flex items-center gap-1">
+                                                <span>Upload</span>
+                                                <span aria-hidden="true">&rarr;</span>
+                                            </a>
+                                        @endif
+                                    </div>
+
+                                    <!-- 2. Membership Application Form -->
+                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-300">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="font-bold text-xs truncate">Application Form</div>
+                                                <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                                                    @if ($hasAppForm)
+                                                        <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                            Uploaded
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                            Not Uploaded
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if ($hasAppForm)
+                                            <a href="/documents/members/{{ $member->id }}/application_form.pdf" target="_blank"
+                                                class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-2xs hover:bg-slate-50 transition shrink-0 inline-flex items-center gap-1">
+                                                <span>View Form</span>
+                                                <span aria-hidden="true">&rarr;</span>
+                                            </a>
+                                        @else
+                                            <a href="{{ $editMemberUrl }}"
+                                                class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition shrink-0 inline-flex items-center gap-1">
+                                                <span>Upload</span>
+                                                <span aria-hidden="true">&rarr;</span>
+                                            </a>
+                                        @endif
+                                    </div>
                                 </dd>
                             </div>
                         </dl>
@@ -688,10 +761,10 @@
                                 <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
                                 </svg>
-                                <span>Annual Subscription Dues &amp; Renewal Tracker</span>
+                                <span>Statutory Membership Fees &amp; Renewal Tracker</span>
                             </h3>
                             <p class="text-xs text-slate-500 mt-0.5">
-                                Statutory annual maintenance charges (AMC) and membership term renewal tracker.
+                                One-time admission fee (capital ledger) and annual subscription dues (operational dues) tracker.
                             </p>
                         </div>
 
@@ -700,53 +773,152 @@
                             <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                             </svg>
-                            <span>Renew Subscription</span>
+                            <span>{{ (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending') ? 'Collect Fee Now' : 'Renew Subscription' }}</span>
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                    @if (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending')
+                        <div class="p-3.5 rounded-xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white">Initial Membership Admission Fee Pending Payment</h4>
+                                    <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                                        @if (($admissionFeeInfo['status'] ?? 'paid') === 'pending' && ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending')
+                                            One-Time Admission Fee (<strong class="text-slate-900 dark:text-white font-mono">₹{{ number_format($admissionFeeInfo['admission_fee_rupees'], 2) }}</strong>) and Annual Subscription Dues (<strong class="text-slate-900 dark:text-white font-mono">₹{{ number_format($annualDuesInfo['annual_fee_rupees'], 2) }}</strong>) are outstanding. Payment has not yet been recorded for this membership.
+                                        @elseif (($admissionFeeInfo['status'] ?? 'paid') === 'pending')
+                                            One-Time Admission Fee of <strong class="text-slate-900 dark:text-white font-mono">₹{{ number_format($admissionFeeInfo['admission_fee_rupees'], 2) }}</strong> is outstanding. Payment has not yet been recorded for this membership.
+                                        @else
+                                            Annual Subscription Dues of <strong class="text-slate-900 dark:text-white font-mono">₹{{ number_format($annualDuesInfo['annual_fee_rupees'], 2) }}</strong> are outstanding. Payment has not yet been recorded for this membership.
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <button wire:click="openRenewModal" type="button"
+                                class="h-8 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 font-semibold text-xs shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer">
+                                <span>Collect Fee Now</span>
+                                <span aria-hidden="true">&rarr;</span>
+                            </button>
+                        </div>
+                    @endif
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
+                        <!-- Tile 1: One-Time Admission Fee -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Annual Subscription Fee</span>
+                            <span class="text-[11px] font-bold uppercase text-slate-400 block">One-Time Admission Fee</span>
+                            <span class="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
+                                ₹{{ number_format($admissionFeeInfo['admission_fee_rupees'], 2) }}
+                            </span>
+                            <div class="mt-1">
+                                @if (($admissionFeeInfo['status'] ?? 'pending') === 'paid')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                        Paid &bull; Lifetime
+                                    </span>
+                                @elseif (($admissionFeeInfo['status'] ?? 'pending') === 'waived')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                        Waived / Exempt
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                        Pending Payment
+                                    </span>
+                                @endif
+                            </div>
+                            <span class="text-[10px] text-slate-500 block mt-1 truncate">
+                                @if (($admissionFeeInfo['status'] ?? 'pending') === 'paid')
+                                    {{ !empty($admissionFeeInfo['receipt_number']) ? 'Rcpt: ' . $admissionFeeInfo['receipt_number'] : $admissionFeeInfo['paid_at_formatted'] }}
+                                @else
+                                    Capital entrance dues
+                                @endif
+                            </span>
+                        </div>
+
+                        <!-- Tile 2: Annual Subscription Fee -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Annual Subscription</span>
                             <span class="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
                                 ₹{{ number_format($annualDuesInfo['annual_fee_rupees'], 2) }}
                             </span>
-                            <span class="text-[10px] text-slate-500 block">Per statutory bylaws</span>
-                        </div>
-
-                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Membership Standing</span>
                             <div class="mt-1">
-                                @if ($annualDuesInfo['status'] === 'active')
-                                    <span class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
-                                        Good Standing
+                                @if ($annualDuesInfo['status'] === 'fee_pending')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                        Fee Pending
+                                    </span>
+                                @elseif ($annualDuesInfo['status'] === 'active')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                        Good Standing &bull; Paid
                                     </span>
                                 @elseif ($annualDuesInfo['status'] === 'expiring_soon')
-                                    <span class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                                         Expiring in {{ $annualDuesInfo['days_remaining'] }}d
                                     </span>
                                 @else
-                                    <span class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
                                         Expired / Due
                                     </span>
                                 @endif
                             </div>
-                            <span class="text-[10px] text-slate-500 block mt-1">Voting &amp; facility eligible</span>
+                            <span class="text-[10px] text-slate-500 block mt-1">Per statutory bylaws</span>
                         </div>
 
+                        <!-- Tile 3: Membership Standing -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Membership Standing</span>
+                            <div class="mt-1">
+                                @if (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || $annualDuesInfo['status'] === 'fee_pending')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                        Fee Pending Payment
+                                    </span>
+                                @elseif ($annualDuesInfo['status'] === 'active')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                        Good Standing
+                                    </span>
+                                @elseif ($annualDuesInfo['status'] === 'expiring_soon')
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                        Renew Soon
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                                        Expired / Due
+                                    </span>
+                                @endif
+                            </div>
+                            <span class="text-[10px] text-slate-500 block mt-1">
+                                {{ (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || $annualDuesInfo['status'] === 'fee_pending') ? 'Dues settlement required' : 'Voting & facility eligible' }}
+                            </span>
+                        </div>
+
+                        <!-- Tile 4: Current Term Valid Until -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                             <span class="text-[11px] font-bold uppercase text-slate-400 block">Current Term Valid Until</span>
-                            <span class="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block">
-                                {{ $annualDuesInfo['valid_until_formatted'] }}
-                            </span>
-                            <span class="text-[10px] text-slate-500 block">Renewal window open</span>
+                            @if ($annualDuesInfo['status'] === 'fee_pending')
+                                <span class="text-sm font-bold text-amber-700 dark:text-amber-400 font-mono mt-0.5 block">
+                                    Pending Settlement
+                                </span>
+                                <span class="text-[10px] text-slate-500 block">Validity inactive</span>
+                            @else
+                                <span class="text-sm font-black text-slate-900 dark:text-white font-mono mt-0.5 block truncate">
+                                    {{ $annualDuesInfo['valid_until_formatted'] }}
+                                </span>
+                                <span class="text-[10px] text-slate-500 block">Renewal window open</span>
+                            @endif
                         </div>
 
+                        <!-- Tile 5: Last Renewal / Settlement -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Last Renewal / Joined</span>
-                            <span class="text-sm font-bold text-slate-900 dark:text-white font-mono mt-0.5 block">
+                            <span class="text-[11px] font-bold uppercase text-slate-400 block">Last Renewal / Settlement</span>
+                            <span class="text-sm font-bold text-slate-900 dark:text-white font-mono mt-0.5 block truncate">
                                 {{ $annualDuesInfo['last_renewed_formatted'] }}
                             </span>
-                            <span class="text-[10px] text-slate-500 block">Roster record</span>
+                            @if (!empty($annualDuesInfo['last_receipt_number']))
+                                <span class="text-[10px] text-slate-500 font-mono block truncate">Rcpt: {{ $annualDuesInfo['last_receipt_number'] }}</span>
+                            @else
+                                <span class="text-[10px] text-slate-500 block">Roster record</span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -2523,8 +2695,12 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Renew Annual Subscription</h3>
-                                <p class="text-[11px] text-slate-500">Member #{{ $member->membership_number }} &bull; Current Valid Until: {{ $annualDuesInfo['valid_until_formatted'] }}</p>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                                    {{ (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending') ? 'Collect Statutory Membership Fees' : 'Renew Annual Subscription' }}
+                                </h3>
+                                <p class="text-[11px] text-slate-500">
+                                    Member #{{ $member->membership_number }} &bull; {{ (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending') ? 'Statutory Fees Settlement' : 'Current Valid Until: ' . $annualDuesInfo['valid_until_formatted'] }}
+                                </p>
                             </div>
                         </div>
                         <button wire:click="closeRenewModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
@@ -2535,25 +2711,66 @@
                     </div>
 
                     <form wire:submit="processRenewMembership" class="space-y-3">
-                        <div class="grid grid-cols-2 gap-2.5">
-                            <div>
-                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
-                                    Renewal Period <span class="text-rose-500">*</span>
-                                </label>
-                                <select wire:model="renewalYears" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
-                                    <option value="1">1 Year</option>
-                                    <option value="2">2 Years</option>
-                                    <option value="3">3 Years</option>
-                                    <option value="5">5 Years</option>
-                                </select>
+                        @if (($admissionFeeInfo['status'] ?? 'paid') === 'paid')
+                            <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span><strong>One-Time Admission Fee:</strong> ₹{{ number_format($admissionFeeInfo['admission_fee_rupees'], 2) }} already paid ({{ $admissionFeeInfo['paid_at_formatted'] }}{{ !empty($admissionFeeInfo['receipt_number']) ? ' &bull; Rcpt: ' . $admissionFeeInfo['receipt_number'] : '' }}). This renewal settles recurring annual dues only.</span>
                             </div>
-                            <div>
-                                <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
-                                    Annual Dues Fee (₹) <span class="text-rose-500">*</span>
-                                </label>
-                                <input type="number" wire:model="renewalFeeRupees" min="0" step="500" required
-                                    class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                        @else
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                                        <input type="checkbox" wire:model.live="collectAdmissionFee" class="rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                                        <span>Collect One-Time Admission Fee</span>
+                                    </label>
+                                    <span class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">Capital Fee</span>
+                                </div>
+                                @if ($collectAdmissionFee)
+                                    <div>
+                                        <label class="block text-[11px] font-semibold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                            Admission Fee Amount (₹) <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="number" wire:model.live="renewalAdmissionFeeRupees" min="0" step="500" required
+                                            class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                    </div>
+                                @endif
                             </div>
+                        @endif
+
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Recurring Annual Subscription Dues</span>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Operational Dues</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-semibold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                        Period <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select wire:model="renewalYears" class="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400">
+                                        <option value="1">1 Year</option>
+                                        <option value="2">2 Years</option>
+                                        <option value="3">3 Years</option>
+                                        <option value="5">5 Years</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold uppercase text-slate-600 dark:text-slate-400 mb-1">
+                                        Annual Dues (₹) <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="number" wire:model.live="renewalFeeRupees" min="0" step="500" required
+                                        class="w-full px-3 py-1.5 text-xs font-mono font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Settlement Payable:</span>
+                            <span class="text-sm font-black text-slate-900 dark:text-white font-mono">
+                                ₹{{ number_format(($collectAdmissionFee ? (float)$renewalAdmissionFeeRupees : 0) + (float)$renewalFeeRupees, 2) }}
+                            </span>
                         </div>
 
                         <div>
@@ -2588,7 +2805,7 @@
                             </button>
                             <button type="submit"
                                 class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
-                                Confirm Subscription Renewal
+                                {{ (($admissionFeeInfo['status'] ?? 'paid') === 'pending' || ($annualDuesInfo['fee_status'] ?? 'paid') === 'pending') ? 'Confirm Payment & Activate Validity' : 'Confirm Subscription Renewal' }}
                             </button>
                         </div>
                     </form>

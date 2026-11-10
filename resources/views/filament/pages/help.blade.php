@@ -1,40 +1,34 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
+    <div x-data="{ printMode: 'procedure' }" class="space-y-6">
 
         <!-- ========================================================================= -->
-        <!-- 1. TOP HEADER & DESK PRINT ACTION                                         -->
+        <!-- 1. GOOGLE HELP CENTER STYLE HEADER                                        -->
         <!-- ========================================================================= -->
-        <div class="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs print:hidden no-print">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-                
-                <!-- Left: Title Hierarchy & System Badge -->
-                <div class="flex items-start sm:items-center gap-3.5">
-                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-xs shrink-0 mt-0.5 sm:mt-0">
-                        <svg class="w-6 h-6 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-2xs print:hidden no-print">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                         </svg>
                     </div>
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Malabar Club Operations Help &amp; Manual</h2>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
-                                Official Standard SOP
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1">
-                            Interactive procedural manual: select an operational procedure from the left menu to view step-by-step instructions.
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-medium text-slate-900 tracking-tight">
+                            Malabar Club Operations Help &amp; Manual
+                        </h1>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Clean, distraction-free procedural guidance and step-by-step instructions.
                         </p>
                     </div>
                 </div>
 
-                <!-- Right: Action Buttons Group -->
-                <div class="flex items-center gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                <div class="flex items-center gap-2.5 shrink-0">
                     <button
                         type="button"
-                        onclick="window.print()"
-                        class="h-10 px-4 inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
+                        @click="printMode = 'desk-reference'; $nextTick(() => window.print())"
+                        class="h-8.5 px-3.5 inline-flex items-center justify-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
-                        <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                         </svg>
                         <span>Print Desk Reference</span>
@@ -44,28 +38,28 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- 2. ENTERPRISE TWO-COLUMN APPLICATION MANUAL LAYOUT                        -->
+        <!-- 2. CLEAN TWO-COLUMN HELP CENTER LAYOUT                                    -->
         <!-- ========================================================================= -->
-        <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden flex flex-col lg:flex-row items-stretch print:hidden no-print min-h-[720px]">
+        <div :class="printMode === 'procedure' ? 'print:block print:border-none print:shadow-none print:min-h-0' : 'print:hidden no-print'" class="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden flex flex-col md:flex-row items-stretch min-h-[680px]">
             
             <!-- --------------------------------------------------------------------- -->
-            <!-- LEFT COLUMN: PROCEDURES DIRECTORY & SEARCH                            -->
+            <!-- LEFT COLUMN: CLEAN TOPIC DIRECTORY & GOOGLE PILL SEARCH               -->
             <!-- --------------------------------------------------------------------- -->
-            <div class="w-full lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200/90 bg-slate-50/70 p-4 space-y-4 flex flex-col justify-between">
+            <div class="w-full md:w-72 shrink-0 border-b md:border-b-0 md:border-r border-slate-200/80 bg-slate-50/40 p-4 space-y-4 flex flex-col justify-between print:hidden no-print">
                 
-                <div class="space-y-4">
-                    <!-- Live Topic Filter Input -->
+                <div class="space-y-3.5">
+                    <!-- Google-style Pill Search Input -->
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                         <input
                             type="text"
                             wire:model.live.debounce.150ms="searchQuery"
-                            placeholder="Filter procedures..."
-                            class="w-full pl-9 pr-8 py-2 bg-white text-slate-900 placeholder:text-slate-400 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all outline-hidden shadow-2xs font-medium"
+                            placeholder="Search help topics..."
+                            class="w-full pl-8.5 pr-8 py-1.5 bg-white text-slate-900 placeholder:text-slate-400 text-xs rounded-full border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-hidden font-normal"
                         />
                         @if($searchQuery)
                             <button
@@ -73,32 +67,29 @@
                                 wire:click="clearSearch"
                                 class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-700 text-xs cursor-pointer"
                             >
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
                         @endif
                     </div>
 
-                    <!-- Filter / Search Status Indicator -->
+                    <!-- Search Status Indicator -->
                     @if($searchQuery)
                         <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
                             <span>Search Results for: <strong class="text-slate-800">"{{ $searchQuery }}"</strong></span>
-                            <button type="button" wire:click="clearSearch" class="text-amber-700 hover:underline font-bold cursor-pointer">Clear</button>
+                            <button type="button" wire:click="clearSearch" class="text-blue-600 hover:underline font-medium cursor-pointer">Clear</button>
                         </div>
                     @endif
 
-                    <!-- Topic Sections List -->
-                    <div class="max-h-[600px] overflow-y-auto space-y-4 pr-1">
+                    <!-- Topic Grouped Sections -->
+                    <div class="max-h-[580px] overflow-y-auto space-y-3 pr-1">
                         @foreach($this->groupedTopics as $groupKey => $group)
                             @if(count($group['topics']) > 0)
-                                <div class="space-y-1">
-                                    <div class="flex items-center justify-between px-2 py-1">
-                                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                <div class="space-y-0.5">
+                                    <div class="px-2.5 py-1">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                                             {{ $group['label'] }}
-                                        </span>
-                                        <span class="text-[10px] font-bold text-slate-400 font-mono">
-                                            {{ count($group['topics']) }}
                                         </span>
                                     </div>
 
@@ -110,14 +101,11 @@
                                             <button
                                                 type="button"
                                                 wire:click="selectTopic('{{ $topic['id'] }}')"
-                                                class="w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-between gap-2 cursor-pointer {{ $isActive ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-950 font-medium' }}"
+                                                class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer {{ $isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-normal' }}"
                                             >
-                                                <div class="flex items-center gap-2 truncate">
-                                                    <span class="shrink-0 text-sm">{{ $topic['icon'] }}</span>
-                                                    <span class="truncate">{{ $topic['title'] }}</span>
-                                                </div>
+                                                <span class="truncate">{{ $topic['title'] }}</span>
                                                 @if($isActive)
-                                                    <span class="text-slate-950 font-black shrink-0">&rarr;</span>
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
                                                 @endif
                                             </button>
                                         @endforeach
@@ -128,149 +116,157 @@
                     </div>
                 </div>
 
-                <!-- Footer Summary of Procedures -->
-                <div class="pt-3 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
-                    <span>13 Standard Operating Guides</span>
-                    <span class="font-bold text-amber-700">Malabar Club</span>
+                <!-- Footer Counter -->
+                <div class="pt-3 border-t border-slate-200/70 text-[11px] text-slate-400 flex items-center justify-between px-1">
+                    <span>13 operational guides</span>
+                    <span>Malabar Club</span>
                 </div>
             </div>
 
             <!-- --------------------------------------------------------------------- -->
-            <!-- RIGHT COLUMN: DEDICATED STEP-BY-STEP PROCEDURE READER                 -->
+            <!-- RIGHT COLUMN: GOOGLE-STYLE CLEAN ARTICLE READER                       -->
             <!-- --------------------------------------------------------------------- -->
-            <div class="flex-1 p-6 sm:p-8 space-y-6 overflow-y-auto bg-white">
+            <div class="flex-1 p-6 sm:p-10 space-y-6 overflow-y-auto bg-white print:p-0 print:overflow-visible print:space-y-4">
                 
                 @php
                     $topic = $this->currentTopic;
                 @endphp
 
-                <!-- Article Breadcrumbs -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                    <button type="button" wire:click="setTab('{{ $topic['tab'] }}')" class="hover:text-slate-700 transition cursor-pointer">
+                <!-- Printable Official SOP Letterhead (Only visible on paper / PDF) -->
+                <div class="hidden print:block pb-3 mb-4 border-b-2 border-slate-900">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-xl font-black uppercase tracking-tight text-slate-900">Malabar Club</h1>
+                            <p class="text-xs font-bold text-slate-700 tracking-wide uppercase">Standard Operating Procedure (SOP) &bull; {{ $topic['tab_label'] }}</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-600">
+                            <p class="font-mono font-bold text-slate-900">{{ strtoupper($activeTopic) }}</p>
+                            <p>Palakkad, Kerala</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtle Clean Breadcrumb -->
+                <div class="flex items-center gap-1.5 text-xs text-slate-400 print:hidden no-print">
+                    <button type="button" wire:click="setTab('{{ $topic['tab'] }}')" class="hover:text-slate-600 transition cursor-pointer">
                         Help Manual
                     </button>
                     <span>/</span>
-                    <span class="text-slate-600 font-semibold">{{ $topic['tab_label'] }}</span>
+                    <span class="text-slate-500">{{ $topic['tab_label'] }}</span>
                     <span>/</span>
-                    <span class="text-slate-900 font-bold truncate">{{ $topic['title'] }}</span>
+                    <span class="text-slate-800 font-medium truncate">{{ $topic['title'] }}</span>
                 </div>
 
-                <!-- Article Header & Meta Details -->
-                <div class="space-y-3 pb-5 border-b border-slate-100">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200">
-                            {{ $topic['tab_label'] }}
-                        </span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                            👤 {{ $topic['target_role'] }}
-                        </span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                            ⏱️ {{ $topic['estimated_time'] }}
-                        </span>
-                    </div>
-
-                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>{{ $topic['icon'] }}</span>
-                        <span>{{ $topic['title'] }}</span>
+                <!-- Article Header: Clean Typography, Zero Badge Clutter -->
+                <div class="space-y-2 pb-4 border-b border-slate-100 print:border-slate-200">
+                    <h1 class="text-2xl font-normal text-slate-900 tracking-tight leading-snug print:text-xl print:font-bold">
+                        {{ $topic['title'] }}
                     </h1>
 
-                    <div class="p-4 bg-slate-50 border-l-4 border-amber-500 rounded-r-xl">
-                        <p class="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-                            {{ $topic['summary'] }}
-                        </p>
+                    <div class="text-xs text-slate-400 print:text-slate-600 flex items-center gap-2 pt-0.5">
+                        <span>For: <strong class="text-slate-600 print:text-slate-900 font-medium">{{ $topic['target_role'] }}</strong></span>
+                        <span>&bull;</span>
+                        <span>{{ $topic['estimated_time'] }}</span>
                     </div>
+
+                    <p class="text-xs sm:text-sm text-slate-600 print:text-slate-800 leading-relaxed font-normal pt-2">
+                        {{ $topic['summary'] }}
+                    </p>
                 </div>
 
-                <!-- Step-by-Step Execution Sequence -->
+                <!-- Step-by-Step Execution Sequence (Clean Numbered Flow) -->
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-black uppercase tracking-wider text-slate-400">
+                    <div class="flex items-center justify-between pb-1">
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 print:text-slate-900 print:font-bold">
                             Standard Step-by-Step Procedure
                         </h2>
-                        <span class="text-xs text-slate-400 font-medium">
-                            {{ count($topic['steps'] ?? []) }} Steps to Complete
+                        <span class="text-xs text-slate-400 print:text-slate-600">
+                            {{ count($topic['steps'] ?? []) }} Steps
                         </span>
                     </div>
 
-                    <div class="space-y-3.5">
+                    <div class="space-y-4">
                         @foreach($topic['steps'] ?? [] as $step)
-                            <div class="p-4 bg-slate-50 hover:bg-slate-50/80 border border-slate-200/90 rounded-2xl transition-all space-y-2">
-                                <div class="flex items-start gap-3.5">
-                                    <div class="w-7 h-7 rounded-lg bg-slate-900 text-amber-300 flex items-center justify-center font-mono font-bold text-xs shrink-0 shadow-xs mt-0.5">
-                                        {{ sprintf('%02d', $step['number']) }}
-                                    </div>
-                                    <div class="space-y-1.5 flex-1 min-w-0">
-                                        <h3 class="font-bold text-slate-900 text-sm">
-                                            {{ $step['title'] }}
-                                        </h3>
-                                        <p class="text-xs text-slate-600 leading-relaxed">
-                                            {{ $step['instruction'] }}
+                            <div class="flex items-start gap-3.5 pb-4 border-b border-slate-100 last:border-b-0 print:border-slate-200 print:pb-3 print:break-inside-avoid">
+                                <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0 mt-0.5 border border-blue-200/60 print:border-slate-800 print:text-slate-900 print:bg-slate-100">
+                                    {{ $step['number'] }}
+                                </div>
+                                <div class="space-y-1.5 flex-1 min-w-0">
+                                    <h3 class="font-medium text-slate-900 text-sm print:font-bold">
+                                        {{ $step['title'] }}
+                                    </h3>
+                                    <p class="text-xs sm:text-sm text-slate-600 print:text-slate-800 leading-relaxed">
+                                        {{ $step['instruction'] }}
+                                    </p>
+
+                                    @if(!empty($step['result']))
+                                        <p class="text-xs text-emerald-700 print:text-emerald-900 font-medium flex items-center gap-1.5 pt-0.5">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600 print:text-emerald-800 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span>{{ $step['result'] }}</span>
                                         </p>
+                                    @endif
 
-                                        @if(!empty($step['result']))
-                                            <div class="pt-1 text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
-                                                <span class="text-emerald-600 font-bold">✓ Outcome:</span>
-                                                <span>{{ $step['result'] }}</span>
+                                    @if(!empty($step['tip']))
+                                        <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-lg text-xs text-slate-600 flex items-start gap-2 mt-2 print:border-slate-300 print:text-slate-800 print:break-inside-avoid">
+                                            <svg class="w-4 h-4 text-blue-600 shrink-0 mt-0.5 print:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <div class="leading-relaxed">
+                                                <strong class="font-semibold text-slate-800">Tip:</strong> {{ $step['tip'] }}
                                             </div>
-                                        @endif
-
-                                        @if(!empty($step['tip']))
-                                            <div class="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-950 mt-2 flex items-start gap-2">
-                                                <span class="shrink-0 text-amber-700 font-bold">💡 Tip:</span>
-                                                <span class="leading-relaxed">{{ $step['tip'] }}</span>
-                                            </div>
-                                        @endif
-                                    </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 </div>
 
-                <!-- Statutory Formula or Accounting Rule Callout Banner -->
+                <!-- Clean Formula / Accounting Mapping Box -->
                 @if(!empty($topic['formula']))
-                    <div class="p-4 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-1 text-xs">
-                        <span class="font-mono font-bold text-[10px] uppercase tracking-wider text-amber-800 block">
+                    <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1 text-xs print:border-slate-300 print:bg-slate-50 print:break-inside-avoid">
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 print:text-slate-800 block">
                             Key Standard / Formula / Double-Entry Mapping
                         </span>
-                        <p class="font-bold text-slate-900 text-xs sm:text-sm font-mono">
+                        <p class="font-mono text-xs sm:text-sm text-slate-800 font-medium">
                             {{ $topic['formula'] }}
                         </p>
                     </div>
                 @endif
 
-                <!-- Operational Policy Note -->
+                <!-- Clean Policy Note -->
                 @if(!empty($topic['policy_note']))
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3 text-xs text-slate-600">
-                        <span class="text-base text-slate-400">📜</span>
-                        <div>
-                            <strong class="text-slate-900">Governance Notice:</strong>
-                            <p class="mt-0.5 leading-relaxed">{{ $topic['policy_note'] }}</p>
+                    <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-600 flex items-start gap-2.5 print:border-slate-300 print:bg-slate-50 print:break-inside-avoid">
+                        <svg class="w-4 h-4 text-slate-400 shrink-0 mt-0.5 print:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <div class="leading-relaxed">
+                            <strong class="font-semibold text-slate-800">Policy Notice:</strong> {{ $topic['policy_note'] }}
                         </div>
                     </div>
                 @endif
 
-                <!-- Topic Tags & Search Keywords -->
-                <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        <span class="text-[11px] text-slate-400 font-medium mr-1">Indexed keywords:</span>
-                        @foreach($topic['tags'] ?? [] as $tag)
-                            <button
-                                type="button"
-                                wire:click="$set('searchQuery', '{{ $tag }}')"
-                                class="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-[10px] font-mono text-slate-600 transition cursor-pointer"
-                            >
-                                #{{ $tag }}
-                            </button>
-                        @endforeach
+                <!-- Printable Official SOP Footer (Only visible on paper / PDF) -->
+                <div class="hidden print:block pt-4 mt-6 border-t border-slate-300 text-[10px] text-slate-500">
+                    <div class="flex items-center justify-between">
+                        <span>Malabar Club Operations Manual &bull; Confidential &bull; Internal Club Use Only</span>
+                        <span>Printed on {{ now()->format('d M Y, h:i A') }}</span>
                     </div>
+                </div>
 
+                <!-- On-Screen Clean Action Footer -->
+                <div class="pt-6 border-t border-slate-100 flex items-center justify-end print:hidden no-print">
                     <button
                         type="button"
-                        onclick="window.print()"
-                        class="text-xs font-bold text-amber-700 hover:text-amber-800 transition flex items-center gap-1 cursor-pointer"
+                        @click="printMode = 'procedure'; $nextTick(() => window.print())"
+                        class="h-8.5 px-3.5 inline-flex items-center justify-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
-                        <span>🖨️ Print This Procedure</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        <span>Print this procedure</span>
                     </button>
                 </div>
 
@@ -280,7 +276,7 @@
         <!-- ========================================================================= -->
         <!-- 3. PRINT-ONLY SINGLE-PAGE CASHIER CHEAT SHEET (DECISION D47)              -->
         <!-- ========================================================================= -->
-        <div class="hidden print:block p-8 bg-white text-slate-900 space-y-6">
+        <div :class="printMode === 'desk-reference' ? 'print:block' : 'print:hidden'" class="hidden p-8 bg-white text-slate-900 space-y-6">
             <div class="border-b-2 border-slate-900 pb-4 flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-black uppercase tracking-tight">Malabar Club</h1>

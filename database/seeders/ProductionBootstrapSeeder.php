@@ -238,15 +238,15 @@ class ProductionBootstrapSeeder extends Seeder
         // 8. Membership Categories
         MembershipCategory::firstOrCreate(
             ['code' => 'ORD'],
-            ['name' => 'Ordinary Member', 'annual_fee_paise' => 1200000, 'has_voting_rights' => true, 'is_active' => true]
+            ['name' => 'Ordinary Member', 'admission_fee_paise' => 5000000, 'annual_fee_paise' => 1200000, 'has_voting_rights' => true, 'is_active' => true]
         );
         MembershipCategory::firstOrCreate(
             ['code' => 'LIFE'],
-            ['name' => 'Life Member', 'annual_fee_paise' => 0, 'has_voting_rights' => true, 'is_active' => true]
+            ['name' => 'Life Member', 'admission_fee_paise' => 20000000, 'annual_fee_paise' => 0, 'has_voting_rights' => true, 'is_active' => true]
         );
         MembershipCategory::firstOrCreate(
             ['code' => 'CORP'],
-            ['name' => 'Corporate Member', 'annual_fee_paise' => 2500000, 'has_voting_rights' => true, 'is_active' => true]
+            ['name' => 'Corporate Member', 'admission_fee_paise' => 50000000, 'annual_fee_paise' => 2500000, 'has_voting_rights' => true, 'is_active' => true]
         );
 
         // 9. Club Bank Accounts

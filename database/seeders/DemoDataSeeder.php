@@ -133,6 +133,8 @@ class DemoDataSeeder extends Seeder
                     'person_id' => $person->id,
                     'membership_category_id' => $m['cat']->id,
                     'status' => MemberStatus::ACTIVE,
+                    'fee_status' => 'paid',
+                    'last_fee_paid_at' => '2024-01-01',
                     'password' => Hash::make('Member@123'),
                     'joined_at' => '2024-01-01',
                     'valid_until' => '2027-12-31',

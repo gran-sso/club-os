@@ -6,6 +6,7 @@ use App\Domain\Access\Models\AccessEvent;
 use App\Domain\Access\Models\Guest;
 use App\Domain\Billing\Models\Bill;
 use App\Domain\Billing\Models\BillLine;
+use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Facility\Exceptions\RoomUnavailableException;
 use App\Domain\Facility\Exceptions\SlotUnavailableException;
@@ -121,6 +122,8 @@ class ViewMember extends ViewRecord
     public bool $showRenewModal = false;
     public int $renewalYears = 1;
     public int $renewalFeeRupees = 5000;
+    public int $renewalAdmissionFeeRupees = 0;
+    public bool $collectAdmissionFee = false;
     public string $renewalTender = 'prepaid';
     public string $renewalNotes = 'Annual Membership Subscription Renewal';
 
@@ -891,8 +894,23 @@ class ViewMember extends ViewRecord
         $feePaise = $member->category?->annual_fee_paise ?? 500000;
         $this->renewalYears = 1;
         $this->renewalFeeRupees = (int) round($feePaise / 100);
-        $this->renewalTender = 'prepaid';
-        $this->renewalNotes = 'Annual Subscription Renewal (' . date('Y') . '-' . (date('Y') + 1) . ')';
+
+        $admissionPaise = $member->admission_fee_paise ?: ($member->category?->admission_fee_paise ?? 0);
+        $this->renewalAdmissionFeeRupees = (int) round($admissionPaise / 100);
+        $this->collectAdmissionFee = $member->isAdmissionFeePending();
+
+        $totalPaise = $feePaise + ($this->collectAdmissionFee ? $admissionPaise : 0);
+        $walletBal = $member->wallet?->balance_paise ?? 0;
+        $this->renewalTender = ($walletBal >= $totalPaise) ? 'prepaid' : 'cash';
+
+        if ($this->collectAdmissionFee && $member->fee_status === 'pending') {
+            $this->renewalNotes = 'One-Time Admission Fee & Annual Subscription Dues Settlement';
+        } elseif ($this->collectAdmissionFee) {
+            $this->renewalNotes = 'One-Time Admission Fee Settlement';
+        } else {
+            $this->renewalNotes = 'Annual Subscription Renewal (' . date('Y') . '-' . (date('Y') + 1) . ')';
+        }
+        
         $this->showRenewModal = true;
     }
 
@@ -906,58 +924,138 @@ class ViewMember extends ViewRecord
         /** @var Member $member */
         $member = $this->getRecord();
 
-        $feePaise = (int) round($this->renewalFeeRupees * 100);
+        $annualPaise = (int) round($this->renewalFeeRupees * 100);
+        $admissionPaise = $this->collectAdmissionFee ? (int) round($this->renewalAdmissionFeeRupees * 100) : 0;
+        $totalPaise = $annualPaise + $admissionPaise;
+
+        if ($totalPaise <= 0) {
+            Notification::make()->title('Invalid Amount')->body('Please specify a positive fee amount to settle.')->danger()->send();
+            return;
+        }
+
+        $receiptNumber = null;
 
         // If paying by prepaid wallet, enforce sufficient funds!
         if ($this->renewalTender === 'prepaid') {
             $availablePaise = ($member->wallet?->balance_paise ?? 0) - ($member->wallet?->reserved_paise ?? 0);
-            if ($availablePaise < $feePaise) {
+            if ($availablePaise < $totalPaise) {
                 Notification::make()
                     ->title('Insufficient Prepaid Balance')
-                    ->body(sprintf("Renewal requires ₹%.2f, but available prepaid balance is only ₹%.2f. Overdrafts or negative balances are not permitted.", $this->renewalFeeRupees, $availablePaise / 100))
+                    ->body(sprintf("Settlement requires ₹%.2f, but available prepaid balance is only ₹%.2f. Overdrafts or negative balances are not permitted.", $totalPaise / 100, $availablePaise / 100))
                     ->danger()
                     ->send();
                 return;
             }
 
             try {
+                $notes = [];
+                if ($admissionPaise > 0) {
+                    $notes[] = sprintf("One-time admission fee: ₹%.2f", $admissionPaise / 100);
+                }
+                if ($annualPaise > 0) {
+                    $notes[] = sprintf("Annual subscription dues: ₹%.2f (%d yr)", $annualPaise / 100, $this->renewalYears);
+                }
+                $noteString = implode(', ', $notes);
+
                 $walletService->debit(
                     wallet: $member->wallet,
-                    amountPaise: $feePaise,
+                    amountPaise: $totalPaise,
                     referenceType: 'membership_renewal',
                     referenceId: $member->id,
-                    notes: "Annual membership renewal ({$this->renewalYears} year(s))",
+                    notes: $noteString,
                     userId: auth()->id()
                 );
             } catch (\Exception $e) {
                 Notification::make()->title('Payment Failed')->body($e->getMessage())->danger()->send();
                 return;
             }
+        } else {
+            $tender = match ($this->renewalTender) {
+                'digital' => TenderType::DIGITAL,
+                'bank_transfer' => TenderType::BANK_TRANSFER,
+                'cheque' => TenderType::CHEQUE,
+                default => TenderType::CASH,
+            };
+
+            $yearMonth = now()->format('Ym');
+            $receiptCount = PaymentReceipt::where('receipt_number', 'LIKE', "RCP-{$yearMonth}-%")->count() + 1;
+            $receiptNumber = sprintf("RCP-%s-%05d", $yearMonth, $receiptCount);
+
+            PaymentReceipt::create([
+                'receipt_number' => $receiptNumber,
+                'shift_id' => null,
+                'bill_id' => null,
+                'wallet_transaction_id' => null,
+                'customer_type' => Member::class,
+                'customer_id' => $member->id,
+                'tender_type' => $tender,
+                'amount_paise' => $totalPaise,
+                'provider_name' => 'secretariat_manual',
+                'provider_reference' => "MEM-FEE-{$member->membership_number}",
+                'provider_status' => 'confirmed',
+                'idempotency_key' => (string) Str::uuid(),
+                'confirmed_at' => now(),
+                'created_by_user_id' => auth()->id(),
+            ]);
         }
 
-        // Extend validity
-        $baseDate = ($member->valid_until && $member->valid_until->isFuture()) ? $member->valid_until : now();
-        $newValidUntil = $baseDate->copy()->addYears($this->renewalYears)->endOfDay();
+        // If collecting admission fee
+        if ($this->collectAdmissionFee && $admissionPaise > 0) {
+            $member->admission_fee_status = 'paid';
+            $member->admission_fee_paise = $admissionPaise;
+            $member->admission_fee_paid_at = now();
+            if ($receiptNumber) {
+                $member->admission_fee_receipt_number = $receiptNumber;
+            }
+        }
 
-        $member->valid_until = $newValidUntil;
-        if ($member->status === MemberStatus::EXPIRED) {
+        // Extend validity if annual dues were paid
+        if ($annualPaise > 0) {
+            $baseDate = ($member->valid_until && $member->valid_until->isFuture()) ? $member->valid_until : now();
+            $newValidUntil = $baseDate->copy()->addYears($this->renewalYears)->endOfDay();
+
+            $member->valid_until = $newValidUntil;
+            $member->fee_status = 'paid';
+            $member->last_fee_paid_at = now();
+            if ($receiptNumber) {
+                $member->last_fee_receipt_number = $receiptNumber;
+            }
+        } elseif ($member->admission_fee_status === 'paid' && !$member->valid_until) {
+            $member->valid_until = now()->addYear()->endOfDay();
+            $member->fee_status = 'paid';
+        }
+
+        if ($member->status === MemberStatus::EXPIRED && ($member->valid_until && $member->valid_until->isFuture())) {
             $member->status = MemberStatus::ACTIVE;
         }
         $member->save();
 
+        $receiptNote = $receiptNumber ? " (Receipt #{$receiptNumber})" : "";
         MemberNote::create([
             'member_id' => $member->id,
             'created_by_user_id' => auth()->id(),
             'category' => 'general',
-            'note' => "Membership renewed for {$this->renewalYears} year(s) until " . $newValidUntil->format('d M Y') . ". Tender: " . ucfirst($this->renewalTender) . " (₹{$this->renewalFeeRupees}).",
+            'note' => sprintf(
+                "Statutory fees settled: Total ₹%.2f (Admission: ₹%.2f, Annual Dues: ₹%.2f). Tender: %s%s.",
+                $totalPaise / 100,
+                $admissionPaise / 100,
+                $annualPaise / 100,
+                ucfirst($this->renewalTender),
+                $receiptNote
+            ),
         ]);
 
         $this->showRenewModal = false;
         $this->record = $member->fresh(['wallet', 'committeeNotes.author']);
 
         Notification::make()
-            ->title('Membership Renewed')
-            ->body("Membership for {$member->name} (#{$member->membership_number}) renewed until " . $newValidUntil->format('d M Y') . ".")
+            ->title('Statutory Fees Settled')
+            ->body(sprintf("Total ₹%.2f recorded for %s (#%s). Membership active%s.", 
+                $totalPaise / 100, 
+                $member->name, 
+                $member->membership_number, 
+                $member->valid_until ? ' until ' . $member->valid_until->format('d M Y') : ''
+            ))
             ->success()
             ->send();
     }
@@ -1040,12 +1138,31 @@ class ViewMember extends ViewRecord
             }
         })->latest('recorded_at')->take(50)->get();
 
+        // One-Time Admission Fee Info
+        $admissionFeePaise = $member->admission_fee_paise ?: ($member->category?->admission_fee_paise ?? 0);
+        $admissionFeeRupees = round($admissionFeePaise / 100, 2);
+        $isPaid = $member->hasPaidAdmissionFee();
+        $admissionStatus = $isPaid ? 'paid' : ($member->admission_fee_status ?? 'pending');
+
+        $admissionFeeInfo = [
+            'admission_fee_rupees' => $admissionFeeRupees,
+            'status' => $admissionStatus,
+            'is_paid' => $isPaid,
+            'paid_at_formatted' => $member->admission_fee_paid_at ? $member->admission_fee_paid_at->format('d M Y') : ($isPaid && $member->joined_at ? $member->joined_at->format('d M Y') : 'Pending Payment'),
+            'receipt_number' => $member->admission_fee_receipt_number,
+        ];
+
         // Annual Dues Status Info
         $annualFeePaise = $member->category?->annual_fee_paise ?? 500000;
         $annualFeeRupees = round($annualFeePaise / 100, 2);
         $daysRemaining = $member->valid_until ? (int) now()->diffInDays($member->valid_until, false) : 9999;
+        
+        $feeStatus = $member->fee_status ?? ($member->valid_until ? 'paid' : 'pending');
+        
         $duesStatus = 'active';
-        if ($member->valid_until && $member->valid_until->isPast()) {
+        if ($feeStatus === 'pending') {
+            $duesStatus = 'fee_pending';
+        } elseif ($member->valid_until && $member->valid_until->isPast()) {
             $duesStatus = 'expired';
         } elseif ($daysRemaining <= 30) {
             $duesStatus = 'expiring_soon';
@@ -1053,10 +1170,12 @@ class ViewMember extends ViewRecord
 
         $annualDuesInfo = [
             'annual_fee_rupees' => $annualFeeRupees,
+            'fee_status' => $feeStatus,
             'status' => $duesStatus,
             'days_remaining' => $daysRemaining,
-            'valid_until_formatted' => $member->valid_until ? $member->valid_until->format('d M Y') : 'Continuous / Lifetime',
-            'last_renewed_formatted' => $member->joined_at ? $member->joined_at->format('d M Y') : 'Founding Member',
+            'valid_until_formatted' => $member->valid_until ? $member->valid_until->format('d M Y') : ($feeStatus === 'pending' ? 'Pending Settlement' : 'Continuous / Lifetime'),
+            'last_renewed_formatted' => $member->last_fee_paid_at ? $member->last_fee_paid_at->format('d M Y') : ($feeStatus === 'paid' && $member->joined_at ? $member->joined_at->format('d M Y') : 'Unrecorded / Pending'),
+            'last_receipt_number' => $member->last_fee_receipt_number,
         ];
 
         // F&B Consumption Analytics
@@ -1112,6 +1231,7 @@ class ViewMember extends ViewRecord
             'assignedLockers' => $assignedLockers,
             'availableLockers' => $availableLockers,
             'accessEvents' => $accessEvents,
+            'admissionFeeInfo' => $admissionFeeInfo,
             'annualDuesInfo' => $annualDuesInfo,
             'departmentSpend' => $departmentSpend,
             'favoriteItems' => $favoriteItems,

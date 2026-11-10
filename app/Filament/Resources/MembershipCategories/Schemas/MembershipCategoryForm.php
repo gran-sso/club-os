@@ -38,21 +38,35 @@ class MembershipCategoryForm
                         ]),
                     ]),
 
-                Section::make('Statutory Rights & Subscription Dues')
-                    ->description('Configure annual dues and general meeting voting eligibility under Malabar Club bylaws.')
+                Section::make('Statutory Fees & Subscription Schedule')
+                    ->description('Configure one-time admission capital fee, recurring annual subscription dues, and general meeting voting eligibility under Malabar Club bylaws.')
                     ->columnSpanFull()
                     ->schema([
-                        Grid::make(3)->schema([
-                            TextInput::make('annual_fee_paise')
-                                ->label('Annual Subscription Fee (₹)')
+                        Grid::make(2)->schema([
+                            TextInput::make('admission_fee_paise')
+                                ->label('One-Time Admission Fee (₹)')
                                 ->required()
                                 ->numeric()
                                 ->minValue(0)
+                                ->default(0)
                                 ->prefix('₹')
-                                ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : null)
+                                ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : 0)
                                 ->dehydrateStateUsing(fn ($state) => (int) round(((float) $state) * 100))
-                                ->helperText('Standard annual subscription fee in Rupees.'),
+                                ->helperText('Capital entrance fee charged once upon member admission.'),
 
+                            TextInput::make('annual_fee_paise')
+                                ->label('Annual Subscription Dues (₹)')
+                                ->required()
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(0)
+                                ->prefix('₹')
+                                ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : 0)
+                                ->dehydrateStateUsing(fn ($state) => (int) round(((float) $state) * 100))
+                                ->helperText('Recurring annual maintenance dues (leave ₹0 for Life/Permanent categories).'),
+                        ]),
+
+                        Grid::make(2)->schema([
                             Toggle::make('has_voting_rights')
                                 ->label('Club Voting Rights')
                                 ->default(true)

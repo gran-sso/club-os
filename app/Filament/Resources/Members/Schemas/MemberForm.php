@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Members\Schemas;
 
 use App\Domain\Membership\Models\MembershipCategory;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -74,6 +75,30 @@ class MemberForm
                                 ->helperText('Unique government document number (mandatory for new admissions).'),
                         ]),
 
+                        Grid::make(2)->schema([
+                            FileUpload::make('id_proof_path')
+                                ->label('Upload Identity Proof (Optional)')
+                                ->disk('local')
+                                ->directory('documents/members/kyc')
+                                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+                                ->maxSize(5120)
+                                ->nullable()
+                                ->downloadable()
+                                ->openable()
+                                ->helperText('Clear scan or photo of Aadhaar, Passport, or DL (PDF, JPG, PNG up to 5MB).'),
+
+                            FileUpload::make('application_form_path')
+                                ->label('Upload Application Form Scan (Optional)')
+                                ->disk('local')
+                                ->directory('documents/members/applications')
+                                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+                                ->maxSize(10240)
+                                ->nullable()
+                                ->downloadable()
+                                ->openable()
+                                ->helperText('Signed physical membership application form (PDF, JPG, PNG up to 10MB).'),
+                        ]),
+
                         Textarea::make('notes')
                             ->label('Residential Address & Club Notes')
                             ->rows(3)
@@ -100,7 +125,17 @@ class MemberForm
                                 ->options(fn () => MembershipCategory::where('is_active', true)->pluck('name', 'id'))
                                 ->searchable()
                                 ->preload()
-                                ->helperText('Determines voting rights, facility tariffs, and annual subscription charges.')
+                                ->live()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state) {
+                                        $cat = MembershipCategory::find($state);
+                                        if ($cat) {
+                                            $set('admission_fee_amount_rupees', $cat->admission_fee_rupees);
+                                            $set('annual_fee_amount_rupees', $cat->annual_fee_rupees);
+                                        }
+                                    }
+                                })
+                                ->helperText('Determines admission entrance charges, voting rights, and recurring annual subscription dues.')
                                 ->createOptionForm([
                                     TextInput::make('code')
                                         ->label('Category Code')
@@ -116,13 +151,23 @@ class MemberForm
                                         ->maxLength(100)
                                         ->placeholder('e.g. Honorary Member'),
 
-                                    TextInput::make('annual_fee_rupees')
-                                        ->label('Annual Subscription Fee (₹)')
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->default(0)
-                                        ->prefix('₹')
-                                        ->helperText('Standard yearly membership dues.'),
+                                    Grid::make(2)->schema([
+                                        TextInput::make('admission_fee_rupees')
+                                            ->label('One-Time Admission Fee (₹)')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->default(0)
+                                            ->prefix('₹')
+                                            ->helperText('Capital fee charged only once upon admission.'),
+
+                                        TextInput::make('annual_fee_rupees')
+                                            ->label('Annual Subscription Dues (₹)')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->default(0)
+                                            ->prefix('₹')
+                                            ->helperText('Recurring yearly maintenance dues (₹0 for Life/Hon).'),
+                                    ]),
 
                                     \Filament\Forms\Components\Toggle::make('has_voting_rights')
                                         ->label('Club Voting Rights')
@@ -132,6 +177,7 @@ class MemberForm
                                     $category = MembershipCategory::create([
                                         'code' => strtoupper(trim($data['code'])),
                                         'name' => trim($data['name']),
+                                        'admission_fee_paise' => (int) round(((float) ($data['admission_fee_rupees'] ?? 0)) * 100),
                                         'annual_fee_paise' => (int) round(((float) ($data['annual_fee_rupees'] ?? 0)) * 100),
                                         'has_voting_rights' => (bool) ($data['has_voting_rights'] ?? true),
                                         'is_active' => true,
@@ -164,8 +210,83 @@ class MemberForm
                                 ->label('Membership Valid Until (Optional)')
                                 ->nullable()
                                 ->helperText('Leave empty for Life / Permanent memberships without fixed expiry.'),
+
+                            Select::make('fee_status')
+                                ->label('Membership Fee Settlement Status')
+                                ->options([
+                                    'paid' => 'Paid / Settled in Full',
+                                    'pending' => 'Pending Payment / Unpaid',
+                                    'waived' => 'Waived / Honorary Exemption',
+                                ])
+                                ->default('pending')
+                                ->helperText('Tracks statutory admission dues settlement.')
+                                ->visibleOn('edit'),
                         ]),
                     ]),
+
+                Section::make('Statutory Membership Fees & Admission Collection')
+                    ->description('Optionally collect the one-time admission capital fee and first-year annual subscription dues upon registration.')
+                    ->columnSpanFull()
+                    ->schema([
+                        \Filament\Forms\Components\Toggle::make('collect_initial_fee')
+                            ->label('Collect Membership Fees Now')
+                            ->helperText('If enabled, admission fee and subscription dues are immediately recorded, an official receipt is generated, and annual validity is activated.')
+                            ->default(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                if ($state) {
+                                    $catId = $get('membership_category_id');
+                                    $cat = $catId ? MembershipCategory::find($catId) : null;
+                                    if ($cat) {
+                                        $set('admission_fee_amount_rupees', $cat->admission_fee_rupees);
+                                        $set('annual_fee_amount_rupees', $cat->annual_fee_rupees);
+                                    }
+                                }
+                            }),
+
+                        Grid::make(2)
+                            ->visible(fn ($get) => (bool) $get('collect_initial_fee'))
+                            ->schema([
+                                TextInput::make('admission_fee_amount_rupees')
+                                    ->label('One-Time Admission Fee (₹)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->prefix('₹')
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee'))
+                                    ->helperText('Statutory entrance fee paid only once in member lifetime.'),
+
+                                TextInput::make('annual_fee_amount_rupees')
+                                    ->label('First-Year Annual Subscription Dues (₹)')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->prefix('₹')
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee'))
+                                    ->helperText('Recurring annual maintenance dues for Year 1 (₹0 if category is exempt).'),
+                            ]),
+
+                        Grid::make(2)
+                            ->visible(fn ($get) => (bool) $get('collect_initial_fee'))
+                            ->schema([
+                                Select::make('fee_tender_type')
+                                    ->label('Payment Tender / Mode')
+                                    ->options([
+                                        'cash' => 'Cash in Hand (Counter)',
+                                        'digital' => 'Digital (UPI / POS Terminal)',
+                                        'bank_transfer' => 'Bank Remittance (NEFT / RTGS)',
+                                        'cheque' => 'Bank Cheque / DD',
+                                    ])
+                                    ->default('cash')
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee')),
+
+                                TextInput::make('fee_reference')
+                                    ->label('Banking / Instrument Ref #')
+                                    ->placeholder('e.g. UPI-12345678 or Cheque #004521')
+                                    ->helperText('Optional transaction / instrument reference for audit.'),
+                            ]),
+                    ])
+                    ->visibleOn('create'),
 
                 Section::make('Smartcard & RFID Hardware Token')
                     ->description('Optionally link an RFID Mifare/NFC contactless card UID for high-speed POS checkouts.')

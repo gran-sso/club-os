@@ -127,4 +127,31 @@ class AdminPanelTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Club Admin');
     }
+
+    public function test_brand_logo_displays_user_role_dynamically(): void
+    {
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+
+        // Cashier viewing Accommodation Deck sees "Cashier" badge, not "Admin"
+        $cashierResponse = $this->actingAs($cashier)->get('/admin/room-rack');
+        $cashierResponse->assertStatus(200);
+        $cashierResponse->assertSee('>Cashier<', false);
+        $cashierResponse->assertDontSee('>Admin<', false);
+
+        $this->flushSession();
+
+        // Reception viewing Room Rack sees "Reception" badge
+        $reception = User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $receptionResponse = $this->actingAs($reception)->get('/admin/room-rack');
+        $receptionResponse->assertStatus(200);
+        $receptionResponse->assertSee('>Reception<', false);
+
+        $this->flushSession();
+
+        // Admin viewing Dashboard sees "Admin" badge
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $adminResponse = $this->actingAs($admin)->get('/admin');
+        $adminResponse->assertStatus(200);
+        $adminResponse->assertSee('>Admin<', false);
+    }
 }

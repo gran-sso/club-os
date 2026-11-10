@@ -41,12 +41,16 @@ class EditMember extends EditRecord
             $data['email'] = $record->person->email;
             $data['id_proof_type'] = $record->person->id_proof_type;
             $data['id_proof_number'] = $record->person->id_proof_number;
+            $data['id_proof_path'] = $record->person->id_proof_path;
+            $data['application_form_path'] = $record->person->application_form_path;
             $data['notes'] = $record->person->notes;
         }
 
         if ($record->status instanceof BackedEnum) {
             $data['status'] = $record->status->value;
         }
+
+        $data['fee_status'] = $record->fee_status ?? 'pending';
 
         return $data;
     }
@@ -62,6 +66,8 @@ class EditMember extends EditRecord
                 'email' => $data['email'] ?? null,
                 'id_proof_type' => $data['id_proof_type'] ?? null,
                 'id_proof_number' => $data['id_proof_number'] ?? null,
+                'id_proof_path' => $data['id_proof_path'] ?? null,
+                'application_form_path' => $data['application_form_path'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
         }
@@ -70,6 +76,7 @@ class EditMember extends EditRecord
             'membership_number' => $data['membership_number'],
             'membership_category_id' => $data['membership_category_id'],
             'status' => $data['status'],
+            'fee_status' => $data['fee_status'] ?? $record->fee_status,
             'joined_at' => $data['joined_at'],
             'valid_until' => $data['valid_until'] ?? null,
         ]);

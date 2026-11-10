@@ -1777,6 +1777,105 @@ For environments where full browser automation is unavailable, operators should 
 - `php artisan test --filter=MembershipAndAccessTest`: **7 passed, 36 assertions, 0 failures**.
 - `npm run build`: Compiled cleanly in 1.12s.
 
+### 21.5 Optional Statutory KYC Document Upload & Secure Vault Synchronization (Decision D55)
+- **Database Schema**:
+  - Added migration `2026_11_09_140000_add_document_paths_to_persons_table.php` introducing nullable `id_proof_path` and `application_form_path` to the `persons` table.
+  - Updated `Person` fillable attributes and added `id_proof_path` / `application_form_path` accessors on `Member`.
+- **Form Integration**:
+  - Integrated Filament `FileUpload` fields into `MemberForm.php` for:
+    - **Identity Proof**: Accepts PDF, JPG, PNG, WEBP up to 5MB, stored on the access-restricted `local` (`storage/app/private`) disk under `documents/members/kyc`.
+    - **Application Form Scan**: Accepts PDF, JPG, PNG, WEBP up to 10MB, stored on the `local` disk under `documents/members/applications`.
+  - Both fields are fully optional, allowing staff to register members immediately and upload scanned documents later.
+  - Wired `CreateMember` and `EditMember` to hydrate, validate, and persist both file paths cleanly.
+- **Member Profile Vault & Access Control**:
+  - Refactored the Statutory Document Vault in `view-member.blade.php`:
+    - Shows dynamic status indicator: green "Uploaded" badge when files exist, neutral "Not Uploaded" badge when missing.
+    - If uploaded: provides "View Proof →" and "View Form →" direct links.
+    - If not uploaded: provides a direct "Upload →" link opening the member edit form.
+  - Enhanced `DocumentController::showMemberDocument`:
+    - Streams actual physical files from private disk storage when present with `Pragma: no-cache` and `Cache-Control: no-store` headers.
+    - Enforces RBAC clearance (unauthenticated redirects to login, cashiers get 403 Forbidden, authorized staff gets 200).
+- **Automated Verification**:
+  - `php artisan test --filter=MemberDocumentUploadTest`: **4 passed, 19 assertions, 0 failures**.
+  - `php artisan test --filter=MemberProfileViewTest`: **27 passed, 123 assertions, 0 failures**.
+
+### 21.6 Statutory Membership Fee Tracking & On-Registration Settlement (Decision D56)
+- **Database Schema**:
+  - Added migration `2026_11_10_090000_add_fee_tracking_to_members_table.php` adding `fee_status` (paid, pending, waived), `last_fee_paid_at`, and `last_fee_receipt_number` to `members`.
+  - Updated `Member` fillable attributes, casts, and helper methods (`hasPaidFee()`, `isFeePending()`).
+- **On-Registration Fee Collection ([`MemberForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Schemas/MemberForm.php))**:
+  - Added `Statutory Membership Fee & Admission Settlement` section on create form with toggle `Collect Initial Membership Fee Now`.
+  - Auto-populates standard category fee in Rupees upon selecting or changing `membership_category_id`.
+  - Supports tender selection (Cash in Hand, Digital UPI / POS, Bank Remittance NEFT/RTGS, Cheque/DD) with optional banking reference #.
+  - In [`CreateMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/CreateMember.php), if enabled, generates an official `PaymentReceipt` (`RCP-YYYYMM-XXXXX`), logs `MemberNote`, marks `fee_status = 'paid'`, and activates 1-year validity. If omitted, cleanly flags `fee_status = 'pending'`.
+- **Member Profile Audit & Direct Collection ([`ViewMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/ViewMember.php) & [`view-member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/resources/members/pages/view-member.blade.php))**:
+  - Header profile badge displays `Fee Pending` pulse chip whenever dues are unsettled.
+  - Annual Subscription Dues card renders a high-visibility amber alert banner: *"Initial Membership Admission Fee Pending Payment: Statutory dues of ₹X,XXX.00 are outstanding"*, with standing set to `Fee Pending Payment` and term validity as `Pending Settlement`.
+  - Provides a direct **"Collect Fee Now"** action opening the payment modal, which now records formal `PaymentReceipt` entries for Cash, Digital, and Bank Remittance tenders, marks `fee_status = 'paid'`, and extends validity.
+- **Automated Verification**:
+  - `php artisan test --filter=MembershipFeeCollectionTest`: **3 passed, 33 assertions, 0 failures**.
+  - `php artisan test --filter=MemberProfileViewTest`: **27 passed, 123 assertions, 0 failures**.
+  - `npm run build`: Compiled cleanly in 405ms.
+
+### 21.7 Two-Tier Membership Fee Structure: One-Time Admission Fee & Recurring Annual Subscription Dues (Decision D57)
+- **Database Schema**:
+  - Added migration `2026_11_10_093000_add_admission_fee_to_categories_and_members.php`:
+    - `membership_categories.admission_fee_paise`: Unsigned bigint in integer paise (e.g. ₹50,000 for Ordinary, ₹2,00,000 for Life, ₹5,00,000 for Corporate).
+    - `members.admission_fee_status`: Status enum (`paid`, `pending`, `waived`).
+    - `members.admission_fee_paise`: Exact paise snapshot recorded upon admission.
+    - `members.admission_fee_receipt_number`: Formal receipt number tracking admission fee settlement.
+    - `members.admission_fee_paid_at`: Timestamp tracking when admission fee was settled.
+- **Category Configuration ([`MembershipCategoryForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MembershipCategories/Schemas/MembershipCategoryForm.php) & [`MembershipCategoriesTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MembershipCategories/Tables/MembershipCategoriesTable.php))**:
+  - Form configures both "One-Time Admission Fee (₹)" and "Annual Subscription Dues (₹)" under Statutory Fees.
+  - Category roster table displays formatted currency for both admission fee and annual subscription dues.
+- **Member Registration ([`MemberForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Schemas/MemberForm.php) & [`CreateMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/CreateMember.php))**:
+  - Auto-populates both `admission_fee_amount_rupees` and `annual_fee_amount_rupees` dynamically upon selecting category.
+  - Quick-create modal (`createOptionForm`) allows defining both admission and annual fees on new categories on the fly.
+  - Registration handler computes total paise across both fees, generates `PaymentReceipt` itemizing total, sets `admission_fee_status = 'paid'`, `admission_fee_receipt_number`, `admission_fee_paid_at`, `fee_status = 'paid'`, and activates 1-year validity. If fee collection is omitted, flags both as `pending`.
+- **Member Profile Audit & Renewal Flow ([`ViewMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/ViewMember.php) & [`view-member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/resources/members/pages/view-member.blade.php))**:
+  - Re-architected tracker card to **Statutory Membership Fees & Renewal Tracker** with 5 informative status tiles:
+    1. *One-Time Admission Fee*: Displays amount, badge (`Paid • Lifetime`, `Pending Payment`, or `Waived`), and receipt reference.
+    2. *Annual Subscription Dues*: Displays yearly rate, status badge (`Good Standing • Paid`, `Expiring in Xd`, `Expired / Due`, `Fee Pending`), and bylaws note.
+    3. *Membership Standing*: Displays overall club standing and voting eligibility.
+    4. *Current Term Valid Until*: Displays formatted expiration date or pending notice.
+    5. *Last Renewal / Settlement*: Displays last payment date and receipt number.
+  - Interactive Modal (Modal 12):
+    - When admission fee is already paid, shows confirmation notice that admission fee is satisfied and **only prompts for the recurring annual subscription dues**, guaranteeing admission fee is never charged again.
+    - If admission fee is pending, provides option to collect admission fee + annual subscription dues together or independently, showing dynamic total calculation.
+- **Automated Verification**:
+  - `php artisan test --filter=MembershipFeeCollectionTest`: **4 passed, 52 assertions, 0 failures**.
+  - `php artisan test --filter=MemberProfileViewTest`: **27 passed, 123 assertions, 0 failures**.
+  - `npm run build`: Vite build completed in 417ms.
+
+### 21.8 Comprehensive Help Center SOP & Role-Aware Brand Header (Decisions D54 & UX Polish)
+- **Role-Aware Panel Brand Header ([`brand-logo.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/brand-logo.blade.php))**:
+  - Replaced hardcoded "Admin" text badge with dynamic, authenticated role resolution (`Cashier`, `Reception`, `Manager`, `Accounts`, `Auditor`, `Admin`, or `Staff`). Cashiers and front-desk staff accessing the Accommodation Deck or Court Schedule see their actual role context rather than confusing administrative labels.
+  - Added automated test in [`AdminPanelTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminPanelTest.php) (`test_brand_logo_displays_user_role_dynamically`).
+- **Standardized Food Contractor Settlement SOP in Help Section ([`HelpPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php))**:
+  - Enriched the `finance-contractor` topic with a 6-step operational manual:
+    1. *Daily Counter Billing at POS (Cashiers)*: Ringing up dining items under the food department, immediate collection via Wallet, Cash, or UPI QR; unused top-ups strictly excluded.
+    2. *Generate Yesterday's Settlement Batch*: Procurement & Food Contractor -> Contractor Settlements -> "Generate Daily Settlement Batch", bundling paid lines into unique `SET-YYYYMMDD-001` batches.
+    3. *Audit & Approve Settlement Batch*: Verifying gross sales, taxes, deductions, net payable, and automated double-entry GL posting (Dr 5020 Contractor Food Expense / Cr 2020 Food Contractor Payable).
+    4. *Execute & Record Bank Payout*: Modal capturing Disbursing Club Bank Account, payment instrument (NEFT/RTGS/IMPS/Cheque), Bank UTR / Cheque reference, GL disbursement (Dr 2020 / Cr 1020), and bank ledger balance deduction.
+    5. *Automated Refund Handling (Post-Settlement Adjustments)*: Preserving locked historical batches and logging linked negative adjustments carried forward into the next payout batch.
+    6. *Reconciliation & Tally Prime Audit*: Executive Reporting Hub export to CSV, residual payable verification, and transactional outbox background synchronization.
+- **Google Help Center Minimalist Redesign ([`help.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/help.blade.php))**:
+  - Completely restyled the operations manual to mirror Google Help Center's clean, distraction-free aesthetic:
+    - Pure white canvas with subtle neutral borders (`slate-200/90`) and soft shadows (`shadow-2xs`).
+    - Google pill search input (`rounded-full`, focus ring in light Google blue `ring-blue-100`).
+    - Left sidebar topic directory with clear category groupings and clean Google Blue active pills (`bg-blue-50 text-blue-700`).
+    - Stripped all visual badge clutter: removed heavy black badges, rainbow tags, and decorative icon clouds. Replaced with clean typography, clear metadata, and generous whitespace.
+    - Subtle numbered step circles (`w-6 h-6 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60`).
+    - Clean Google-style light-blue tip cards and neutral policy notices (removed unnecessary "Was this helpful? Yes/No" prompt).
+    - Intelligent Alpine print mode router:
+      - Clicking **"Print this procedure"** cleanly isolates and prints the currently displayed procedure on paper with official Malabar Club SOP letterhead, step-by-step instructions, formula boxes, and policy notices.
+      - Clicking **"Print Desk Reference"** prints the single-page laminated Cashier POS Cheat Sheet (Decision D47).
+      - Suppressed UI chrome, search bars, sidebars, and buttons during print.
+- **Automated Verification**:
+  - `php artisan test --filter=HelpCenterTest`: **14 passed, 63 assertions, 0 failures**.
+  - `php artisan test --filter=AdminPanelTest`: **7 passed, 71 assertions, 0 failures**.
+  - `npm run build`: Compiled in 428ms.
+
 
 
 

@@ -191,4 +191,23 @@ class HelpCenterTest extends TestCase
         $items = collect($categories->get('Operational Screens & Quick Links'));
         $this->assertTrue($items->contains(fn ($res) => str_contains($res->title, 'Help')));
     }
+
+    public function test_help_page_contractor_settlement_procedure_details(): void
+    {
+        $this->actingAs($this->accountant);
+
+        Livewire::test(HelpPage::class)
+            ->call('selectTopic', 'finance-contractor')
+            ->assertSet('activeTopic', 'finance-contractor')
+            ->assertSet('activeTab', 'finance')
+            ->assertSee('External Food Contractor Daily Settlement &amp; Bank Payout Cycle', false)
+            ->assertSee('Daily Counter Billing at POS (Cashiers)')
+            ->assertSee('Generate Yesterday\'s Settlement Batch')
+            ->assertSee('Audit &amp; Approve Settlement Batch', false)
+            ->assertSee('Execute &amp; Record Bank Payout (NEFT / RTGS / Cheque)', false)
+            ->assertSee('Automated Refund Handling (Post-Settlement Adjustments)')
+            ->assertSee('Contractor Food Expense')
+            ->assertSee('Food Contractor Payable')
+            ->assertSee('Bank Clearing');
+    }
 }

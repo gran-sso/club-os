@@ -30,9 +30,14 @@ class MembershipCategoriesTable
                     ->sortable()
                     ->weight('bold'),
 
+                TextColumn::make('admission_fee_paise')
+                    ->label('One-Time Admission Fee')
+                    ->state(fn (MembershipCategory $record) => $record->admission_fee_paise > 0 ? '₹' . number_format($record->admission_fee_paise / 100, 2) : 'Nil / ₹0.00')
+                    ->sortable(),
+
                 TextColumn::make('annual_fee_paise')
                     ->label('Annual Subscription')
-                    ->state(fn (MembershipCategory $record) => $record->annual_fee_paise > 0 ? '₹' . number_format($record->annual_fee_paise / 100, 2) : 'Exempt / ₹0.00')
+                    ->state(fn (MembershipCategory $record) => $record->annual_fee_paise > 0 ? '₹' . number_format($record->annual_fee_paise / 100, 2) . '/yr' : 'Exempt / ₹0.00')
                     ->sortable(),
 
                 IconColumn::make('has_voting_rights')

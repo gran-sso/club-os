@@ -26,6 +26,13 @@ class Member extends Model implements AuthenticatableContract
         'person_id',
         'membership_category_id',
         'status',
+        'fee_status',
+        'last_fee_paid_at',
+        'last_fee_receipt_number',
+        'admission_fee_status',
+        'admission_fee_paise',
+        'admission_fee_receipt_number',
+        'admission_fee_paid_at',
         'password',
         'last_login_at',
         'joined_at',
@@ -42,10 +49,22 @@ class Member extends Model implements AuthenticatableContract
         'joined_at' => 'date',
         'valid_until' => 'date',
         'last_login_at' => 'datetime',
+        'last_fee_paid_at' => 'datetime',
+        'admission_fee_paise' => 'integer',
+        'admission_fee_paid_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
+        static::creating(function (Member $member) {
+            if ($member->valid_until && empty($member->fee_status)) {
+                $member->fee_status = 'paid';
+            }
+            if ($member->valid_until && empty($member->admission_fee_status)) {
+                $member->admission_fee_status = 'paid';
+            }
+        });
+
         static::deleting(function (Member $member) {
             // 1. Guard against non-zero prepaid wallet balance
             if ($member->wallet && $member->wallet->balance_paise > 0) {
@@ -192,6 +211,53 @@ class Member extends Model implements AuthenticatableContract
     public function getPhotoPathAttribute(): ?string
     {
         return $this->person?->photo_path;
+    }
+
+    public function getIdProofPathAttribute(): ?string
+    {
+        return $this->person?->id_proof_path;
+    }
+
+    public function getApplicationFormPathAttribute(): ?string
+    {
+        return $this->person?->application_form_path;
+    }
+
+    public function hasPaidAdmissionFee(): bool
+    {
+        if ($this->admission_fee_status === 'paid') {
+            return true;
+        }
+
+        // If member already had valid_until established and fee_status is not 'pending'
+        if ($this->valid_until && $this->fee_status !== 'pending' && $this->admission_fee_status !== 'waived') {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function isAdmissionFeePending(): bool
+    {
+        if ($this->hasPaidAdmissionFee() || $this->admission_fee_status === 'waived') {
+            return false;
+        }
+
+        if ($this->category && $this->category->admission_fee_paise == 0) {
+            return false;
+        }
+
+        return $this->admission_fee_status === 'pending';
+    }
+
+    public function hasPaidFee(): bool
+    {
+        return $this->fee_status === 'paid';
+    }
+
+    public function isFeePending(): bool
+    {
+        return $this->fee_status === 'pending';
     }
 
     public function isActive(?\Carbon\CarbonInterface $onDate = null): bool

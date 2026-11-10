@@ -38,6 +38,8 @@ class MemberService
                 'email' => $personData['email'] ?? null,
                 'id_proof_type' => $personData['id_proof_type'] ?? null,
                 'id_proof_number' => $personData['id_proof_number'] ?? null,
+                'id_proof_path' => $personData['id_proof_path'] ?? null,
+                'application_form_path' => $personData['application_form_path'] ?? null,
                 'photo_path' => $personData['photo_path'] ?? null,
                 'notes' => $personData['notes'] ?? null,
             ]);

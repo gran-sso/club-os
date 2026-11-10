@@ -19,6 +19,8 @@ class Person extends Model
         'email',
         'id_proof_type',
         'id_proof_number',
+        'id_proof_path',
+        'application_form_path',
         'photo_path',
         'notes',
     ];
