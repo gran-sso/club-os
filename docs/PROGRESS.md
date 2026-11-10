@@ -2029,3 +2029,27 @@ For environments where full browser automation is unavailable, operators should 
   - `php artisan test tests/Feature/CounterPosKeyboardTest.php tests/Feature/CounterPosTest.php tests/Feature/CounterPosHeldTabsTest.php`: **28 passed, 152 assertions, 0 failures**.
   - `php artisan test --filter=Pos`: **50 passed, 301 assertions, 0 failures**.
   - Recompiled production assets with `npm run build` (0 errors).
+
+---
+
+## Configurable Zero / Negative Stock Sales on POS (Delivered)
+
+- **Context & Client Requirement**:
+  - In daily clubhouse operations, physical beverage or food stock frequently arrives at the counter/bar, but the storekeeper or receiving clerk may not have entered the supplier invoice / purchase receipt (GRN) into the system yet.
+  - Under strict inventory enforcement, cashiers were blocked with *"Item is out of stock"*, causing customer friction at the counter.
+  - Client requested an administrative setting to allow selling zero/negative stock items silently without warning or alert dialogs.
+- **Implementation Highlights**:
+  - **System Settings Configuration ([`SystemSettingsPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/SystemSettingsPage.php) & [`system-settings.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/system-settings.blade.php))**:
+    - Added setting toggle `allow_zero_stock_sales` under Tab 2 ("Billing & Cashier Policies").
+    - Restricted strictly to Administrators and Managers (`canAccess` policy).
+    - Preserved default `false` (strict stock enforcement) with persistence via `SystemSetting`.
+  - **Counter POS Logic ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php))**:
+    - In `addTariffToCartInternal`, checks `allowZeroStockSales()`: when enabled, bypasses out-of-stock error blocks and adds items silently to the cart without warning prompts.
+    - In item autocomplete and catalogue search, displays current recorded stock quantity as available for billing without red disabled blocks.
+  - **Transactional Stock Issuance ([`InventoryService.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Inventory/Services/InventoryService.php))**:
+    - In `issueStockForBillLine`, checks `allow_zero_stock_sales`: when enabled, skips `InsufficientStockException`, updates `current_stock_qty` into negative balance, and records an immutable `InventoryMovement` of type `sale_issue`.
+    - Negative balance self-reconciles cleanly when the storekeeper posts the subsequent purchase invoice or stock adjustment.
+- **Automated Verification**:
+  - `php artisan test tests/Feature/SystemSettingsTest.php`: **8 passed, 35 assertions, 0 failures**.
+  - `php artisan test tests/Feature/CounterPosKeyboardTest.php`: **17 passed, 91 assertions, 0 failures** (including `test_out_of_stock_item_cannot_be_added_to_bill` and `test_out_of_stock_item_can_be_added_and_settled_when_allow_zero_stock_sales_enabled`).
+  - `php artisan test --filter=Pos`: **51 passed, 312 assertions, 0 failures**.

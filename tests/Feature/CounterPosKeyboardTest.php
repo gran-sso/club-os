@@ -307,6 +307,45 @@ class CounterPosKeyboardTest extends TestCase
         $test->assertSeeHtml('is out of stock');
     }
 
+    public function test_out_of_stock_item_can_be_added_and_settled_when_allow_zero_stock_sales_enabled(): void
+    {
+        $this->actingAs($this->cashier);
+
+        // Turn ON allow_zero_stock_sales in system settings
+        \App\Domain\Shared\Models\SystemSetting::set('allow_zero_stock_sales', '1', 'billing');
+
+        // Vodka initially has 0 stock
+        $this->assertEquals(0, (float) $this->outOfStockItem->fresh()->current_stock_qty);
+
+        $test = Livewire::test(CounterPos::class)
+            // 1. Select member with funds
+            ->set('searchQuery', 'CARD-VENU-001')
+            ->call('searchMember')
+            ->assertSet('selectedMember.id', $this->memberWithFunds->id)
+
+            // 2. Add zero stock item to bill via serving selection - must succeed silently without errors
+            ->call('selectServingAndAddToCart', $this->outOfStockTariff->id)
+            ->assertSet('errorMessage', null)
+            ->assertCount('cart', 1)
+
+            // 3. Complete checkout via prepaid tender
+            ->call('initiateCheckout', 'prepaid')
+            ->assertSet('showPaymentConfirmModal', true)
+            ->call('confirmCheckout')
+            ->assertSet('showReceiptModal', true);
+
+        // 4. Verify stock tracked into negative on inventory ledger
+        $updatedVodka = $this->outOfStockItem->fresh();
+        $this->assertLessThan(0, (float) $updatedVodka->current_stock_qty);
+
+        // 5. Verify immutable inventory movement recorded with negative balance
+        $movement = \App\Domain\Inventory\Models\InventoryMovement::where('inventory_item_id', $this->outOfStockItem->id)->latest('id')->first();
+        $this->assertNotNull($movement);
+        $this->assertEquals('sale_issue', $movement->type);
+        $this->assertLessThan(0, (float) $movement->quantity);
+        $this->assertLessThan(0, (float) $movement->balance_after_qty);
+    }
+
     public function test_payment_failure_does_not_lose_draft_cart(): void
     {
         $this->actingAs($this->cashier);

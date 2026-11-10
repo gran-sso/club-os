@@ -455,6 +455,7 @@ class CounterPos extends Component
         }
 
         $results = [];
+        $allowZeroStock = $this->allowZeroStockSales();
 
         // 1. Search Inventory Items (which may have multiple servings or single serving)
         $inventoryItems = InventoryItem::with(['servingMappings.tariff'])
@@ -502,7 +503,7 @@ class CounterPos extends Component
                     'serving_display' => "Multiple ({$count} units: {$servingNames})",
                     'stock_qty' => $invItem->current_stock_qty,
                     'base_unit' => $invItem->base_unit,
-                    'is_in_stock' => $invItem->current_stock_qty > 0,
+                    'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty > 0),
                     'has_multiple_servings' => true,
                     'serving_options' => $servingOptions,
                 ];
@@ -524,7 +525,7 @@ class CounterPos extends Component
                     'serving_display' => $sm->serving_name,
                     'stock_qty' => $invItem->current_stock_qty,
                     'base_unit' => $invItem->base_unit,
-                    'is_in_stock' => $invItem->current_stock_qty >= $sm->serving_qty,
+                    'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty >= $sm->serving_qty),
                     'has_multiple_servings' => false,
                     'serving_options' => [],
                 ];
@@ -584,7 +585,7 @@ class CounterPos extends Component
                             'serving_display' => "Multiple ({$allMappings->count()} units: " . $allMappings->pluck('serving_name')->implode(', ') . ")",
                             'stock_qty' => $invItem->current_stock_qty,
                             'base_unit' => $invItem->base_unit,
-                            'is_in_stock' => $invItem->current_stock_qty > 0,
+                            'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty > 0),
                             'has_multiple_servings' => true,
                             'serving_options' => $servingOptions,
                         ];
@@ -602,7 +603,7 @@ class CounterPos extends Component
             $taxPaise = (int) round(($tariff->rate_paise * $tariff->tax_percent) / 100);
             $stockQty = $invItem ? $invItem->current_stock_qty : null;
             $baseUnit = $invItem ? $invItem->base_unit : 'unit';
-            $isInStock = $invItem ? ($invItem->current_stock_qty >= ($mapping->serving_qty ?? 1)) : true;
+            $isInStock = $invItem ? ($allowZeroStock || ($invItem->current_stock_qty >= ($mapping->serving_qty ?? 1))) : true;
 
             $results[] = [
                 'type' => 'single_tariff',
@@ -766,9 +767,10 @@ class CounterPos extends Component
         $mapping = $tariff->servingMapping;
         if ($mapping && $mapping->inventoryItem) {
             $invItem = $mapping->inventoryItem;
+            $allowZeroStock = $this->allowZeroStockSales();
 
-            // Check if item is completely out of stock first
-            if ($invItem->current_stock_qty <= 0) {
+            // Check if item is completely out of stock first (only when zero stock sales are disallowed)
+            if (!$allowZeroStock && $invItem->current_stock_qty <= 0) {
                 $this->errorMessage = sprintf(
                     "Item '%s' is out of stock (Available: %.2f %s). Cannot add to bill.",
                     $invItem->name,
@@ -786,9 +788,9 @@ class CounterPos extends Component
                 return;
             }
 
-            // Check stock availability
+            // Check stock availability (only when zero stock sales are disallowed)
             $requiredQty = (float) $mapping->serving_qty;
-            if ($invItem->current_stock_qty < $requiredQty) {
+            if (!$allowZeroStock && $invItem->current_stock_qty < $requiredQty) {
                 $this->errorMessage = sprintf(
                     "Item '%s' is out of stock (Available: %.2f %s, Required: %.2f %s). Cannot add to bill.",
                     $invItem->name,
@@ -1420,6 +1422,11 @@ class CounterPos extends Component
     {
         $this->successMessage = null;
         $this->errorMessage = null;
+    }
+
+    public function allowZeroStockSales(): bool
+    {
+        return (bool) \App\Domain\Shared\Models\SystemSetting::get('allow_zero_stock_sales', false);
     }
 
     public function render()

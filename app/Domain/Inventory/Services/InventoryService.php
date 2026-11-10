@@ -188,7 +188,9 @@ class InventoryService
 
             $requiredQty = (float) ($mapping->serving_qty * $line->quantity);
 
-            if ($item->current_stock_qty < $requiredQty) {
+            $allowZeroStock = (bool) \App\Domain\Shared\Models\SystemSetting::get('allow_zero_stock_sales', false);
+
+            if (!$allowZeroStock && $item->current_stock_qty < $requiredQty) {
                 throw new InsufficientStockException(
                     sprintf(
                         "Insufficient stock for %s. Available: %.3f %s, Required: %.3f %s.",

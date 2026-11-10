@@ -43,6 +43,7 @@ class SystemSettingsPage extends Page
     public float $maxWalletRecharge = 50000.00;
     public float $lostCardFee = 150.00;
     public bool $allowSplitTender = true;
+    public bool $allowZeroStockSales = false;
 
     // Tab 3: Front Desk & Facilities
     public string $checkInTime = '14:00';
@@ -92,6 +93,7 @@ class SystemSettingsPage extends Page
         $this->maxWalletRecharge = (float) SystemSetting::get('max_wallet_recharge', 50000.00);
         $this->lostCardFee = (float) SystemSetting::get('lost_card_fee', 150.00);
         $this->allowSplitTender = (bool) SystemSetting::get('allow_split_tender', true);
+        $this->allowZeroStockSales = (bool) SystemSetting::get('allow_zero_stock_sales', false);
 
         // Tab 3
         $this->checkInTime = (string) SystemSetting::get('check_in_time', '14:00');
@@ -155,6 +157,7 @@ class SystemSettingsPage extends Page
         SystemSetting::set('max_wallet_recharge', $this->maxWalletRecharge, 'billing');
         SystemSetting::set('lost_card_fee', $this->lostCardFee, 'billing');
         SystemSetting::set('allow_split_tender', $this->allowSplitTender ? '1' : '0', 'billing');
+        SystemSetting::set('allow_zero_stock_sales', $this->allowZeroStockSales ? '1' : '0', 'billing');
 
         // Save Tab 3
         SystemSetting::set('check_in_time', $this->checkInTime, 'facilities');

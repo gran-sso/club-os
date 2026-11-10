@@ -231,6 +231,25 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Inventory & Stock Enforcement</h3>
+                        <p class="text-xs text-slate-500">Control stock verification rules for counter billing and POS terminals.</p>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="flex items-start gap-3 cursor-pointer select-none">
+                            <input type="checkbox" wire:model="allowZeroStockSales" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900">Allow Selling Zero / Negative Stock Items on POS</span>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                                    When enabled, cashiers can bill items on the POS even if current recorded stock is zero or insufficient (e.g. physical stock has arrived, but storekeeper has not yet entered purchase receipts). Stock balance will track into negative until stock inward is posted. When disabled, out-of-stock items are strictly blocked from being billed.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
             </div>
         @endif
 

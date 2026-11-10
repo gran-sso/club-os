@@ -104,6 +104,7 @@ class SystemSettingsTest extends TestCase
             ->set('maxWalletRecharge', 100000.00)
             ->set('lostCardFee', 250.00)
             ->set('allowSplitTender', false)
+            ->set('allowZeroStockSales', true)
             ->call('saveSettings')
             ->assertHasNoErrors();
 
@@ -112,6 +113,7 @@ class SystemSettingsTest extends TestCase
         $this->assertEquals('100000', SystemSetting::get('max_wallet_recharge'));
         $this->assertEquals('250', SystemSetting::get('lost_card_fee'));
         $this->assertEquals('0', SystemSetting::get('allow_split_tender'));
+        $this->assertEquals('1', SystemSetting::get('allow_zero_stock_sales'));
     }
 
     public function test_can_save_front_desk_and_facilities_timings(): void
