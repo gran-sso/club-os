@@ -1876,6 +1876,36 @@ For environments where full browser automation is unavailable, operators should 
   - `php artisan test --filter=AdminPanelTest`: **7 passed, 71 assertions, 0 failures**.
   - `npm run build`: Compiled in 428ms.
 
+### 21.9 Front Desk Room Balance Payment & Key Issue Workflow Fix
+- **Problem Diagnosed**:
+  - When collecting balance payment for a room booking before issuing the key, selecting Digital UPI or Member Wallet failed silently due to invalid enum constant references (`TenderType::DIGITAL_UPI` and `TenderType::PREPAID_WALLET` instead of `TenderType::DIGITAL` and `TenderType::PREPAID`).
+  - Because of this, `processAccommodationBilling()` caught the runtime exception, logged a warning (`Undefined constant App\Domain\Shared\Enums\TenderType::DIGITAL_UPI`), and returned `null`.
+  - While `paid_amount_paise` was incremented on the reservation record, no official `Bill`, `PaymentReceipt`, or double-entry General Ledger journal (`1010/1020` -> `4030 Room Revenue`) was created.
+  - Furthermore, the Front Desk Check-In modal opened a disconnected secondary payment modal without closing itself, and failed to refresh the reservation summary in real time, leaving the check-in screen in a stale "Payment Required" state.
+- **Implementation & Architectural Improvements**:
+  - **Tender Enum Rectification ([`TenderType.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Enums/TenderType.php))**:
+    - Restored canonical enum cases (`CASH = 'cash'`, `DIGITAL = 'digital'`, `PREPAID = 'prepaid'`) and added explicit `BANK_TRANSFER = 'bank_transfer'` and `CHEQUE = 'cheque'` cases.
+    - Updated tender mapping in [`RoomRackPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/RoomRackPage.php) to use `TenderType::DIGITAL` for `upi` and `TenderType::PREPAID` for `wallet`.
+    - Removed silent exception swallowing; billing errors now bubble up and display informative Filament notifications.
+  - **Integrated Front Desk Check-In & Balance Settlement ([`room-rack.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/room-rack.blade.php) & [`RoomRackPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/RoomRackPage.php))**:
+    - Replaced the disconnected multi-modal friction with an integrated Front Desk settlement flow directly inside the Check-In modal:
+      - Clean display of Total Room Charge, Advance Paid, and outstanding Balance Due.
+      - If unpaid balance exists: embedded collection fields (Amount to Collect in ₹ and Tender Mode: Cash / Digital UPI / Prepaid Wallet).
+      - If room is clean: **"Collect ₹[Balance] & Issue Key"** button triggers `confirmCheckInWithPayment()`, which atomically validates payment, creates official Bill and Payment Receipt, updates the GL journal, credits the reservation, transitions status to `checked_in`, sets `checked_in_at = now()`, and hands over the key.
+      - If room is not yet clean: displays housekeeping warning and provides **"Collect Payment Only"** button, updating the reservation balance in place without issuing the key until housekeeping finishes.
+  - **Bug Fix for Bill Line Print Preview ([`BillsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Tables/BillsTable.php))**:
+    - Fixed `load(['lines.tariff', 'receipts'])` to `load(['lines', 'receipts'])`, eliminating `RelationNotFoundException` when previewing accommodation and bar bills.
+  - **Production Seeder Guard**:
+    - Restored safety check in `DemoDataSeeder` (`app()->environment('production') && !env('ALLOW_DEMO_SEEDING', false)`), allowing controlled demo seeding when explicitly configured via `.env` while protecting live environments.
+- **Automated Verification**:
+  - Created [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php):
+    - `test_room_check_in_with_balance_payment_via_cash`: **Passed** (Receipt amount ₹1,000, Tender: Cash, GL posted, status: `checked_in`).
+    - `test_room_check_in_with_balance_payment_via_digital_upi`: **Passed** (Receipt amount ₹1,500, Tender: Digital UPI, GL posted, status: `checked_in`).
+    - `test_check_in_blocked_if_payment_amount_less_than_unpaid_balance`: **Passed** (Enforces no-credit invariant; check-in blocked when underpaid).
+  - `php artisan test tests/Feature/RoomRackCheckInWorkflowTest.php tests/Feature/FacilityAndBookingTest.php`: **11 passed, 71 assertions, 0 failures**.
+  - `php artisan test tests/Feature/RealTallyAndPwaTest.php`: **7 passed, 36 assertions, 0 failures**.
+
+
 
 
 
