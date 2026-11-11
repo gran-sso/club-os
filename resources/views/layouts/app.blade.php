@@ -56,14 +56,31 @@
                 <a href="{{ route('pos') }}" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all {{ request()->routeIs('pos') ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                     ⚡ Counter POS
                 </a>
-                @if (auth('web')->user()?->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))
-                    <a href="{{ url('/admin/room-rack') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden md:inline-flex items-center gap-1.5">
-                        🏨 Accommodation Deck
-                    </a>
-                    <a href="{{ url('/admin/court-schedule') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden lg:inline-flex items-center gap-1.5">
-                        🏸 Court Schedule
-                    </a>
-                    @if (auth('web')->user()?->hasAnyRole(['admin', 'manager', 'accountant', 'auditor', 'Administrator', 'Manager', 'Accountant', 'Auditor']))
+                @php($posUser = auth('web')->user())
+                @if ($posUser && $posUser->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))
+                    @if ($posUser->hasClubPermission('rooms.view_rack'))
+                        <a href="{{ url('/admin/room-rack') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden md:inline-flex items-center gap-1.5">
+                            🏨 Accommodation Deck
+                        </a>
+                    @endif
+                    @if ($posUser->hasClubPermission('courts.view_schedule'))
+                        <a href="{{ url('/admin/court-schedule') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden lg:inline-flex items-center gap-1.5">
+                            🏸 Court Schedule
+                        </a>
+                    @endif
+                    @if ($posUser->hasAnyClubPermission([
+                        'users.manage', 'reports.view', 'members.view', 'members.manage',
+                        'bills.view', 'bills.manage', 'shifts.view', 'shifts.manage',
+                        'tariffs.view', 'tariffs.manage', 'promotions.view', 'promotions.manage',
+                        'stock.view', 'stock.manage', 'purchases.view', 'purchases.manage',
+                        'suppliers.view', 'suppliers.manage', 'contractors.view', 'contractors.manage',
+                        'contractor.view', 'contractor.settle', 'expenses.view', 'expenses.manage',
+                        'bank_accounts.view', 'bank_accounts.manage', 'accounts.view', 'accounts.manage',
+                        'journals.view', 'journals.manage', 'periods.view', 'periods.manage',
+                        'facilities.view', 'facilities.manage', 'integrations.view', 'integrations.manage',
+                        'settings.manage', 'notices.manage', 'subscriptions.view', 'subscriptions.manage',
+                        'categories.view', 'categories.manage',
+                    ]))
                         <a href="{{ url('/admin') }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all flex items-center gap-1.5">
                             🏛️ Club Admin
                         </a>

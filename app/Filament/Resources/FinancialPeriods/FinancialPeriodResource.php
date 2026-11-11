@@ -62,13 +62,22 @@ class FinancialPeriodResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager', 'accountant', 'auditor']));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['periods.view', 'periods.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager', 'accountant']));
+
+        return (bool) ($user && $user->hasClubPermission('periods.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('periods.manage'));
     }
 
     public static function form(Schema $schema): Schema

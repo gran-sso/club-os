@@ -19,28 +19,71 @@ class FrontDeskPulseWidget extends Widget
 
     protected ?string $pollingInterval = '30s';
 
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['rooms.view_rack', 'courts.view_schedule']));
+    }
+
     public function getViewData(): array
     {
         // 1. Accommodation Rooms (Rooms 101 - 105)
         $rooms = Facility::where('type', 'room')->orderBy('code')->get();
 
-        $roomStatuses = $rooms->map(function (Facility $room) {
-            $activeRes = RoomReservation::with('sponsorMember.person')
+        $todayStr = today()->toDateString();
+
+        $roomStatuses = $rooms->map(function (Facility $room) use ($todayStr) {
+            $inMaintenance = !$room->is_active || \App\Domain\Facility\Models\FacilityMaintenanceBlock::where('facility_id', $room->id)
+                ->where('status', 'active')
+                ->whereDate('start_date', '<=', $todayStr)
+                ->whereDate('end_date', '>', $todayStr)
+                ->exists();
+
+            $occupiedRes = RoomReservation::with(['guest.person', 'sponsorMember.person'])
                 ->where('facility_id', $room->id)
-                ->whereIn('status', ['checked_in', 'confirmed'])
-                ->whereDate('check_in_date', '<=', today())
-                ->whereDate('check_out_date', '>=', today())
+                ->where('status', 'checked_in')
+                ->whereDate('check_in_date', '<=', $todayStr)
+                ->orderByDesc('check_in_date')
+                ->orderByDesc('id')
                 ->first();
 
-            $status = $room->is_active ? 'available' : 'maintenance';
+            $reservedToday = !$occupiedRes
+                ? RoomReservation::with(['guest.person', 'sponsorMember.person'])
+                    ->where('facility_id', $room->id)
+                    ->where('status', 'reserved')
+                    ->whereDate('check_in_date', '<=', $todayStr)
+                    ->whereDate('check_out_date', '>', $todayStr)
+                    ->orderBy('check_in_date')
+                    ->first()
+                : null;
+
+            $latestCheckedOut = (!$occupiedRes && !$reservedToday)
+                ? RoomReservation::where('facility_id', $room->id)
+                    ->where('status', 'checked_out')
+                    ->orderByDesc('checked_out_at')
+                    ->orderByDesc('id')
+                    ->first()
+                : null;
+
+            $status = 'available';
             $occupantName = null;
 
-            if ($activeRes && $activeRes->status === 'checked_in') {
+            if ($inMaintenance) {
+                $status = 'maintenance';
+            } elseif ($occupiedRes) {
                 $status = 'occupied';
-                $occupantName = $activeRes->guest_name ?? $activeRes->sponsorMember?->name ?? 'Occupied Guest';
-            } elseif ($activeRes && $activeRes->status === 'confirmed') {
+                $occupantName = $occupiedRes->guest?->name
+                    ?? $occupiedRes->sponsorMember?->name
+                    ?? 'Occupied Guest';
+            } elseif ($reservedToday) {
                 $status = 'reserved_today';
-                $occupantName = 'Arriving: ' . ($activeRes->guest_name ?? $activeRes->sponsorMember?->name ?? 'Guest');
+                $guestName = $reservedToday->guest?->name
+                    ?? $reservedToday->sponsorMember?->name
+                    ?? 'Guest';
+                $occupantName = 'Arriving: ' . $guestName;
+            } elseif ($latestCheckedOut?->housekeeping_status === 'dirty') {
+                $status = 'cleaning';
             }
 
             return [

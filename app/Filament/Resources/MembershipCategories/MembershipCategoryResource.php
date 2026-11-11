@@ -61,26 +61,29 @@ class MembershipCategoryResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('members.manage')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['categories.view', 'categories.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('members.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('categories.manage'));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('members.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('categories.manage'));
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
         /** @var MembershipCategory $record */
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('members.manage')) && !$record->members()->exists());
+        return (bool) ($user && $user->hasClubPermission('categories.manage') && !$record->members()->exists());
     }
 
     public static function form(Schema $schema): Schema

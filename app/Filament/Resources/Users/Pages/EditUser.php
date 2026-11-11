@@ -8,6 +8,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\PermissionRegistrar;
 
 class EditUser extends EditRecord
 {
@@ -72,6 +73,11 @@ class EditUser extends EditRecord
         }
 
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     protected function getRedirectUrl(): string

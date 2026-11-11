@@ -64,13 +64,25 @@ class PurchaseReceiptResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('stock.manage')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['purchases.view', 'purchases.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('stock.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('purchases.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
     }
 
     public static function form(Schema $schema): Schema

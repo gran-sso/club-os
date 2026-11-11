@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Domain\Shared\Security\ClubPermissionRegistry;
 use App\Models\User;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
@@ -11,6 +12,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 class UserForm
 {
@@ -108,57 +110,81 @@ class UserForm
                     ]),
 
                 Section::make('Role-Based Access Control (RBAC)')
-                    ->description('Select the staff role(s) to grant preset operational capabilities. Each role confers standard clubhouse permissions.')
+                    ->description('Select the staff role(s) assigned to this user. Configure which forms and approvals each role can access under System & Access Control → Roles & Form Access.')
                     ->columnSpanFull()
                     ->schema([
                         CheckboxList::make('roles')
                             ->label('Assigned Club Roles')
                             ->relationship('roles', 'name')
-                            ->getOptionLabelFromRecordUsing(fn ($record): string => match ($record->name) {
-                                'admin' => 'Club Administrator — Full System, Settings & Access Control',
-                                'manager' => 'General Manager — Operations, Members, Tariffs & Approvals',
-                                'accountant' => 'Club Accountant — Financial Ledgers, Settlements & Vouchers',
-                                'auditor' => 'Internal Auditor — Read-Only Financial Registers & Reports',
-                                'reception' => 'Front Desk Reception — Room Rack, Court Schedule & Guest KYC',
-                                'cashier' => 'Counter Cashier — POS Terminal Billing, Drawer Shifts & Prepaid Recharges',
-                                default => ucfirst($record->name),
+                            ->getOptionLabelFromRecordUsing(function ($record): string {
+                                $normalized = ClubPermissionRegistry::normalizeRoleName($record->name);
+                                $meta = ClubPermissionRegistry::roleMeta()[$normalized] ?? null;
+
+                                if ($meta) {
+                                    return "{$meta['label']} ({$record->name}) — {$meta['description']}";
+                                }
+
+                                $count = $record->permissions()->count();
+
+                                return ClubPermissionRegistry::roleDisplayName($record->name) . " ({$record->name}) — Custom role ({$count} permissions)";
                             })
-                            ->columns(2)
-                            ->gridDirection('row')
-                            ->helperText('Assigning one or more roles confers the bundled permissions configured for that operational capacity.'),
+                            ->rules([
+                                fn (?User $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                    if (! $record) {
+                                        return;
+                                    }
+
+                                    $selectedRoleNames = Role::query()
+                                        ->whereIn('id', (array) $value)
+                                        ->pluck('name')
+                                        ->all();
+
+                                    $keepsAdmin = collect($selectedRoleNames)
+                                        ->contains(fn (string $name): bool => in_array($name, ClubPermissionRegistry::SUPER_ROLES, true));
+
+                                    if (auth()->id() === $record->id && $record->hasAnyRole(ClubPermissionRegistry::SUPER_ROLES) && ! $keepsAdmin) {
+                                        $fail('You cannot remove the Administrator role from your own account.');
+                                    }
+
+                                    if ($record->hasRole('admin') && ! $keepsAdmin) {
+                                        $otherActiveAdmins = User::role('admin')
+                                            ->where('is_active', true)
+                                            ->where('id', '!=', $record->id)
+                                            ->count();
+
+                                        if ($otherActiveAdmins === 0) {
+                                            $fail('Cannot remove Administrator role from the sole remaining active administrator.');
+                                        }
+                                    }
+                                },
+                            ])
+                            ->columns(1)
+                            ->helperText('Assign one or more built-in or custom roles. To change which forms a role sees across the club, edit that role under Roles & Form Access.'),
                     ]),
 
-                Section::make('Granular Permission Overrides')
-                    ->description('Optionally grant or restrict individual capabilities directly to this user account beyond their assigned roles.')
+                Section::make('Additive Direct Permission Overrides')
+                    ->description('Optionally grant extra form or approval capabilities directly to this single user in addition to what their assigned role(s) provide. To remove a capability, uncheck it from their role in Roles & Form Access (or assign a narrower custom role).')
                     ->collapsed()
                     ->collapsible()
                     ->columnSpanFull()
                     ->schema([
                         CheckboxList::make('permissions')
-                            ->label('Direct Individual Permissions')
+                            ->label('Direct Individual Permissions (Additive)')
                             ->relationship('permissions', 'name')
-                            ->getOptionLabelFromRecordUsing(fn ($record): string => match ($record->name) {
-                                'users.manage' => 'Manage Staff & User Access (users.manage)',
-                                'members.manage' => 'Manage Members & KYC Records (members.manage)',
-                                'guests.register' => 'Register Visiting Guests & Issue Passes (guests.register)',
-                                'counter.operate' => 'Open, Operate & Reconcile Counter Shifts (counter.operate)',
-                                'wallet.recharge' => 'Recharge Member Prepaid Balances (wallet.recharge)',
-                                'sales.checkout' => 'Execute POS Checkouts & Commercial Sales (sales.checkout)',
-                                'tariffs.manage' => 'Edit Selling Prices & GST Tariffs (tariffs.manage)',
-                                'refunds.approve' => 'Approve Returns & Tender Refunds (refunds.approve)',
-                                'rooms.view_rack' => 'View Accommodation Room Rack (rooms.view_rack)',
-                                'rooms.manage_reservations' => 'Book & Check-In Room Guests (rooms.manage_reservations)',
-                                'courts.view_schedule' => 'View Badminton Court Schedule (courts.view_schedule)',
-                                'courts.manage_bookings' => 'Book Badminton Court Slots (courts.manage_bookings)',
-                                'stock.manage' => 'Inward Consignments & Stock Control (stock.manage)',
-                                'contractor.settle' => 'Settle Daily Food Contractor Batches (contractor.settle)',
-                                'reports.view' => 'Access Executive & Financial Reports (reports.view)',
-                                'integrations.manage' => 'Configure Tally & Hardware Connectors (integrations.manage)',
-                                default => $record->name,
+                            ->getOptionLabelFromRecordUsing(function ($record): string {
+                                $def = ClubPermissionRegistry::definitions()[$record->name] ?? null;
+                                if (! $def) {
+                                    return $record->name;
+                                }
+
+                                $groupTitle = ClubPermissionRegistry::groups()[$def['group']]['title'] ?? ucfirst($def['group']);
+
+                                return "{$groupTitle}: {$def['label']} ({$record->name})";
                             })
+                            ->bulkToggleable()
                             ->columns(2)
                             ->gridDirection('row')
-                            ->helperText('Direct permissions apply in addition to any permissions inherited through assigned roles.'),
+                            ->helperText('Direct permissions stack additively on top of permissions inherited from assigned roles.'),
                     ]),
             ]);
     }

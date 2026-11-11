@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Domain\Shared\Security\ClubPermissionRegistry;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
@@ -61,7 +62,7 @@ class UserResource extends Resource
     {
         /** @var User $record */
         return [
-            'Role' => $record->roles->pluck('name')->map(fn ($r) => ucfirst($r))->join(', ') ?: 'No Role Assigned',
+            'Role' => $record->roles->pluck('name')->map(fn ($r) => ClubPermissionRegistry::roleShortBadgeLabel($r))->join(', ') ?: 'No Role Assigned',
             'Staff ID' => $record->employee_id ?? 'N/A',
             'Status' => $record->is_active ? 'Active' : 'Deactivated',
             'Phone' => $record->phone ?? 'N/A',
@@ -77,21 +78,21 @@ class UserResource extends Resource
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
+        return (bool) ($user && $user->hasClubPermission('users.manage'));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
+        return (bool) ($user && $user->hasClubPermission('users.manage'));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
+        return (bool) ($user && $user->hasClubPermission('users.manage'));
     }
 
     public static function canDelete(Model $record): bool
@@ -102,7 +103,7 @@ class UserResource extends Resource
             return false;
         }
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
+        return (bool) ($user && $user->hasClubPermission('users.manage'));
     }
 
     public static function getPages(): array

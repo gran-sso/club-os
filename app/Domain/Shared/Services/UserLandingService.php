@@ -13,33 +13,55 @@ class UserLandingService
      */
     public function resolveHomeUrlForUser(User $user): string
     {
-        if ($user->hasAnyRole([
-            'admin',
-            'Administrator',
-            'manager',
-            'Manager',
-            'accountant',
-            'Accountant',
-            'auditor',
-            'Auditor',
-        ]) || $user->hasAnyPermission([
+        if ($user->isSuperAdmin() || $user->hasAnyClubPermission([
             'users.manage',
             'reports.view',
+            'journals.view',
+            'expenses.view',
+            'bills.view',
         ])) {
             return Filament::getPanel('admin')?->getUrl() ?? url('/admin');
         }
 
         if ($user->hasAnyRole(['reception', 'Reception'])) {
-            return url('/admin/room-rack');
+            if ($user->hasClubPermission('rooms.view_rack')) {
+                return url('/admin/room-rack');
+            }
+
+            if ($user->hasClubPermission('courts.view_schedule')) {
+                return url('/admin/court-schedule');
+            }
+
+            if ($user->hasClubPermission('counter.operate')) {
+                return route('pos');
+            }
         }
 
-        if ($user->hasAnyRole(['cashier', 'Cashier'])) {
-            return route('pos');
+        if ($user->hasAnyRole(['cashier', 'Cashier']) || $user->hasClubPermission('counter.operate')) {
+            if ($user->hasClubPermission('counter.operate')) {
+                return route('pos');
+            }
+
+            if ($user->hasClubPermission('rooms.view_rack')) {
+                return url('/admin/room-rack');
+            }
+
+            if ($user->hasClubPermission('courts.view_schedule')) {
+                return url('/admin/court-schedule');
+            }
         }
 
         $adminPanel = Filament::getPanel('admin');
 
         if ($adminPanel && $user->canAccessPanel($adminPanel)) {
+            if ($user->hasClubPermission('rooms.view_rack')) {
+                return url('/admin/room-rack');
+            }
+
+            if ($user->hasClubPermission('courts.view_schedule')) {
+                return url('/admin/court-schedule');
+            }
+
             return $adminPanel->getUrl();
         }
 

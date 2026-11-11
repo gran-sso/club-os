@@ -22,6 +22,7 @@ class ListContractorSettlementBatches extends ListRecords
                 ->label('Generate Daily Settlement Batch')
                 ->icon(Heroicon::OutlinedSparkles)
                 ->color('primary')
+                ->visible(fn (): bool => (bool) auth()->user()?->hasClubPermission('contractor.settle'))
                 ->form([
                     DatePicker::make('business_date')
                         ->label('Cutoff Business Date')
@@ -30,6 +31,7 @@ class ListContractorSettlementBatches extends ListRecords
                         ->helperText('Food sales up to the cutoff time on this date will be batched for settlement.'),
                 ])
                 ->action(function (array $data) {
+                    abort_unless((bool) auth()->user()?->hasClubPermission('contractor.settle'), 403);
                     $contractor = Contractor::first();
                     if (!$contractor) {
                         Notification::make()

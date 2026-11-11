@@ -76,25 +76,29 @@ class SupplierResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('stock.manage')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['suppliers.view', 'suppliers.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('stock.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('suppliers.manage'));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('stock.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('suppliers.manage'));
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager']));
+
+        return (bool) ($user && $user->hasClubPermission('suppliers.manage'));
     }
 
     public static function getPages(): array

@@ -65,6 +65,32 @@ class ShiftResource extends Resource
         return static::getUrl('edit', ['record' => $record]);
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['shifts.view', 'shifts.manage']));
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('shifts.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('shifts.manage'));
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ShiftForm::configure($schema);

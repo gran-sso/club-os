@@ -109,6 +109,8 @@ class CounterPos extends Component
 
     public function mount(): void
     {
+        abort_unless((bool) auth('web')->user()?->hasClubPermission('counter.operate'), 403, 'Access denied. You do not have Counter POS access.');
+
         $this->openingFloat = (float) \App\Domain\Shared\Models\SystemSetting::get('default_opening_float', 2000.00);
         $this->refreshActiveShift();
     }
@@ -124,6 +126,11 @@ class CounterPos extends Component
     public function openShift(ShiftService $shiftService): void
     {
         $this->clearMessages();
+
+        if (! auth('web')->user()?->hasClubPermission('counter.operate')) {
+            $this->errorMessage = 'Access denied. Counter shift operations require counter.operate permission.';
+            return;
+        }
 
         try {
             $this->activeShift = $shiftService->openShift(
@@ -142,6 +149,11 @@ class CounterPos extends Component
     public function closeShift(ShiftService $shiftService): void
     {
         $this->clearMessages();
+
+        if (! auth('web')->user()?->hasClubPermission('counter.operate')) {
+            $this->errorMessage = 'Access denied. Closing shifts requires counter.operate permission.';
+            return;
+        }
 
         if (!$this->activeShift) {
             $this->errorMessage = "No active shift to close.";
@@ -1345,6 +1357,12 @@ class CounterPos extends Component
     ): void {
         $this->clearMessages();
 
+        if (! auth('web')->user()?->hasClubPermission('sales.checkout')) {
+            $this->showPaymentConfirmModal = false;
+            $this->errorMessage = 'Access denied. Completing POS checkouts requires sales.checkout permission.';
+            return;
+        }
+
         // 1. Double submit & race condition safeguard
         if ($this->isProcessingPayment) {
             return;
@@ -1393,6 +1411,9 @@ class CounterPos extends Component
                 $guestName = $this->selectedGuest?->name ?? $this->selectedRoomReservation->guest?->name ?? $this->selectedRoomReservation->sponsorMember?->name ?? 'Resident Guest';
                 $notes = "Counter sale for {$this->selectedRoomReservation->facility->name} (Resident: {$guestName})";
             } elseif ($this->isGuestSale && !empty($this->guestFirstName)) {
+                if (! auth('web')->user()?->hasClubPermission('guests.register')) {
+                    throw new \RuntimeException("Access denied. Registering guests or issuing guest passes requires guests.register permission.");
+                }
                 if (!$this->selectedMember) {
                     throw new \RuntimeException("A sponsoring member is required for guest entry.");
                 }
@@ -1545,6 +1566,11 @@ class CounterPos extends Component
     public function rechargeWallet(WalletService $walletService, ReceiptPrinterInterface $printer): void
     {
         $this->clearMessages();
+
+        if (! auth('web')->user()?->hasClubPermission('wallet.recharge')) {
+            $this->errorMessage = 'Access denied. Prepaid wallet recharges require wallet.recharge permission.';
+            return;
+        }
 
         if (!$this->activeShift) {
             $this->errorMessage = "Cannot recharge wallet without an open counter shift.";

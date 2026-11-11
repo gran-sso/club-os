@@ -46,7 +46,8 @@ class RoomRackPage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->checkPermissionTo('rooms.view_rack')));
+
+        return (bool) ($user && $user->hasClubPermission('rooms.view_rack'));
     }
 
     public string $selectedDate = '';
@@ -119,6 +120,8 @@ class RoomRackPage extends Page
     {
         $date = Carbon::parse($this->selectedDate)->startOfDay();
         $dateStr = $date->toDateString();
+        $todayStr = now()->toDateString();
+        $isViewingPastOrToday = $dateStr <= $todayStr;
 
         // 7-day forecast header
         $this->forecastDates = [];
@@ -136,30 +139,49 @@ class RoomRackPage extends Page
         $roomsData = [];
 
         foreach ($rooms as $room) {
-            // Check active maintenance block today
+            // Check active maintenance block for selected date
             $maintenance = FacilityMaintenanceBlock::where('facility_id', $room->id)
                 ->where('status', 'active')
                 ->where('start_date', '<=', $dateStr)
                 ->where('end_date', '>', $dateStr)
                 ->first();
 
-            // Check reservation active or checking in today
-            $activeReservation = RoomReservation::where('facility_id', $room->id)
+            // Any guest still checked in on or before the selected date physically occupies
+            // the room until Reception completes Check-Out (including checkout due today & overstays).
+            $occupiedReservation = null;
+            if ($isViewingPastOrToday) {
+                $occupiedReservation = RoomReservation::where('facility_id', $room->id)
+                    ->where('status', 'checked_in')
+                    ->where('check_in_date', '<=', $dateStr)
+                    ->orderByDesc('check_in_date')
+                    ->orderByDesc('id')
+                    ->with(['guest.person', 'sponsorMember.person'])
+                    ->first();
+            }
+
+            $activeReservation = $occupiedReservation ?? RoomReservation::where('facility_id', $room->id)
                 ->whereIn('status', ['reserved', 'checked_in'])
                 ->where('check_in_date', '<=', $dateStr)
                 ->where('check_out_date', '>', $dateStr)
+                ->orderByRaw("CASE WHEN status = 'checked_in' THEN 0 ELSE 1 END")
+                ->orderBy('check_in_date')
                 ->with(['guest.person', 'sponsorMember.person'])
                 ->first();
 
-            // Next upcoming reservation if currently vacant
+            // Next arriving/upcoming reserved booking (including back-to-back check-ins on check-out day)
             $upcomingReservation = null;
-            if (!$activeReservation) {
-                $upcomingReservation = RoomReservation::where('facility_id', $room->id)
+            if (!$activeReservation || $activeReservation->status === 'checked_in') {
+                $upcomingQuery = RoomReservation::where('facility_id', $room->id)
                     ->where('status', 'reserved')
-                    ->where('check_in_date', '>=', $dateStr)
+                    ->where('check_out_date', '>', $dateStr)
                     ->orderBy('check_in_date')
-                    ->with(['guest.person', 'sponsorMember.person'])
-                    ->first();
+                    ->with(['guest.person', 'sponsorMember.person']);
+
+                if ($activeReservation) {
+                    $upcomingQuery->where('id', '!=', $activeReservation->id);
+                }
+
+                $upcomingReservation = $upcomingQuery->first();
             }
 
             // 7-day occupancy strip
@@ -173,11 +195,24 @@ class RoomRackPage extends Page
                     ->where('end_date', '>', $fDateStr)
                     ->exists();
 
-                $res = RoomReservation::where('facility_id', $room->id)
-                    ->whereIn('status', ['reserved', 'checked_in'])
-                    ->where('check_in_date', '<=', $fDateStr)
-                    ->where('check_out_date', '>', $fDateStr)
-                    ->first();
+                $res = null;
+                if ($fDate['is_today']) {
+                    $res = RoomReservation::where('facility_id', $room->id)
+                        ->where('status', 'checked_in')
+                        ->where('check_in_date', '<=', $fDateStr)
+                        ->orderByDesc('check_in_date')
+                        ->orderByDesc('id')
+                        ->first();
+                }
+
+                if (!$res) {
+                    $res = RoomReservation::where('facility_id', $room->id)
+                        ->whereIn('status', ['reserved', 'checked_in'])
+                        ->where('check_in_date', '<=', $fDateStr)
+                        ->where('check_out_date', '>', $fDateStr)
+                        ->orderByRaw("CASE WHEN status = 'checked_in' THEN 0 ELSE 1 END")
+                        ->first();
+                }
 
                 $status = 'free';
                 if ($isMaint) {
@@ -192,9 +227,25 @@ class RoomRackPage extends Page
                 ];
             }
 
-            // Determine primary display status
+            $latestCheckedOut = RoomReservation::where('facility_id', $room->id)
+                ->where('status', 'checked_out')
+                ->orderByDesc('checked_out_at')
+                ->orderByDesc('id')
+                ->first();
+
+            // Determine primary display status & physical housekeeping state
             $displayStatus = 'vacant_ready';
-            $currentHousekeeping = $activeReservation?->housekeeping_status ?? 'clean';
+            $currentHousekeeping = 'clean';
+
+            if ($activeReservation && $activeReservation->status === 'checked_in') {
+                $currentHousekeeping = $activeReservation->housekeeping_status ?? 'clean';
+            } elseif ($date->isToday()) {
+                if ($activeReservation?->housekeeping_status === 'dirty' || $latestCheckedOut?->housekeeping_status === 'dirty') {
+                    $currentHousekeeping = 'dirty';
+                }
+            } elseif ($activeReservation) {
+                $currentHousekeeping = $activeReservation->housekeeping_status ?? 'clean';
+            }
 
             if ($maintenance) {
                 $displayStatus = 'maintenance';
@@ -207,6 +258,11 @@ class RoomRackPage extends Page
             } elseif ($currentHousekeeping === 'dirty') {
                 $displayStatus = 'vacant_dirty';
             }
+
+            $checkOutDateStr = $activeReservation?->check_out_date?->toDateString();
+            $isCheckedIn = $activeReservation?->status === 'checked_in';
+            $isCheckoutDueToday = $isCheckedIn && $checkOutDateStr === $todayStr;
+            $isOverstay = $isCheckedIn && $checkOutDateStr !== null && $checkOutDateStr < $todayStr;
 
             $roomsData[] = [
                 'id' => $room->id,
@@ -228,12 +284,17 @@ class RoomRackPage extends Page
                     'paid_amount_rupees' => $activeReservation->paid_amount_paise / 100,
                     'balance_rupees' => max(0, ($activeReservation->total_charge_paise - $activeReservation->paid_amount_paise) / 100),
                     'is_fully_paid' => $activeReservation->isFullyPaid(),
+                    'is_checkout_due_today' => $isCheckoutDueToday,
+                    'is_overstay' => $isOverstay,
                     'status' => $activeReservation->status,
                     'housekeeping_status' => $activeReservation->housekeeping_status,
                 ] : null,
                 'upcoming_reservation' => $upcomingReservation ? [
+                    'id' => $upcomingReservation->id,
+                    'reservation_number' => $upcomingReservation->reservation_number,
                     'guest_name' => $upcomingReservation->guest?->name ?? $upcomingReservation->sponsorMember?->name ?? 'Guest',
                     'check_in_date' => $upcomingReservation->check_in_date->format('d M Y'),
+                    'is_arriving_on_selected_date' => $upcomingReservation->check_in_date->toDateString() <= $dateStr,
                 ] : null,
                 'maintenance_reason' => $maintenance?->reason,
                 'forecast' => $forecastStrip,
@@ -245,6 +306,7 @@ class RoomRackPage extends Page
 
     public function openCheckIn(int $reservationId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person'])->findOrFail($reservationId);
         $this->activeReservationId = $res->id;
         $unpaidPaise = max(0, $res->total_charge_paise - $res->paid_amount_paise);
@@ -270,6 +332,7 @@ class RoomRackPage extends Page
 
     public function confirmCheckIn(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         if (!$this->activeReservationId) {
             return;
         }
@@ -307,6 +370,7 @@ class RoomRackPage extends Page
      */
     public function confirmCheckInWithPayment(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         if (!$this->activeReservationId) {
             return;
         }
@@ -381,6 +445,7 @@ class RoomRackPage extends Page
 
     public function openCheckOut(int $reservationId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person'])->findOrFail($reservationId);
         $this->activeReservationId = $res->id;
         $this->activeReservationData = [
@@ -399,6 +464,7 @@ class RoomRackPage extends Page
 
     public function confirmCheckOut(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         if (!$this->activeReservationId) {
             return;
         }
@@ -419,6 +485,7 @@ class RoomRackPage extends Page
 
     public function openHousekeeping(int $roomId, string $currentStatus): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $room = Facility::findOrFail($roomId);
         $this->selectedRoomId = $room->id;
         $this->selectedRoomName = $room->name;
@@ -428,23 +495,46 @@ class RoomRackPage extends Page
 
     public function confirmHousekeeping(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         if (!$this->selectedRoomId) {
             return;
         }
 
-        // Find active reservation or latest reservation for this room
-        $reservation = RoomReservation::where('facility_id', $this->selectedRoomId)
+        $service = app(RoomReservationService::class);
+        $activeReservations = RoomReservation::where('facility_id', $this->selectedRoomId)
             ->whereIn('status', ['reserved', 'checked_in'])
-            ->first();
+            ->get();
 
-        if ($reservation) {
-            $service = app(RoomReservationService::class);
-            $service->setHousekeepingStatus($reservation, $this->housekeepingStatus);
+        if ($this->housekeepingStatus === 'clean') {
+            foreach ($activeReservations as $res) {
+                $service->setHousekeepingStatus($res, 'clean');
+            }
+
+            $dirtyCheckedOut = RoomReservation::where('facility_id', $this->selectedRoomId)
+                ->where('status', 'checked_out')
+                ->where('housekeeping_status', 'dirty')
+                ->get();
+
+            foreach ($dirtyCheckedOut as $checkedOutRes) {
+                $service->setHousekeepingStatus($checkedOutRes, 'clean');
+            }
         } else {
-            // Update latest checked_out reservation
-            $latest = RoomReservation::where('facility_id', $this->selectedRoomId)->latest()->first();
-            if ($latest) {
-                $latest->update(['housekeeping_status' => $this->housekeepingStatus]);
+            foreach ($activeReservations as $res) {
+                if ($res->status === 'checked_in' || $res->check_in_date->toDateString() <= $this->selectedDate) {
+                    $service->setHousekeepingStatus($res, $this->housekeepingStatus);
+                }
+            }
+
+            if ($activeReservations->where('status', 'checked_in')->isEmpty()) {
+                $latestCheckedOut = RoomReservation::where('facility_id', $this->selectedRoomId)
+                    ->where('status', 'checked_out')
+                    ->orderByDesc('checked_out_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($latestCheckedOut) {
+                    $service->setHousekeepingStatus($latestCheckedOut, $this->housekeepingStatus);
+                }
             }
         }
 
@@ -460,6 +550,7 @@ class RoomRackPage extends Page
 
     public function openPaymentModal(int $reservationId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $res = RoomReservation::findOrFail($reservationId);
         $this->activeReservationId = $res->id;
         $unpaidPaise = max(0, $res->total_charge_paise - $res->paid_amount_paise);
@@ -471,6 +562,7 @@ class RoomRackPage extends Page
 
     public function confirmAdvancePayment(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         if (!$this->activeReservationId || $this->paymentAmountRupees <= 0) {
             return;
         }
@@ -537,6 +629,7 @@ class RoomRackPage extends Page
 
     public function openNewBookingModal(?int $facilityId = null): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $selectedFacility = $facilityId 
             ? Facility::find($facilityId) 
             : Facility::where('type', 'room')->where('is_active', true)->first();
@@ -570,6 +663,7 @@ class RoomRackPage extends Page
 
     public function confirmNewBooking(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $rules = [
             'newBooking.facility_id' => 'required|exists:facilities,id',
             'newBooking.check_in_date' => 'required|date',

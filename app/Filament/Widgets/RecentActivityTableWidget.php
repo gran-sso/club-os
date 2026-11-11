@@ -19,6 +19,13 @@ class RecentActivityTableWidget extends TableWidget
 
     protected ?string $pollingInterval = '30s';
 
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['reports.view', 'bills.view', 'bills.manage']));
+    }
+
     public function table(Table $table): Table
     {
         return $table

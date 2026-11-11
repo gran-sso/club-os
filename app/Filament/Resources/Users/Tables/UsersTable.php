@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Domain\Shared\Security\ClubPermissionRegistry;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -40,19 +41,11 @@ class UsersTable
                         'danger' => 'admin',
                         'warning' => 'manager',
                         'info' => 'accountant',
-                        'purple' => 'auditor',
+                        'gray' => 'auditor',
                         'primary' => 'reception',
                         'success' => 'cashier',
                     ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'admin' => 'Admin',
-                        'manager' => 'Manager',
-                        'accountant' => 'Accountant',
-                        'auditor' => 'Auditor',
-                        'reception' => 'Reception',
-                        'cashier' => 'Cashier',
-                        default => ucfirst($state),
-                    }),
+                    ->formatStateUsing(fn (string $state): string => ClubPermissionRegistry::roleShortBadgeLabel($state)),
 
                 TextColumn::make('permissions_count')
                     ->counts('permissions')

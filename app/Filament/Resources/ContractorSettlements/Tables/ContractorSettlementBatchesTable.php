@@ -78,11 +78,12 @@ class ContractorSettlementBatchesTable
                     ->label('Approve Batch')
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
-                    ->visible(fn ($record) => $record->status === 'draft')
+                    ->visible(fn ($record) => $record->status === 'draft' && (bool) auth()->user()?->hasClubPermission('contractor.settle'))
                     ->requiresConfirmation()
                     ->modalHeading('Approve Contractor Settlement Batch')
                     ->modalDescription('Approve this food settlement batch? This will post the contractor food expense and liability to the general ledger.')
                     ->action(function ($record) {
+                        abort_unless((bool) auth()->user()?->hasClubPermission('contractor.settle'), 403);
                         $service = app(ContractorSettlementService::class);
                         $service->approveSettlementBatch($record, auth()->user());
                         Notification::make()
@@ -96,7 +97,7 @@ class ContractorSettlementBatchesTable
                     ->label('Record Payout')
                     ->icon(Heroicon::OutlinedBanknotes)
                     ->color('primary')
-                    ->visible(fn ($record) => in_array($record->status, ['approved', 'partially_paid']) && $record->residual_payable_paise > 0)
+                    ->visible(fn ($record) => in_array($record->status, ['approved', 'partially_paid']) && $record->residual_payable_paise > 0 && (bool) auth()->user()?->hasClubPermission('contractor.settle'))
                     ->form([
                         Select::make('bank_account_id')
                             ->label('Disbursing Club Bank Account')

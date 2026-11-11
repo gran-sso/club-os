@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Shared\Security\ClubPermissionRegistry;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +29,10 @@ class User extends Authenticatable implements FilamentUser
         'remember_token',
     ];
 
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected function casts(): array
     {
         return [
@@ -44,28 +49,51 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
-        // Administrative, management, front-desk, and counter staff can access the panel.
-        // Sensitive financial ledgers, reports, tariffs, and contractor payouts are scoped per resource.
-        return $this->hasAnyRole([
-            'admin',
-            'manager',
-            'accountant',
-            'auditor',
-            'reception',
-            'cashier',
-            'Administrator',
-            'Manager',
-            'Accountant',
-            'Auditor',
-            'Reception',
-            'Cashier',
-        ]) || $this->hasAnyPermission([
-            'users.manage',
-            'reports.view',
-            'rooms.view_rack',
-            'courts.view_schedule',
-            'counter.operate',
-        ]);
+        if ($this->hasAnyRole(ClubPermissionRegistry::SUPER_ROLES)) {
+            return true;
+        }
+
+        return $this->hasAnyClubPermission(ClubPermissionRegistry::adminPanelPermissions());
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_active && $this->hasAnyRole(ClubPermissionRegistry::SUPER_ROLES);
+    }
+
+    public function hasClubPermission(string $permission): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if ($this->hasAnyRole(ClubPermissionRegistry::SUPER_ROLES)) {
+            return true;
+        }
+
+        return $this->checkPermissionTo($permission);
+    }
+
+    /**
+     * @param  array<int, string>  $permissions
+     */
+    public function hasAnyClubPermission(array $permissions): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if ($this->hasAnyRole(ClubPermissionRegistry::SUPER_ROLES)) {
+            return true;
+        }
+
+        foreach ($permissions as $permission) {
+            if ($this->checkPermissionTo($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

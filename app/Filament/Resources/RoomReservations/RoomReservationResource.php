@@ -68,6 +68,32 @@ class RoomReservationResource extends Resource
         return static::getUrl('edit', ['record' => $record]);
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['rooms.view_rack', 'rooms.manage_reservations']));
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('rooms.manage_reservations'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('rooms.manage_reservations'));
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return RoomReservationForm::configure($schema);

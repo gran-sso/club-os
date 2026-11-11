@@ -89,7 +89,7 @@ class EditBill extends EditRecord
         }
 
         // Refund action for paid bills
-        if ($status === 'paid' && auth()->user()?->hasAnyRole(['admin', 'manager', 'Administrator', 'Manager'])) {
+        if ($status === 'paid' && auth()->user()?->hasClubPermission('refunds.approve')) {
             $actions[] = Action::make('refund')
                 ->label('Authorize Refund')
                 ->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowUturnLeft)

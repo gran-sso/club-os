@@ -108,7 +108,7 @@ class GuestService
      */
     public function cancelUnusedGuestPass(GuestPass $pass, string $reason, \App\Models\User $approver): array
     {
-        if (!$approver->hasAnyRole(['admin', 'manager', 'Administrator', 'Manager'])) {
+        if (!$approver->hasClubPermission('refunds.approve')) {
             throw new UnauthorizedActionException("Only a Manager or Administrator can revoke passes and approve refunds.");
         }
 

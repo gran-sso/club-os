@@ -370,7 +370,7 @@ class InventoryService
         }
 
         $operator = $userId ? User::find($userId) : auth()->user();
-        if ($operator && !$operator->hasRole('admin') && !$operator->hasRole('manager') && !$operator->hasPermissionTo('stock.manage')) {
+        if ($operator && !$operator->hasClubPermission('stock.manage')) {
             throw new UnauthorizedActionException("Only a Manager or Administrator can adjust stock.");
         }
 

@@ -154,4 +154,203 @@ class RoomRackCheckInWorkflowTest extends TestCase
         $this->assertEquals(50000, $res->paid_amount_paise);
         $this->assertFalse($res->isFullyPaid());
     }
+
+    public function test_checked_in_room_with_checkout_today_still_shows_occupied_on_room_rack_and_pulse_widget(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+        $guest = \App\Domain\Access\Models\Guest::firstOrFail();
+
+        $res = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-DUE-TODAY-01',
+            'facility_id' => $room->id,
+            'guest_id' => $guest->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Access\Models\Guest::class,
+            'payer_id' => $guest->id,
+            'check_in_date' => now()->subDay()->toDateString(),
+            'check_out_date' => now()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 250000,
+            'paid_amount_paise' => 250000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        app(\App\Domain\Facility\Services\RoomReservationService::class)->checkIn($res, $reception);
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->assertSee('OCCUPIED')
+            ->assertSee('Check-Out Due Today')
+            ->assertSee('Check-Out Guest');
+
+        $roomData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertNotNull($roomData);
+        $this->assertEquals('occupied', $roomData['status']);
+        $this->assertTrue($roomData['active_reservation']['is_checkout_due_today']);
+        $this->assertFalse($roomData['active_reservation']['is_overstay']);
+        $this->assertEquals('occupied', $roomData['forecast'][0]['status']);
+
+        $this->actingAs($reception);
+        $pulseData = (new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData();
+        $pulseRoom = collect($pulseData['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('occupied', $pulseRoom['status']);
+        $this->assertEquals($guest->name, $pulseRoom['occupant']);
+    }
+
+    public function test_overstaying_checked_in_room_past_checkout_date_stays_occupied_with_overstay_warning(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+
+        $res = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-OVERSTAY-01',
+            'facility_id' => $room->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Membership\Models\Member::class,
+            'payer_id' => $member->id,
+            'check_in_date' => now()->subDays(3)->toDateString(),
+            'check_out_date' => now()->subDay()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 500000,
+            'paid_amount_paise' => 500000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        app(\App\Domain\Facility\Services\RoomReservationService::class)->checkIn($res, $reception);
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->assertSee('OCCUPIED')
+            ->assertSee('Overdue Check-Out')
+            ->assertSee('Check-Out Guest');
+
+        $roomData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('occupied', $roomData['status']);
+        $this->assertTrue($roomData['active_reservation']['is_overstay']);
+        $this->assertFalse($roomData['active_reservation']['is_checkout_due_today']);
+
+        $this->actingAs($reception);
+        $pulseData = (new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData();
+        $pulseRoom = collect($pulseData['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('occupied', $pulseRoom['status']);
+    }
+
+    public function test_back_to_back_checkin_blocked_while_current_guest_is_still_checked_in_and_room_rack_surfaces_arrival(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+        $guest = \App\Domain\Access\Models\Guest::firstOrFail();
+
+        $currentStay = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-CURRENT-STAY',
+            'facility_id' => $room->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Membership\Models\Member::class,
+            'payer_id' => $member->id,
+            'check_in_date' => now()->subDay()->toDateString(),
+            'check_out_date' => now()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 250000,
+            'paid_amount_paise' => 250000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        $service = app(\App\Domain\Facility\Services\RoomReservationService::class);
+        $service->checkIn($currentStay, $reception);
+
+        $arrivingToday = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-ARRIVING-TODAY',
+            'facility_id' => $room->id,
+            'guest_id' => $guest->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Access\Models\Guest::class,
+            'payer_id' => $guest->id,
+            'check_in_date' => now()->toDateString(),
+            'check_out_date' => now()->addDay()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 250000,
+            'paid_amount_paise' => 250000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->assertSee('OCCUPIED')
+            ->assertSee('Arriving Today:');
+
+        $roomData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('occupied', $roomData['status']);
+        $this->assertNotNull($roomData['upcoming_reservation']);
+        $this->assertTrue($roomData['upcoming_reservation']['is_arriving_on_selected_date']);
+        $this->assertEquals($guest->name, $roomData['upcoming_reservation']['guest_name']);
+
+        $this->expectException(\App\Domain\Facility\Exceptions\FacilityNotReadyException::class);
+        $service->checkIn($arrivingToday, $reception);
+    }
+
+    public function test_room_shows_dirty_immediately_after_checkout_and_returns_ready_after_housekeeping_clean(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+
+        $res = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-CHECKOUT-DIRTY-01',
+            'facility_id' => $room->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Membership\Models\Member::class,
+            'payer_id' => $member->id,
+            'check_in_date' => now()->subDay()->toDateString(),
+            'check_out_date' => now()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 250000,
+            'paid_amount_paise' => 250000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        app(\App\Domain\Facility\Services\RoomReservationService::class)->checkIn($res, $reception);
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->call('openCheckOut', $res->id)
+            ->call('confirmCheckOut');
+
+        $res->refresh();
+        $this->assertEquals('checked_out', $res->status);
+        $this->assertEquals('dirty', $res->housekeeping_status);
+
+        $dirtyRoomData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('vacant_dirty', $dirtyRoomData['status']);
+        $component->assertSee('DIRTY')->assertSee('Needs Cleaning');
+
+        $this->actingAs($reception);
+        $dirtyPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('cleaning', $dirtyPulse['status']);
+
+        $component
+            ->call('openHousekeeping', $room->id, 'dirty')
+            ->set('housekeepingStatus', 'clean')
+            ->call('confirmHousekeeping');
+
+        $cleanRoomData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('vacant_ready', $cleanRoomData['status']);
+        $this->assertEquals('clean', $cleanRoomData['housekeeping_status']);
+
+        $readyPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('available', $readyPulse['status']);
+    }
 }

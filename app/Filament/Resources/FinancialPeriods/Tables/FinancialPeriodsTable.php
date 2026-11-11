@@ -72,8 +72,9 @@ class FinancialPeriodsTable
                     ->requiresConfirmation()
                     ->modalHeading(fn ($record) => "Close Financial Period {$record->period_code}")
                     ->modalDescription('Closing this period will permanently lock all accounting transactions within this date range. No backdated bills or expenses can be posted.')
-                    ->visible(fn ($record) => $record->status !== 'closed')
+                    ->visible(fn ($record) => $record->status !== 'closed' && (bool) auth()->user()?->hasClubPermission('periods.manage'))
                     ->action(function ($record) {
+                        abort_unless((bool) auth()->user()?->hasClubPermission('periods.manage'), 403);
                         $service = app(\App\Domain\Finance\Services\PeriodClosingService::class);
                         $service->closePeriod(
                             periodCode: $record->period_code,

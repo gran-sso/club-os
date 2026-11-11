@@ -55,7 +55,8 @@ class IntegrationStatusPage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('integrations.manage')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['integrations.view', 'integrations.manage']));
     }
 
     public function mount(): void
@@ -88,6 +89,7 @@ class IntegrationStatusPage extends Page
 
     public function saveTallySettings(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('integrations.manage'), 403);
         $this->validate([
             'tallyHost' => 'required|string|max:150',
             'tallyPort' => 'required|numeric|min:1|max:65535',
@@ -115,6 +117,7 @@ class IntegrationStatusPage extends Page
 
     public function testTallyConnection(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('integrations.manage'), 403);
         $this->validate([
             'tallyHost' => 'required|string|max:150',
             'tallyPort' => 'required|numeric|min:1|max:65535',
@@ -143,6 +146,7 @@ class IntegrationStatusPage extends Page
 
     public function dispatchOutbox(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('integrations.manage'), 403);
         $tallyConnector = app(AccountingConnectorInterface::class);
         $syncService = app(TallySyncService::class);
         $syncService->processPendingOutbox($tallyConnector);
@@ -151,6 +155,7 @@ class IntegrationStatusPage extends Page
 
     public function testAccessEntry(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('integrations.manage'), 403);
         if (empty(trim($this->simCardNumber))) {
             return;
         }
@@ -161,6 +166,7 @@ class IntegrationStatusPage extends Page
 
     public function generateSampleReceipt(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('integrations.manage'), 403);
         $printer = app(ReceiptPrinterInterface::class);
         $dummyReceipt = new PaymentReceipt([
             'receipt_number' => 'RCT-TEST-0001',

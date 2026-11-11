@@ -78,21 +78,21 @@ class AccountResource extends Resource
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole(['admin', 'accountant']) || $user->checkPermissionTo('reports.view')));
+        return (bool) ($user && $user->hasAnyClubPermission(['accounts.view', 'accounts.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && $user->hasRole(['admin', 'accountant']));
+        return (bool) ($user && $user->hasClubPermission('accounts.manage'));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && $user->hasRole(['admin', 'accountant']));
+        return (bool) ($user && $user->hasClubPermission('accounts.manage'));
     }
 
     public static function canDelete(Model $record): bool
@@ -104,7 +104,7 @@ class AccountResource extends Resource
             return false;
         }
 
-        return (bool) ($user && $user->hasRole(['admin', 'accountant']));
+        return (bool) ($user && $user->hasClubPermission('accounts.manage'));
     }
 
     public static function getPages(): array

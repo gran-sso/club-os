@@ -179,6 +179,7 @@ class ViewMember extends ViewRecord
     // Modal Triggers
     public function openTopUpModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('wallet.recharge'), 403);
         $this->topUpAmount = '';
         $this->topUpTender = 'cash';
         $this->topUpRef = '';
@@ -193,6 +194,7 @@ class ViewMember extends ViewRecord
 
     public function processTopUp(WalletService $walletService): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('wallet.recharge'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
 
@@ -245,6 +247,7 @@ class ViewMember extends ViewRecord
 
     public function openCardModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
         $this->newCardNumber = '';
@@ -259,6 +262,7 @@ class ViewMember extends ViewRecord
 
     public function processCardIssue(CardService $cardService): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
 
@@ -300,6 +304,7 @@ class ViewMember extends ViewRecord
 
     public function openDependentModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         $this->depFirstName = '';
         $this->depLastName = '';
         $this->depPhone = '';
@@ -315,6 +320,7 @@ class ViewMember extends ViewRecord
 
     public function processDependentRegister(MemberService $memberService): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
 
@@ -358,6 +364,7 @@ class ViewMember extends ViewRecord
 
     public function toggleDependentWalletDebit(int $dependentId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         $dep = Dependent::where('member_id', $this->getRecord()->id)->findOrFail($dependentId);
         $dep->can_spend_wallet = !$dep->can_spend_wallet;
         $dep->save();
@@ -374,6 +381,7 @@ class ViewMember extends ViewRecord
 
     public function openStatusModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
         $this->newStatus = $record->status instanceof \BackedEnum ? $record->status->value : (string) $record->status;
@@ -388,6 +396,7 @@ class ViewMember extends ViewRecord
 
     public function processStatusChange(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $record */
         $record = $this->getRecord();
 
@@ -488,6 +497,7 @@ class ViewMember extends ViewRecord
     // Direct Court Booking Methods
     public function openBookCourtModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         $court = Facility::where('type', 'court')->first();
         $this->bookCourtFacilityId = $court?->id;
         $this->bookCourtDate = now()->toDateString();
@@ -513,6 +523,7 @@ class ViewMember extends ViewRecord
 
     public function processDirectCourtBooking(CourtBookingService $service): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
         $court = Facility::findOrFail($this->bookCourtFacilityId);
@@ -557,6 +568,7 @@ class ViewMember extends ViewRecord
     // Direct Room Reservation Methods
     public function openBookRoomModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $room = Facility::where('type', 'room')->where('is_active', true)->first();
         $this->bookRoomFacilityId = $room?->id;
         $this->bookRoomCheckIn = now()->toDateString();
@@ -575,6 +587,7 @@ class ViewMember extends ViewRecord
 
     public function processDirectRoomBooking(RoomReservationService $service): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
 
@@ -687,6 +700,7 @@ class ViewMember extends ViewRecord
     // Confidential Committee / Staff Notes Methods
     public function openAddNoteModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         $this->noteCategory = 'general';
         $this->noteContent = '';
         $this->showAddNoteModal = true;
@@ -699,6 +713,7 @@ class ViewMember extends ViewRecord
 
     public function processAddNote(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
 
@@ -731,6 +746,7 @@ class ViewMember extends ViewRecord
     // Gate Access Security Methods
     public function blockActiveCard(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
         $activeCard = $member->activeCard;
@@ -764,6 +780,7 @@ class ViewMember extends ViewRecord
 
     public function unblockCard(int $cardId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
         $card = Card::where('id', $cardId)->where('cardable_type', Member::class)->where('cardable_id', $member->id)->firstOrFail();
@@ -797,6 +814,7 @@ class ViewMember extends ViewRecord
     // Club Locker Allocation Methods
     public function openAssignLockerModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         $firstAvailable = Locker::where('status', 'available')->first();
         $this->selectedLockerId = $firstAvailable?->id;
         $this->lockerDepositRupees = $firstAvailable ? (int) $firstAvailable->deposit_rupees : 1000;
@@ -812,6 +830,7 @@ class ViewMember extends ViewRecord
 
     public function processAssignLocker(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
 
@@ -855,6 +874,7 @@ class ViewMember extends ViewRecord
 
     public function vacateLocker(int $lockerId): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
         $locker = Locker::where('id', $lockerId)->where('assigned_member_id', $member->id)->firstOrFail();
@@ -889,6 +909,7 @@ class ViewMember extends ViewRecord
     // Annual Membership Renewal Methods
     public function openRenewModal(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
         $feePaise = $member->category?->annual_fee_paise ?? 500000;
@@ -921,6 +942,7 @@ class ViewMember extends ViewRecord
 
     public function processRenewMembership(WalletService $walletService): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
         /** @var Member $member */
         $member = $this->getRecord();
 

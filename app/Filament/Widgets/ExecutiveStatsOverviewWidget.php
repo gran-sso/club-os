@@ -24,7 +24,8 @@ class ExecutiveStatsOverviewWidget extends StatsOverviewWidget
     public static function canView(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager', 'accountant', 'auditor']));
+
+        return (bool) ($user && $user->hasClubPermission('reports.view'));
     }
 
     protected function getStats(): array

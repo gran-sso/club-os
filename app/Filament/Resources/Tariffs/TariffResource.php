@@ -54,31 +54,37 @@ class TariffResource extends Resource
 
     public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
     {
-        return static::getUrl('edit', ['record' => $record]);
+        return auth()->user()?->hasClubPermission('tariffs.manage')
+            ? static::getUrl('edit', ['record' => $record])
+            : static::getUrl('index');
     }
 
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['tariffs.view', 'tariffs.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('tariffs.manage'));
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('tariffs.manage'));
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
+
+        return (bool) ($user && $user->hasClubPermission('tariffs.manage'));
     }
 
     public static function form(Schema $schema): Schema

@@ -56,6 +56,39 @@ class MemberResource extends Resource
         return parent::getGlobalSearchEloquentQuery()->with(['person', 'category', 'wallet']);
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['members.view', 'members.manage']));
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('members.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('members.manage'));
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('members.manage'));
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MemberForm::configure($schema);

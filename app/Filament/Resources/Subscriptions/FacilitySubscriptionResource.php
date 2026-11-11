@@ -69,6 +69,34 @@ class FacilitySubscriptionResource extends Resource
         return static::getUrl('index');
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasAnyClubPermission(['subscriptions.view', 'subscriptions.manage']));
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('subscriptions.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('subscriptions.manage'));
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('subscriptions.manage'));
+    }
+
     public static function form(Schema $schema): Schema
     {
         return FacilitySubscriptionForm::configure($schema);

@@ -62,13 +62,22 @@ class BankAccountResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('reports.view')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['bank_accounts.view', 'bank_accounts.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('reports.view')));
+
+        return (bool) ($user && $user->hasClubPermission('bank_accounts.manage'));
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+
+        return (bool) ($user && $user->hasClubPermission('bank_accounts.manage'));
     }
 
     public static function form(Schema $schema): Schema

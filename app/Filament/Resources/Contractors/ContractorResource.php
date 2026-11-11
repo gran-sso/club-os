@@ -57,31 +57,37 @@ class ContractorResource extends Resource
 
     public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): ?string
     {
-        return static::getUrl('edit', ['record' => $record]);
+        return auth()->user()?->hasClubPermission('contractors.manage')
+            ? static::getUrl('edit', ['record' => $record])
+            : static::getUrl('index');
     }
 
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('contractor.settle')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['contractors.view', 'contractors.manage']));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
+
+        return (bool) ($user && $user->hasClubPermission('contractors.manage'));
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
+
+        return (bool) ($user && $user->hasClubPermission('contractors.manage'));
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
+
+        return (bool) ($user && $user->hasClubPermission('contractors.manage'));
     }
 
     public static function form(Schema $schema): Schema

@@ -59,7 +59,23 @@ class ContractorSettlementBatchResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('contractor.settle')));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['contractor.view', 'contractor.settle']));
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
     }
 
     public static function form(Schema $schema): Schema

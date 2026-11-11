@@ -623,13 +623,15 @@
                                             </div>
                                         </div>
 
-                                        @if ($hasIdProof)
+                                        @if ($hasIdProof && auth()->user()?->hasClubPermission('members.kyc_view'))
                                             <a href="/documents/members/{{ $member->id }}/id_proof.jpg" target="_blank"
                                                 class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-2xs hover:bg-slate-50 transition shrink-0 inline-flex items-center gap-1">
                                                 <span>View Proof</span>
                                                 <span aria-hidden="true">&rarr;</span>
                                             </a>
-                                        @else
+                                        @elseif ($hasIdProof)
+                                            <span class="px-2.5 py-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">Restricted</span>
+                                        @elseif (auth()->user()?->hasClubPermission('members.manage'))
                                             <a href="{{ $editMemberUrl }}"
                                                 class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition shrink-0 inline-flex items-center gap-1">
                                                 <span>Upload</span>
@@ -664,13 +666,15 @@
                                             </div>
                                         </div>
 
-                                        @if ($hasAppForm)
+                                        @if ($hasAppForm && auth()->user()?->hasClubPermission('members.kyc_view'))
                                             <a href="/documents/members/{{ $member->id }}/application_form.pdf" target="_blank"
                                                 class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-2xs hover:bg-slate-50 transition shrink-0 inline-flex items-center gap-1">
                                                 <span>View Form</span>
                                                 <span aria-hidden="true">&rarr;</span>
                                             </a>
-                                        @else
+                                        @elseif ($hasAppForm)
+                                            <span class="px-2.5 py-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">Restricted</span>
+                                        @elseif (auth()->user()?->hasClubPermission('members.manage'))
                                             <a href="{{ $editMemberUrl }}"
                                                 class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition shrink-0 inline-flex items-center gap-1">
                                                 <span>Upload</span>

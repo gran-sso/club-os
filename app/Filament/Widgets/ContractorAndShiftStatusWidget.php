@@ -22,7 +22,8 @@ class ContractorAndShiftStatusWidget extends Widget
     public static function canView(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager', 'accountant']));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['contractor.view', 'contractor.settle', 'shifts.manage']));
     }
 
     public function getViewData(): array

@@ -67,7 +67,7 @@ class ShiftsTable
                     ->label('Close Shift')
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedLockClosed)
                     ->color('danger')
-                    ->visible(fn ($record) => ($record->status?->value ?? $record->status) === 'open')
+                    ->visible(fn ($record) => ($record->status?->value ?? $record->status) === 'open' && (bool) auth()->user()?->hasClubPermission('shifts.manage'))
                     ->form([
                         \Filament\Forms\Components\Placeholder::make('expected_display')
                             ->label('Current System Expected Cash')
@@ -84,6 +84,7 @@ class ShiftsTable
                             ->placeholder('Cash drop reference or reasons for discrepancy if any.'),
                     ])
                     ->action(function ($record, array $data) {
+                        abort_unless((bool) auth()->user()?->hasClubPermission('shifts.manage'), 403);
                         $service = app(\App\Domain\Billing\Services\ShiftService::class);
                         $countedPaise = (int) round(((float) $data['counted_cash']) * 100);
                         $service->closeShift($record, $countedPaise, $data['close_notes'] ?? null);

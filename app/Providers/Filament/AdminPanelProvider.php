@@ -71,7 +71,9 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn (): string => route('pos'))
                     ->icon(Heroicon::OutlinedBolt)
                     ->sort(-1)
-                    ->visible(fn (): bool => ! (auth()->user()?->hasRole('admin') ?? false)),
+                    ->visible(fn (): bool => (bool) ($user = auth()->user())
+                        && ! $user->isSuperAdmin()
+                        && $user->hasClubPermission('counter.operate')),
             ])
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()

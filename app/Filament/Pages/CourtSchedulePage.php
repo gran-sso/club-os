@@ -32,7 +32,8 @@ class CourtSchedulePage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->checkPermissionTo('courts.view_schedule')));
+
+        return (bool) ($user && $user->hasClubPermission('courts.view_schedule'));
     }
 
     public string $selectedDate = '';
@@ -181,6 +182,7 @@ class CourtSchedulePage extends Page
 
     public function openBookModal(string $startTime, string $endTime): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         $slotStart = Carbon::parse("{$this->selectedDate} {$startTime}");
         if ($slotStart->isPast()) {
             Notification::make()
@@ -200,6 +202,7 @@ class CourtSchedulePage extends Page
 
     public function confirmBooking(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         if (!$this->courtFacilityId || !$this->bookMemberId) {
             return;
         }
@@ -249,6 +252,7 @@ class CourtSchedulePage extends Page
 
     public function openCancelModal(int $bookingId, string $bookingRef): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         $this->cancelBookingId = $bookingId;
         $this->cancelBookingRef = $bookingRef;
         $this->showCancelModal = true;
@@ -256,6 +260,7 @@ class CourtSchedulePage extends Page
 
     public function confirmCancel(): void
     {
+        abort_unless((bool) auth()->user()?->hasClubPermission('courts.manage_bookings'), 403);
         if (!$this->cancelBookingId) {
             return;
         }

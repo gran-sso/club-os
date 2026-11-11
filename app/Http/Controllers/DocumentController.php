@@ -21,8 +21,8 @@ class DocumentController extends Controller
             abort(Response::HTTP_UNAUTHORIZED, 'Authentication required to access member records.');
         }
 
-        // Only authorized staff roles can view sensitive member documents
-        if (!$user->hasAnyRole(['admin', 'manager', 'reception', 'accountant', 'Administrator', 'Manager', 'Reception', 'Accountant'])) {
+        // Only authorized staff with KYC document access can view sensitive member documents
+        if (! $user->hasClubPermission('members.kyc_view')) {
             abort(Response::HTTP_FORBIDDEN, 'Access denied. You do not have permission to inspect member identification documents.');
         }
 

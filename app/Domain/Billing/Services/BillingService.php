@@ -414,7 +414,7 @@ class BillingService
         }
 
         // Cashier cannot approve refunds - requires manager or admin
-        if (!$approver->hasAnyRole(['admin', 'manager', 'Administrator', 'Manager'])) {
+        if (!$approver->hasClubPermission('refunds.approve')) {
             throw new UnauthorizedActionException("Only a Manager or Administrator can approve refunds.");
         }
 

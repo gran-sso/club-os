@@ -115,6 +115,20 @@
                                     <div class="text-[10px] text-slate-500 font-mono">
                                         {{ $res['guest_phone'] }}
                                     </div>
+                                    @if (!empty($res['is_overstay']))
+                                        <div class="px-2 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-700">
+                                            Overdue Check-Out
+                                        </div>
+                                    @elseif (!empty($res['is_checkout_due_today']))
+                                        <div class="px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800">
+                                            Check-Out Due Today
+                                        </div>
+                                    @endif
+                                    @if ($isReserved && ($room['housekeeping_status'] ?? 'clean') === 'dirty')
+                                        <div class="px-2 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800">
+                                            Room needs cleaning before check-in
+                                        </div>
+                                    @endif
                                     <div class="pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px]">
                                         <span class="text-slate-500">Dates:</span>
                                         <span class="font-semibold text-slate-800 font-mono">{{ $res['check_in_date'] }} &rarr; {{ $res['check_out_date'] }}</span>
@@ -133,6 +147,15 @@
                                         <div class="pt-1 border-t border-rose-100 flex justify-between items-center text-[10px] text-rose-700 font-bold">
                                             <span>Balance Due:</span>
                                             <span class="font-mono">₹{{ number_format($res['balance_rupees'], 2) }}</span>
+                                        </div>
+                                    @endif
+                                    @if ($isOccupied && !empty($room['upcoming_reservation']))
+                                        <div class="pt-1 border-t border-slate-100 text-[10px] font-medium {{ !empty($room['upcoming_reservation']['is_arriving_on_selected_date']) ? 'text-blue-700 font-semibold' : 'text-slate-600' }}">
+                                            @if (!empty($room['upcoming_reservation']['is_arriving_on_selected_date']))
+                                                Arriving Today: <strong>{{ $room['upcoming_reservation']['guest_name'] }}</strong>
+                                            @else
+                                                Next Arrival: <strong>{{ $room['upcoming_reservation']['guest_name'] }}</strong> ({{ $room['upcoming_reservation']['check_in_date'] }})
+                                            @endif
                                         </div>
                                     @endif
                                 </div>

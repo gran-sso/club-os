@@ -117,8 +117,29 @@ class RoomReservationService
                 throw new PaymentRequiredException("Cannot check in: reservation requires full payment of accommodation charge (unpaid: {$unpaid} paise).");
             }
 
+            $occupiedByOther = RoomReservation::where('facility_id', $locked->facility_id)
+                ->where('id', '!=', $locked->id)
+                ->where('status', 'checked_in')
+                ->lockForUpdate()
+                ->exists();
+
+            if ($occupiedByOther) {
+                throw new FacilityNotReadyException("Cannot check in: room is still occupied until current guest checks out.");
+            }
+
             if ($locked->housekeeping_status !== 'clean') {
                 throw new FacilityNotReadyException("Cannot check in: room is not clean (current status: {$locked->housekeeping_status}).");
+            }
+
+            $latestCheckedOut = RoomReservation::where('facility_id', $locked->facility_id)
+                ->where('id', '!=', $locked->id)
+                ->where('status', 'checked_out')
+                ->orderByDesc('checked_out_at')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($latestCheckedOut && $latestCheckedOut->housekeeping_status === 'dirty') {
+                throw new FacilityNotReadyException("Cannot check in: room requires housekeeping cleanup after previous check-out.");
             }
 
             $inMaintenance = FacilityMaintenanceBlock::where('facility_id', $locked->facility_id)

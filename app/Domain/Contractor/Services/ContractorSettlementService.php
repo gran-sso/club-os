@@ -168,7 +168,7 @@ class ContractorSettlementService
             throw new InvalidArgumentException("Only draft settlement batches can be approved.");
         }
 
-        if (!$approver->hasAnyRole(['admin', 'manager', 'accountant', 'Administrator', 'Manager', 'Accountant'])) {
+        if (!$approver->hasClubPermission('contractor.settle')) {
             throw new UnauthorizedActionException("Only an Accountant, Manager, or Administrator can approve contractor settlements.");
         }
 

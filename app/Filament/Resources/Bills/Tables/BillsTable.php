@@ -94,7 +94,7 @@ class BillsTable
                     ->label('Authorize Refund')
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedArrowUturnLeft)
                     ->color('danger')
-                    ->visible(fn ($record) => ($record->status?->value ?? $record->status) === 'paid' && auth()->user()?->hasAnyRole(['admin', 'manager', 'Administrator', 'Manager']))
+                    ->visible(fn ($record) => ($record->status?->value ?? $record->status) === 'paid' && auth()->user()?->hasClubPermission('refunds.approve'))
                     ->form([
                         \Filament\Forms\Components\TextInput::make('reason')
                             ->label('Manager Authorization Reason')

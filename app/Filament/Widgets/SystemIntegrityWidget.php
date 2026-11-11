@@ -25,7 +25,8 @@ class SystemIntegrityWidget extends Widget
     public static function canView(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && $user->hasRole(['admin', 'manager', 'accountant', 'auditor']));
+
+        return (bool) ($user && $user->hasAnyClubPermission(['reports.view', 'integrations.view', 'integrations.manage']));
     }
 
     public function getViewData(): array

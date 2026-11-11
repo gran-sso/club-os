@@ -29,89 +29,9 @@ class ProductionBootstrapSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 1. Core Permissions
-        $permissions = [
-            'users.manage',
-            'tariffs.manage',
-            'refunds.approve',
-            'members.manage',
-            'guests.register',
-            'counter.operate',
-            'wallet.recharge',
-            'sales.checkout',
-            'reports.view',
-            'integrations.manage',
-            'stock.manage',
-            'contractor.settle',
-            'rooms.view_rack',
-            'rooms.manage_reservations',
-            'courts.view_schedule',
-            'courts.manage_bookings',
-            'notices.manage',
-        ];
-
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm]);
-        }
-
-        // 2. Roles
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->syncPermissions(Permission::all());
-
-        $managerRole = Role::firstOrCreate(['name' => 'manager']);
-        $managerRole->syncPermissions([
-            'tariffs.manage',
-            'refunds.approve',
-            'members.manage',
-            'guests.register',
-            'counter.operate',
-            'wallet.recharge',
-            'sales.checkout',
-            'reports.view',
-            'stock.manage',
-            'contractor.settle',
-            'rooms.view_rack',
-            'rooms.manage_reservations',
-            'courts.view_schedule',
-            'courts.manage_bookings',
-            'notices.manage',
-        ]);
-
-        $cashierRole = Role::firstOrCreate(['name' => 'cashier']);
-        $cashierRole->syncPermissions([
-            'counter.operate',
-            'wallet.recharge',
-            'sales.checkout',
-            'guests.register',
-            'rooms.view_rack',
-            'rooms.manage_reservations',
-            'courts.view_schedule',
-            'courts.manage_bookings',
-        ]);
-
-        $receptionRole = Role::firstOrCreate(['name' => 'reception']);
-        $receptionRole->syncPermissions([
-            'members.manage',
-            'guests.register',
-            'counter.operate',
-            'wallet.recharge',
-            'sales.checkout',
-            'rooms.view_rack',
-            'rooms.manage_reservations',
-            'courts.view_schedule',
-            'courts.manage_bookings',
-            'notices.manage',
-        ]);
-
-        $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
-        $accountantRole->syncPermissions([
-            'reports.view',
-            'integrations.manage',
-            'contractor.settle',
-            'notices.manage',
-        ]);
-
-        Role::firstOrCreate(['name' => 'auditor'])->syncPermissions(['reports.view']);
+        // 1 & 2. Core + Granular Form Permissions & Roles (preserves existing non-admin customizations)
+        \App\Domain\Shared\Security\ClubPermissionRegistry::seedBootstrapRolesAndPermissions();
+        $adminRole = Role::where('name', 'admin')->where('guard_name', 'web')->firstOrFail();
 
         // 3. Departments
         $depts = [
