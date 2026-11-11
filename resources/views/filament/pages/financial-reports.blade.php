@@ -159,7 +159,7 @@
         @if($activeTab === 'sales')
             <div class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 gap-4">
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <span class="text-[11px] font-bold uppercase text-slate-400 block">Total Bills Paid</span>
                         <span class="text-xl font-black text-slate-900 mt-1 block">
@@ -199,7 +199,7 @@
                         <span>External Collections (Cash Inflow) vs. Internal Redemptions</span>
                         <span class="text-[11px] text-slate-500 font-normal">Prepaid Ledger Safeguard</span>
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 text-xs">
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
                             <span class="text-[11px] font-bold uppercase text-slate-500 block">Cash Collected at Counters</span>
                             <div class="mt-1 flex items-baseline justify-between">
@@ -233,13 +233,13 @@
                 </div>
 
                 <!-- Department-wise Sales Table -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Department-Wise Sales Breakdown</h4>
                         <span class="text-[11px] text-slate-500">Period: {{ $startDate }} to {{ $endDate }}</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">Department</th>
@@ -281,12 +281,12 @@
                 </div>
 
                 <!-- Billing Counter Breakdown -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Billing Counter Breakdown</h4>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">Counter ID</th>
@@ -321,34 +321,34 @@
         @if($activeTab === 'income_expenditure')
             <div class="space-y-6">
                 <!-- Net Operating Result Banner -->
-                <div class="p-6 bg-gradient-to-r {{ ($incomeExpenditureReport['net_operating_surplus_paise'] ?? 0) >= 0 ? 'from-emerald-900 to-teal-900 text-white' : 'from-rose-900 to-red-950 text-white' }} rounded-2xl shadow-sm">
+                <div class="p-6 bg-gradient-to-r {{ ($incomeExpenditureReport['net_operating_surplus_paise'] ?? 0) >= 0 ? 'from-emerald-900 to-teal-900 text-white' : 'from-rose-900 to-red-950 text-white' }} rounded-2xl shadow-sm print:bg-none print:bg-white print:text-slate-900 print:border-2 print:border-slate-900 print:p-4">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div>
-                            <span class="text-xs uppercase tracking-widest font-bold opacity-80 block">Net Operating Result for Period</span>
-                            <h2 class="text-3xl font-black font-mono tracking-tight mt-1">
+                            <span class="text-xs uppercase tracking-widest font-bold opacity-80 print:opacity-100 print:text-slate-600 block">Net Operating Result for Period</span>
+                            <h2 class="text-3xl font-black font-mono tracking-tight mt-1 {{ ($incomeExpenditureReport['net_operating_surplus_paise'] ?? 0) >= 0 ? 'print:text-emerald-800' : 'print:text-rose-800' }}">
                                 ₹{{ number_format(($incomeExpenditureReport['net_operating_surplus_paise'] ?? 0) / 100, 2) }}
                             </h2>
-                            <span class="text-xs opacity-90 mt-1 block">
+                            <span class="text-xs opacity-90 print:opacity-100 print:text-slate-700 mt-1 block">
                                 {{ ($incomeExpenditureReport['net_operating_surplus_paise'] ?? 0) >= 0 ? 'Operating Surplus (Net Profit)' : 'Operating Deficit (Net Loss)' }}
                             </span>
                         </div>
                         <div class="flex items-center gap-6 text-right">
                             <div>
-                                <span class="text-[11px] uppercase tracking-wider opacity-75 block">Total Operating Income</span>
-                                <span class="text-xl font-bold font-mono">₹{{ number_format(($incomeExpenditureReport['incomes']['total_income_paise'] ?? 0) / 100, 2) }}</span>
+                                <span class="text-[11px] uppercase tracking-wider opacity-75 print:opacity-100 print:text-slate-600 block">Total Operating Income</span>
+                                <span class="text-xl font-bold font-mono print:text-slate-950">₹{{ number_format(($incomeExpenditureReport['incomes']['total_income_paise'] ?? 0) / 100, 2) }}</span>
                             </div>
-                            <div class="border-l border-white/20 pl-6">
-                                <span class="text-[11px] uppercase tracking-wider opacity-75 block">Total Operating Expenditure</span>
-                                <span class="text-xl font-bold font-mono">₹{{ number_format(($incomeExpenditureReport['expenditures']['total_expenditure_paise'] ?? 0) / 100, 2) }}</span>
+                            <div class="border-l border-white/20 print:border-slate-300 pl-6">
+                                <span class="text-[11px] uppercase tracking-wider opacity-75 print:opacity-100 print:text-slate-600 block">Total Operating Expenditure</span>
+                                <span class="text-xl font-bold font-mono print:text-slate-950">₹{{ number_format(($incomeExpenditureReport['expenditures']['total_expenditure_paise'] ?? 0) / 100, 2) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Two-Column Statement -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6">
                     <!-- Operating Incomes -->
-                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                         <div class="px-5 py-3.5 border-b border-slate-200 bg-emerald-50/60 flex items-center justify-between">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
                                 <span>📥</span>
@@ -358,7 +358,7 @@
                                 ₹{{ number_format(($incomeExpenditureReport['incomes']['total_income_paise'] ?? 0) / 100, 2) }}
                             </span>
                         </div>
-                        <table class="w-full text-left text-xs divide-y divide-slate-100">
+                        <table class="w-full text-left text-xs divide-y divide-slate-100 print-report-table">
                             <tbody>
                                 <tr class="hover:bg-slate-50">
                                     <td class="py-3 px-4 font-semibold text-slate-700">Food Catering Turnover</td>
@@ -399,7 +399,7 @@
                     </div>
 
                     <!-- Operating Expenditures -->
-                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                         <div class="px-5 py-3.5 border-b border-slate-200 bg-rose-50/60 flex items-center justify-between">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
                                 <span>📤</span>
@@ -409,7 +409,7 @@
                                 ₹{{ number_format(($incomeExpenditureReport['expenditures']['total_expenditure_paise'] ?? 0) / 100, 2) }}
                             </span>
                         </div>
-                        <table class="w-full text-left text-xs divide-y divide-slate-100">
+                        <table class="w-full text-left text-xs divide-y divide-slate-100 print-report-table">
                             <tbody>
                                 <tr class="hover:bg-slate-50">
                                     <td class="py-3 px-4 font-semibold text-slate-700">Food Contractor Catering Payouts</td>
@@ -452,7 +452,7 @@
         @if($activeTab === 'cash_recon')
             <div class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 gap-4">
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <span class="text-[11px] font-bold uppercase text-slate-400 block">Total Shifts Run</span>
                         <span class="text-xl font-black text-slate-900 mt-1 block">
@@ -489,13 +489,13 @@
                 </div>
 
                 <!-- Shift Reconciliation Table -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Cashier Shifts &amp; Till Drawer Audit Log</h4>
                         <span class="text-[11px] text-slate-500">Period: {{ $startDate }} to {{ $endDate }}</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">Shift #</th>
@@ -549,7 +549,7 @@
         @if($activeTab === 'contractor')
             <div class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 gap-4">
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <span class="text-[11px] font-bold uppercase text-slate-400 block">Total Batches</span>
                         <span class="text-xl font-black text-slate-900 mt-1 block">
@@ -584,13 +584,13 @@
                 </div>
 
                 <!-- Batches Table -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Catering Contractor Settlement Batches</h4>
                         <span class="text-[11px] text-slate-500">100% Pass-Through Policy</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">Batch #</th>
@@ -639,7 +639,7 @@
         @if($activeTab === 'bar_stock')
             <div class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 gap-4">
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <span class="text-[11px] font-bold uppercase text-slate-400 block">Total Items Tracked</span>
                         <span class="text-xl font-black text-slate-900 mt-1 block">
@@ -674,13 +674,13 @@
                 </div>
 
                 <!-- Inventory Item Master Table -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Inventory Items, Current Stock &amp; Consumption</h4>
                         <span class="text-[11px] text-slate-500">Perpetual Moving Weighted Average</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">SKU &amp; Item Name</th>
@@ -739,7 +739,7 @@
         @if($activeTab === 'sports')
             <div class="space-y-6">
                 <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 print:grid-cols-4 gap-4">
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <span class="text-[11px] font-bold uppercase text-slate-400 block">Total Sports Revenue</span>
                         <span class="text-xl font-black text-slate-900 mt-1 block font-mono">
@@ -774,7 +774,7 @@
                 </div>
 
                 <!-- Sports Breakdown Table -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6">
                     <!-- Gymnasium Breakdown -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 mb-3 flex items-center justify-between">
@@ -832,9 +832,9 @@
         @if($activeTab === 'payables')
             <div class="space-y-6">
                 <!-- Zero Member Debt Affirmation Banner -->
-                <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4">
+                <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4 print:bg-white print:border-slate-300">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shrink-0 print:bg-emerald-50 print:text-emerald-900 print:border print:border-emerald-700">
                             ✓
                         </div>
                         <div>
@@ -854,7 +854,7 @@
                 </div>
 
                 <!-- Payables & Exceptions Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-5">
                     <!-- Contractor Residual Payables -->
                     <div class="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center justify-between">
@@ -942,7 +942,7 @@
         @if($activeTab === 'pnl')
             <div class="space-y-6">
                 <!-- Subledger & Balance Sheet Reconciliations Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-5">
                     <!-- Prepaid Wallets -->
                     <div class="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs relative overflow-hidden">
                         <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400"></div>
@@ -1026,13 +1026,13 @@
                 </div>
 
                 <!-- Departmental P&L Performance Grid -->
-                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print:overflow-visible">
                     <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Segmented Departmental Profit &amp; Loss</h4>
                         <span class="text-[11px] text-slate-500">Period: {{ $startDate }} to {{ $endDate }}</span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left border-collapse text-xs print-report-table">
                             <thead>
                                 <tr class="border-b border-slate-200 bg-slate-100/60 font-bold text-slate-600">
                                     <th class="py-2.5 px-4">Department</th>

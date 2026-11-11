@@ -210,4 +210,64 @@ class HelpCenterTest extends TestCase
             ->assertSee('Food Contractor Payable')
             ->assertSee('Bank Clearing');
     }
+
+    public function test_help_page_covers_recent_workflows_and_corrects_outdated_guidance(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->assertSee('23 operational guides')
+            ->assertSeeHtml('aria-label="Help Topics"')
+            ->assertSeeHtml('<label for="help-topic-search"')
+            ->assertSeeHtml('[F6] HOLD RUNNING BAR TAB')
+            ->assertSeeHtml('[P] PRINT RECEIPT')
+            ->call('selectTopic', 'cashier-recharge')
+            ->assertDontSee('Alt+R')
+            ->call('selectTopic', 'cashier-running-tabs')
+            ->assertSee('Bar / Lounge Running Tabs')
+            ->assertSee('Up to 50 Concurrent Open Tabs per Shift')
+            ->call('selectTopic', 'cashier-promotions')
+            ->assertSee('Promotional Offers')
+            ->assertSee('Buy X Get Y Free')
+            ->call('selectTopic', 'cashier-room-guest')
+            ->assertSee('Resident Room Guest Counter Sales')
+            ->call('selectTopic', 'cashier-zero-stock')
+            ->assertSee('Allow Selling Zero / Negative Stock Items on POS')
+            ->call('selectTopic', 'reception-courts')
+            ->assertSee('6:00 AM – 9:00 PM')
+            ->assertSee('Indoor Wooden Badminton Court')
+            ->assertSee('4 players')
+            ->assertDontSee('Court 1 or Court 2')
+            ->call('selectTopic', 'reception-subscriptions')
+            ->assertSee('Sports Plans Enrollment')
+            ->assertSee('4040 Sports Revenue')
+            ->call('selectTopic', 'reception-members-fees')
+            ->assertSee('Two-Tier Membership Fee Structure')
+            ->call('selectTopic', 'reception-notices')
+            ->assertSee('Broadcast Dues Reminder')
+            ->call('selectTopic', 'finance-banking')
+            ->assertSee('Deposit Counter Cash')
+            ->call('selectTopic', 'finance-printing')
+            ->assertSee('Printing Receipts, Vouchers, Member Statements & Desk Reference')
+            ->call('selectTopic', 'executive-staff')
+            ->assertSee('Roles & Form Access')
+            ->assertSee('Restore Role Defaults')
+            ->call('selectTopic', 'executive-settings')
+            ->assertSee('Fiscal Periods & Locks');
+    }
+
+    public function test_help_page_search_indexes_procedural_step_text_and_handles_empty_matches(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            // Text present inside step instructions/tips rather than only top-level tags
+            ->set('searchQuery', 'Restore Role Defaults')
+            ->assertSee('Staff User Management, Granular Form Access & Login Gateway')
+            ->assertCount('filteredArticles', 1)
+            ->set('searchQuery', 'nonexistent-query-xyz-123')
+            ->assertSee('No operational guides matched')
+            ->call('clearSearch')
+            ->assertSet('searchQuery', '');
+    }
 }

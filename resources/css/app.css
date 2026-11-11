@@ -55,10 +55,105 @@ html, body {
 }
 
 /* ==========================================================================
+   Member Portal Mobile App Shell & Native Bottom Sheet Dialog
+   ========================================================================== */
+
+#member-app-shell :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+    #member-app-shell nav[aria-label="Member Mobile Navigation"] :where(button, a) {
+        min-block-size: 44px;
+        min-inline-size: 44px;
+    }
+}
+
+/* Bottom-anchored native <dialog> sheet (never set display unconditionally) */
+#member-more-sheet {
+    margin: auto 0 0 0;
+    inset-inline: 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: 88dvh;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    overflow: hidden;
+}
+
+#member-more-sheet[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+#member-more-sheet:modal {
+    overscroll-behavior: contain;
+}
+
+#member-more-sheet::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background-color: rgb(2 6 23 / 0.78);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+@media (min-width: 640px) {
+    #member-more-sheet {
+        margin: auto;
+        max-inline-size: 28rem;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    #member-more-sheet {
+        opacity: 0;
+        translate: 0 100%;
+        transition: opacity 200ms ease-out, translate 240ms cubic-bezier(0.22, 1, 0.36, 1), overlay 240ms, display 240ms;
+        transition-behavior: allow-discrete;
+    }
+
+    #member-more-sheet[open] {
+        opacity: 1;
+        translate: 0 0;
+    }
+
+    @starting-style {
+        #member-more-sheet[open] {
+            opacity: 0;
+            translate: 0 100%;
+        }
+    }
+
+    #member-more-sheet::backdrop {
+        opacity: 0;
+        transition: opacity 200ms ease-out, overlay 200ms, display 200ms;
+        transition-behavior: allow-discrete;
+    }
+
+    #member-more-sheet[open]::backdrop {
+        opacity: 1;
+    }
+
+    @starting-style {
+        #member-more-sheet[open]::backdrop {
+            opacity: 0;
+        }
+    }
+}
+
+/* ==========================================================================
    Print & Document Export Styles (Anti-button & Clean Invoice / Form Output)
    ========================================================================== */
 
 @media print {
+    @page {
+        margin: 12mm;
+    }
+
     /* 1. Eliminate all buttons, clickable controls, and action triggers */
     button,
     input[type="button"],
@@ -84,10 +179,13 @@ html, body {
         display: none !important;
     }
 
-    /* 2. Hide navigational chrome, sidebars, topbars, pagination, and breadcrumbs */
+    /* 2. Hide navigational chrome, sidebars, topbars, headers, pagination, and breadcrumbs */
     .fi-topbar,
     .fi-sidebar,
     .fi-sidebar-close-overlay,
+    .fi-layout-sidebar-toggle-btn-ctn,
+    .fi-global-search-ctn,
+    .fi-header,
     .fi-breadcrumbs,
     .fi-pagination,
     .fi-tabs,
@@ -97,6 +195,8 @@ html, body {
     .fi-ta-search-field,
     .pwa-mobile-dock,
     nav[aria-label="Mobile Navigation Dock"],
+    nav[aria-label="Member Mobile Navigation"],
+    dialog#member-more-sheet,
     nav[aria-label="Breadcrumbs"],
     header:not(.printable-header),
     footer:not(.printable-footer),
@@ -109,33 +209,58 @@ html, body {
         display: none !important;
     }
 
-    /* 3. Modal isolation & full-bleed print formatting */
+    /* 3. Reset Filament layout shell spacing & inline flex/opacity rules */
+    .fi-layout,
+    .fi-main-ctn,
+    .fi-main-ctn-sidebar-open,
+    .fi-main,
+    .fi-page,
+    .fi-page-header-main-ctn,
+    .fi-page-main,
+    .fi-page-content {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        margin-inline: 0 !important;
+        padding: 0 !important;
+        padding-inline: 0 !important;
+        opacity: 1 !important;
+        position: static !important;
+        overflow: visible !important;
+        background: transparent !important;
+    }
+
+    /* 4. Modal isolation: Filament 5 action modals (.fi-modal.fi-modal-open) & custom printable modals */
+    .fi-modal:not(.fi-modal-open),
     .fi-modal-close-overlay {
         display: none !important;
     }
 
-    /* Modal wrappers & overlays should not darken, clip or obscure print */
-    .fixed.inset-0,
-    [role="dialog"] {
-        position: static !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: visible !important;
-    }
-
-    /* For Filament native modals mounted outside layout */
-    body:has(.fi-modal-window) .fi-layout {
+    body:has(.fi-modal.fi-modal-open) :not(:has(.fi-modal.fi-modal-open)):not(.fi-modal.fi-modal-open):not(.fi-modal.fi-modal-open *) {
         display: none !important;
     }
 
-    /* Ensure modals unclip and expand naturally to page margins */
-    .fi-modal-window,
-    .fi-modal-ctn {
+    body:has(.fi-modal.fi-modal-open) *:has(.fi-modal.fi-modal-open) {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        transform: none !important;
+        background: transparent !important;
+    }
+
+    .fi-modal.fi-modal-open,
+    .fi-modal.fi-modal-open .fi-modal-window-ctn,
+    .fi-modal.fi-modal-open .fi-modal-ctn,
+    .fi-modal.fi-modal-open .fi-modal-window,
+    .fi-modal.fi-modal-open .fi-modal-content {
+        display: block !important;
         position: static !important;
         transform: none !important;
         width: 100% !important;
@@ -145,11 +270,90 @@ html, body {
         box-shadow: none !important;
         border: none !important;
         overflow: visible !important;
-        background: transparent !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        color-scheme: light !important;
     }
 
-    /* 4. Page layout, background, and typography optimizations */
+    .fi-modal.fi-modal-open:has([data-print-document]) .fi-modal-header {
+        display: none !important;
+    }
+
+    body:has([data-print-document="modal"]) :not(:has([data-print-document="modal"])):not([data-print-document="modal"]):not([data-print-document="modal"] *) {
+        display: none !important;
+    }
+
+    body:has([data-print-document="modal"]) *:has([data-print-document="modal"]) {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        transform: none !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    [data-print-document] {
+        color-scheme: light !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    [data-print-document="modal"]:not(#printable-pos-receipt) {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    #printable-pos-receipt {
+        display: block !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        margin-inline: auto !important;
+        padding: 0 !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 9.5pt !important;
+        line-height: 1.35 !important;
+        white-space: pre !important;
+    }
+
+    /* 5. Help & Operations Manual deterministic mode switch */
+    [data-help-print-mode="desk-reference"] .help-procedure-view {
+        display: none !important;
+    }
+
+    [data-help-print-mode="desk-reference"] .help-desk-reference-view {
+        display: block !important;
+    }
+
+    [data-help-print-mode="procedure"] .help-desk-reference-view {
+        display: none !important;
+    }
+
+    [data-help-print-mode="procedure"] .help-procedure-view {
+        display: block !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        min-height: 0 !important;
+    }
+
+    /* 6. Page layout, background, unclipping, and typography optimizations */
     html, body {
+        color-scheme: light !important;
         background: #ffffff !important;
         color: #0f172a !important; /* slate-900 */
         font-size: 11pt !important;
@@ -161,7 +365,15 @@ html, body {
         padding: 0 !important;
     }
 
-    /* Neutralize shadows, glows, and dark backgrounds for ink-friendly print */
+    /* Unclip horizontally/vertically overflowing report & statement wrappers */
+    .overflow-hidden,
+    .overflow-x-auto,
+    .overflow-y-auto,
+    .print-overflow-visible {
+        overflow: visible !important;
+    }
+
+    /* Neutralize shadows and glows for ink-friendly print */
     * {
         box-shadow: none !important;
         text-shadow: none !important;
@@ -170,7 +382,21 @@ html, body {
     /* Avoid page-breaks cutting across table rows and cards */
     table {
         width: 100% !important;
+        min-width: 0 !important;
         border-collapse: collapse !important;
+    }
+
+    th, td {
+        overflow-wrap: anywhere;
+    }
+
+    .print-report-table {
+        font-size: 9pt !important;
+    }
+
+    .print-report-table th,
+    .print-report-table td {
+        padding: 4px 6px !important;
     }
 
     tr, .break-inside-avoid {

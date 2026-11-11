@@ -1,8 +1,8 @@
-<div class="space-y-5 text-sm text-slate-800">
+<div data-print-document="filament-modal" class="space-y-5 text-sm text-slate-800 print:bg-white print:text-slate-900">
     <!-- Club & Member Info Header Card -->
-    <div class="p-5 bg-gradient-to-br from-slate-50 to-amber-50/30 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap justify-between items-center gap-4">
+    <div class="p-5 bg-gradient-to-br from-slate-50 to-amber-50/30 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap justify-between items-center gap-4 print:bg-none print:bg-white print:border-slate-300 print:shadow-none">
         <div class="flex items-center gap-3.5">
-            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 flex items-center justify-center font-black text-slate-950 text-base shadow-sm shadow-amber-500/20">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 flex items-center justify-center font-black text-slate-950 text-base shadow-sm shadow-amber-500/20 print:bg-none print:bg-slate-100 print:border-2 print:border-slate-900 print:text-slate-950">
                 {{ config('club.short_name', 'MC') }}
             </div>
             <div>
@@ -24,7 +24,7 @@
     </div>
 
     <!-- Statement Transaction Ledger Table -->
-    <div class="border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+    <div class="border border-slate-200/90 rounded-2xl overflow-hidden print:overflow-visible shadow-2xs">
         <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-[11px]">
                 <tr>

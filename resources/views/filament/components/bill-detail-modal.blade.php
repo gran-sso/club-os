@@ -1,9 +1,9 @@
-<div class="space-y-5 text-sm text-slate-800">
+<div data-print-document="filament-modal" class="space-y-5 text-sm text-slate-800 print:bg-white print:text-slate-900">
     <!-- Club Header & Bill Metadata -->
-    <div class="p-5 bg-gradient-to-br from-slate-50 to-amber-50/30 rounded-2xl border border-slate-200/90 shadow-2xs">
+    <div class="p-5 bg-gradient-to-br from-slate-50 to-amber-50/30 rounded-2xl border border-slate-200/90 shadow-2xs print:bg-none print:bg-white print:border-slate-300 print:shadow-none">
         <div class="flex flex-wrap items-center justify-between border-b border-slate-200/80 pb-3 gap-2">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center font-extrabold text-slate-950 text-sm shadow-xs">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center font-extrabold text-slate-950 text-sm shadow-xs print:bg-none print:bg-slate-100 print:border-2 print:border-slate-900 print:text-slate-950">
                     MC
                 </div>
                 <div>
@@ -43,7 +43,7 @@
     </div>
 
     <!-- Line Items Table -->
-    <div class="border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+    <div class="border border-slate-200/90 rounded-2xl overflow-hidden print:overflow-visible shadow-2xs">
         <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-[11px]">
                 <tr>

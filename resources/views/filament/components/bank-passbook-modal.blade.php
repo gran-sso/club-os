@@ -1,23 +1,23 @@
-<div class="space-y-4 text-xs text-slate-800">
+<div data-print-document="filament-modal" class="space-y-4 text-xs text-slate-800 print:bg-white print:text-slate-900">
     <!-- Account Summary Header -->
-    <div class="p-4 bg-slate-900 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+    <div class="p-4 bg-slate-900 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs print:bg-white print:text-slate-900 print:border print:border-slate-300 print:shadow-none">
         <div>
             <div class="flex items-center gap-2">
-                <span class="text-sm font-extrabold tracking-tight text-white">{{ $account->account_name }}</span>
+                <span class="text-sm font-extrabold tracking-tight text-white print:text-slate-950">{{ $account->account_name }}</span>
                 @if ($account->is_primary)
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-950">Primary</span>
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-950 print:bg-slate-100 print:border print:border-slate-900">Primary</span>
                 @endif
             </div>
-            <div class="text-[11px] text-slate-400 mt-0.5">
-                {{ $account->bank_name }} &bull; {{ $account->branch_name }} &bull; IFSC: <span class="font-mono font-bold text-slate-300">{{ $account->ifsc_code }}</span>
+            <div class="text-[11px] text-slate-400 print:text-slate-600 mt-0.5">
+                {{ $account->bank_name }} &bull; {{ $account->branch_name }} &bull; IFSC: <span class="font-mono font-bold text-slate-300 print:text-slate-900">{{ $account->ifsc_code }}</span>
             </div>
-            <div class="font-mono text-xs text-slate-300 mt-1">
+            <div class="font-mono text-xs text-slate-300 print:text-slate-800 mt-1">
                 A/c: <span class="font-bold tracking-wider">{{ $account->account_number }}</span>
             </div>
         </div>
-        <div class="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Cleared Bank Balance</span>
-            <span class="font-mono font-black text-emerald-400 text-lg">₹{{ number_format($account->current_balance, 2) }}</span>
+        <div class="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800 print:border-slate-300">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 print:text-slate-600 block">Cleared Bank Balance</span>
+            <span class="font-mono font-black text-emerald-400 print:text-emerald-800 text-lg">₹{{ number_format($account->current_balance, 2) }}</span>
         </div>
     </div>
 
@@ -33,8 +33,8 @@
             <p class="text-[11px] text-slate-400 mt-0.5">Cash deposits and disbursements will appear here once posted.</p>
         </div>
     @else
-        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-            <div class="overflow-x-auto">
+        <div class="border border-slate-200 rounded-2xl overflow-hidden print:overflow-visible shadow-2xs">
+            <div class="overflow-x-auto print:overflow-visible">
                 <table class="w-full text-left">
                     <thead class="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                         <tr>

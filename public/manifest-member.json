@@ -1,4 +1,5 @@
 {
+  "id": "/member/dashboard",
   "name": "Malabar Club Member Portal",
   "short_name": "Malabar Club",
   "description": "Exclusive member portal & digital membership card for Malabar Club, Vadakkencherry",
@@ -6,9 +7,27 @@
   "scope": "/member/",
   "display": "standalone",
   "background_color": "#020617",
-  "theme_color": "#d97706",
+  "theme_color": "#020617",
   "orientation": "portrait-primary",
+  "categories": ["lifestyle", "social"],
   "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
     {
       "src": "/icons/icon-192.svg",
       "sizes": "192x192",
@@ -20,6 +39,32 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Digital Card",
+      "short_name": "Card",
+      "description": "Open membership card & turnstile QR token",
+      "url": "/member/dashboard?tab=card"
+    },
+    {
+      "name": "Prepaid Wallet",
+      "short_name": "Wallet",
+      "description": "Check wallet balance & central ledger",
+      "url": "/member/dashboard?tab=wallet"
+    },
+    {
+      "name": "My Bookings",
+      "short_name": "Bookings",
+      "description": "View court slots & room reservations",
+      "url": "/member/dashboard?tab=bookings"
+    },
+    {
+      "name": "Club Notices",
+      "short_name": "Notices",
+      "description": "Read official club bulletins & alerts",
+      "url": "/member/dashboard?tab=notices"
     }
   ]
 }

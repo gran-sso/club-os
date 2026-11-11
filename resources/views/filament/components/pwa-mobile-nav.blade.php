@@ -2,7 +2,7 @@
 <!-- MALABAR CLUB MOBILE & TABLET NATIVE UX ENHANCEMENTS                      -->
 <!-- ======================================================================= -->
 
-<div class="print:hidden no-print" x-data="{
+<div class="relative print:hidden no-print" x-data="{
     online: navigator.onLine,
     showNetworkToast: false,
     networkToastMsg: '',
@@ -56,7 +56,7 @@
         this.pwaDismissed = true;
         localStorage.setItem('malabar_admin_pwa_dismissed', '1');
     }
-}" class="relative">
+}">
 
     <!-- 1. Live Network Connectivity Toast -->
     <div x-show="showNetworkToast"

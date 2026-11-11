@@ -188,4 +188,66 @@ class MemberPortalTest extends TestCase
         $response->assertRedirect(route('member.login'));
         $this->assertGuest('member');
     }
+
+    public function test_member_portal_pwa_mobile_app_shell_bottom_dock_and_more_sheet(): void
+    {
+        $this->actingAs($this->activeMember, 'member');
+
+        $response = $this->get(route('member.dashboard'));
+        $response->assertOk();
+
+        // App-shell viewport + service worker registration
+        $response->assertSeeHtml('id="member-app-shell"');
+        $response->assertSeeHtml('h-dvh overflow-hidden');
+        $response->assertSeeHtml('id="member-main"');
+        $response->assertSeeHtml('overscroll-y-contain');
+        $response->assertSee("navigator.serviceWorker.register('/sw.js'", false);
+
+        // Sticky mobile bottom navigation dock
+        $response->assertSeeHtml('aria-label="Member Mobile Navigation"');
+        $response->assertSee('Card');
+        $response->assertSee('Wallet');
+        $response->assertSee('Bookings');
+        $response->assertSee('Bills');
+        $response->assertSee('More');
+
+        // Native <dialog> bottom sheet with secondary destinations + sign out
+        $response->assertSeeHtml('<dialog id="member-more-sheet"');
+        $response->assertSeeHtml('closedby="any"');
+        $response->assertSee('Sports &amp; Gym Plans', false);
+        $response->assertSee('Family &amp; Dependents', false);
+        $response->assertSee('Club Notices &amp; Bulletins', false);
+        $response->assertSee('Sign Out of Member Portal');
+
+        // Also ensure login/activate blade layout renders cleanly with shared member layout and SW registration
+        auth('member')->logout();
+        $this->get(route('member.activate'))
+            ->assertOk()
+            ->assertSee('Activate Member Access')
+            ->assertSee("navigator.serviceWorker.register('/sw.js'", false);
+    }
+
+    public function test_member_manifest_json_declares_id_png_icons_and_shortcuts(): void
+    {
+        $response = $this->get('/manifest-member.json');
+        $response->assertOk();
+
+        $manifest = json_decode($response->getContent(), true);
+        $this->assertIsArray($manifest);
+        $this->assertEquals('/member/dashboard', $manifest['id']);
+        $this->assertEquals('/member/dashboard', $manifest['start_url']);
+        $this->assertEquals('/member/', $manifest['scope']);
+        $this->assertEquals('standalone', $manifest['display']);
+        $this->assertEquals('#020617', $manifest['theme_color']);
+
+        $iconSrcs = collect($manifest['icons'] ?? [])->pluck('src')->all();
+        $this->assertContains('/icons/icon-192.png', $iconSrcs);
+        $this->assertContains('/icons/icon-512.png', $iconSrcs);
+
+        $shortcutUrls = collect($manifest['shortcuts'] ?? [])->pluck('url')->all();
+        $this->assertContains('/member/dashboard?tab=card', $shortcutUrls);
+        $this->assertContains('/member/dashboard?tab=wallet', $shortcutUrls);
+        $this->assertContains('/member/dashboard?tab=bookings', $shortcutUrls);
+        $this->assertContains('/member/dashboard?tab=notices', $shortcutUrls);
+    }
 }

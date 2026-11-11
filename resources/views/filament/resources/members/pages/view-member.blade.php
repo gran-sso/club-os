@@ -1,5 +1,21 @@
 <x-filament-panels::page>
     <div class="space-y-4 text-slate-800 dark:text-slate-100 {{ ($showLetterViewModal || $showInvoiceModal) ? 'print:hidden' : '' }}">
+        <!-- Official Club Print Statement Letterhead (Print Only) -->
+        <div class="hidden print:block border-b-2 border-slate-900 pb-4 mb-4 text-slate-900">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-black uppercase tracking-wider text-slate-950">{{ \App\Domain\Shared\Models\SystemSetting::get('club_name', config('club.name', 'Malabar Club')) }}</h1>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-600 mt-0.5">
+                        {{ \App\Domain\Shared\Models\SystemSetting::get('club_address', config('club.location', 'Vadakkencherry, Palakkad, Kerala')) }} &bull;
+                        {{ $activeTab === 'wallet' ? 'Official Member Wallet & Account Statement' : 'Official Member Account Summary' }}
+                    </p>
+                </div>
+                <div class="text-right text-[11px] text-slate-600">
+                    <div>Printed: <strong class="text-slate-900 font-mono">{{ now()->format('d M Y, h:i A') }} IST</strong></div>
+                    <div>Card: <strong class="text-slate-900 font-mono">{{ $member->activeCard?->card_number ?? 'Not Issued' }}</strong></div>
+                </div>
+            </div>
+        </div>
         
         <!-- ========================================== -->
         <!-- 1. TOP HERO HEADER CARD                    -->
@@ -15,7 +31,7 @@
                             ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1))
                             : strtoupper(substr($nameParts[0] ?? 'M', 0, 2));
                     @endphp
-                    <div class="w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs">
+                    <div class="w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs print:bg-slate-100 print:text-slate-950 print:border print:border-slate-900">
                         {{ $initials }}
                     </div>
 
@@ -1105,13 +1121,13 @@
                 </div>
 
                 <!-- Ledger Table with Horizontal Mobile Scroll -->
-                <div class="sm:hidden text-[11px] text-slate-400 px-1 italic flex items-center gap-1">
+                <div class="sm:hidden text-[11px] text-slate-400 px-1 italic flex items-center gap-1 print:hidden no-print">
                     <span>&larr; Swipe horizontally to view full ledger &rarr;</span>
                 </div>
 
-                <div class="border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs bg-white dark:bg-slate-900">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs min-w-[620px]">
+                <div class="border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden print:overflow-visible shadow-2xs bg-white dark:bg-slate-900">
+                    <div class="overflow-x-auto print:overflow-visible">
+                        <table class="w-full text-left text-xs min-w-[620px] print:min-w-0">
                             <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-[11px]">
                                 <tr>
                                     <th class="p-3.5">Timestamp</th>
@@ -1137,7 +1153,7 @@
                                                 {{ str_replace('_', ' ', $entry->type) }}
                                             </span>
                                             @if ($entry->notes)
-                                                <span class="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1">{{ $entry->notes }}</span>
+                                                <span class="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1 print:line-clamp-none">{{ $entry->notes }}</span>
                                             @endif
                                         </td>
                                         <td class="p-3.5 font-mono text-[11px] text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -2073,14 +2089,29 @@
         <!-- MODAL: View Invoice Details -->
         @if ($showInvoiceModal && $selectedInvoice)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity print:p-0 print:static print:bg-transparent print:overflow-visible print:block print:w-full print:h-auto">
-                <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-lg p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:bg-white print:text-slate-900 print:max-w-none print:w-full print:block print:h-auto">
+                <div id="printable-admin-invoice" data-print-document="modal" class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-lg p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:bg-white print:text-slate-900 print:max-w-none print:w-full print:block print:h-auto">
+                    <!-- Official Club Tax Invoice Letterhead (Print Only) -->
+                    <div class="hidden print:block border-b-2 border-slate-900 pb-3 text-slate-900">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h1 class="text-lg font-black uppercase tracking-wider text-slate-950">{{ \App\Domain\Shared\Models\SystemSetting::get('club_name', config('club.name', 'Malabar Club')) }}</h1>
+                                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                    {{ \App\Domain\Shared\Models\SystemSetting::get('club_address', config('club.location', 'Vadakkencherry, Palakkad, Kerala')) }} &bull; GSTIN: {{ \App\Domain\Shared\Models\SystemSetting::get('club_gstin', '32AABCM1234F1Z5') }}
+                                </p>
+                            </div>
+                            <div class="text-right text-[10px] text-slate-600">
+                                <div>Member: <strong class="text-slate-950">{{ $member->name }}</strong></div>
+                                <div>ID: <strong class="font-mono text-slate-950">#{{ $member->membership_number }}</strong></div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Header -->
-                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 print:border-slate-300 pb-3">
                         <div>
-                            <div class="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">Tax Invoice / Club Receipt</div>
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white font-mono">{{ $selectedInvoice['bill_number'] }}</h3>
-                            <p class="text-[11px] text-slate-500">{{ $selectedInvoice['created_at'] }} &bull; {{ ucfirst($selectedInvoice['department_code'] ?? 'Restaurant') }}</p>
+                            <div class="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400 print:text-amber-900">Tax Invoice / Club Receipt</div>
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white print:text-slate-950 font-mono">{{ $selectedInvoice['bill_number'] }}</h3>
+                            <p class="text-[11px] text-slate-500 print:text-slate-600">{{ $selectedInvoice['created_at'] }} &bull; {{ ucfirst($selectedInvoice['department_code'] ?? 'Restaurant') }}</p>
                         </div>
                         <button wire:click="closeInvoiceModal" type="button" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer print:hidden no-print">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2090,7 +2121,7 @@
                     </div>
 
                     <!-- Line Items Table -->
-                    <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                    <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden print:overflow-visible print:border-slate-300">
                         <table class="w-full text-xs text-left">
                             <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px]">
                                 <tr>
@@ -2474,12 +2505,12 @@
         <!-- ============================================================ -->
         @if ($showLetterViewModal && $generatedLetter)
             <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity print:p-0 print:static print:bg-transparent print:overflow-visible print:block print:w-full print:h-auto">
-                <div id="printable-intro-letter" class="bg-white rounded-t-2xl sm:rounded-xl border border-slate-200 shadow-2xl w-full max-w-2xl p-5 sm:p-7 space-y-5 max-h-[94vh] overflow-y-auto text-slate-900 print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:max-w-none print:w-full print:block print:h-auto">
+                <div id="printable-intro-letter" data-print-document="modal" class="bg-white rounded-t-2xl sm:rounded-xl border border-slate-200 shadow-2xl w-full max-w-2xl p-5 sm:p-7 space-y-5 max-h-[94vh] overflow-y-auto text-slate-900 print:max-h-none print:shadow-none print:border-none print:p-0 print:overflow-visible print:max-w-none print:w-full print:block print:h-auto">
                     
                     <!-- Official Letterhead Header -->
                     <div class="border-b border-slate-300 pb-3 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-2xs">
+                            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-2xs print:bg-slate-100 print:text-slate-950 print:border-2 print:border-slate-900">
                                 MC
                             </div>
                             <div>
@@ -2525,7 +2556,7 @@
                     </div>
 
                     <!-- Sign-off Block -->
-                    <div class="pt-3 flex items-end justify-between border-t border-slate-200 text-xs">
+                    <div class="pt-3 flex items-end justify-between border-t border-slate-200 text-xs break-inside-avoid">
                         <div>
                             <div class="w-14 h-14 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-[10px] text-slate-400 font-mono text-center p-1">
                                 [ Seal ]

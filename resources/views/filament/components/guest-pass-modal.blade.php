@@ -1,14 +1,14 @@
-<div class="space-y-5 text-sm text-slate-800">
+<div data-print-document="filament-modal" class="space-y-5 text-sm text-slate-800 print:bg-white print:text-slate-900">
     <!-- Printable Guest Badge Slip -->
-    <div id="printable-guest-pass" class="max-w-xs mx-auto p-6 bg-white border-2 border-slate-900 rounded-3xl shadow-xl text-center space-y-4 print:border-none print:shadow-none print:p-0">
+    <div id="printable-guest-pass" class="max-w-xs mx-auto p-6 bg-white border-2 border-slate-900 rounded-3xl shadow-xl text-center space-y-4 print:border-2 print:border-slate-900 print:rounded-2xl print:shadow-none print:p-5 print:max-w-sm print:mx-auto">
         <!-- Club Header -->
         <div class="border-b-2 border-slate-900 pb-3">
-            <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 text-slate-950 font-black flex items-center justify-center text-xl mb-1.5 shadow-md shadow-amber-500/25">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 text-slate-950 font-black flex items-center justify-center text-xl mb-1.5 shadow-md shadow-amber-500/25 print:bg-none print:bg-slate-100 print:border-2 print:border-slate-900 print:text-slate-950">
                 {{ config('club.short_name', 'MC') }}
             </div>
             <h2 class="font-extrabold text-lg tracking-tight text-slate-950 uppercase">{{ config('club.name', 'Malabar Club') }}</h2>
             <div class="text-[10px] text-slate-600 font-bold uppercase tracking-wider">{{ config('club.location', 'Vadakkencherry, Kerala') }}</div>
-            <div class="inline-block mt-2 px-3 py-0.5 rounded-full bg-slate-950 text-white text-[10px] font-extrabold tracking-widest uppercase">
+            <div class="inline-block mt-2 px-3 py-0.5 rounded-full bg-slate-950 text-white text-[10px] font-extrabold tracking-widest uppercase print:bg-slate-100 print:text-slate-950 print:border print:border-slate-900">
                 Official Guest Pass
             </div>
         </div>

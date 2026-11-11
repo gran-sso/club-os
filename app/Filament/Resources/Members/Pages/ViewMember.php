@@ -153,7 +153,7 @@ class ViewMember extends ViewRecord
     public function printStatement(): void
     {
         $this->activeTab = 'wallet';
-        $this->js('setTimeout(() => window.print(), 150)');
+        $this->js('requestAnimationFrame(() => requestAnimationFrame(() => window.print()))');
     }
 
     protected function getHeaderActions(): array
