@@ -73,7 +73,7 @@
         <div x-show="activeTab === 'graph'" class="space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                 <!-- Doughnut Canvas -->
-                <div class="lg:col-span-5 flex flex-col items-center justify-center p-2 bg-slate-50/50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <div class="lg:col-span-5 flex flex-col items-center justify-center p-3 bg-slate-50/50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800/60 relative min-h-[260px]">
                     <div
                         x-load
                         x-load-src="{{ FilamentAsset::getAlpineComponentSrc('chart', 'filament/widgets') }}"
@@ -84,15 +84,79 @@
                             options: @js($this->getOptions()),
                             type: @js($type),
                         })"
-                        class="fi-wi-chart-frame fi-wi-chart-canvas-ctn w-full flex items-center justify-center relative"
-                        style="min-height: 250px; max-height: 260px;"
+                        {{
+                            (new FilamentComponentAttributeBag)
+                                ->color(ChartWidgetComponent::class, $this->getColor())
+                                ->class([
+                                    'fi-wi-chart-frame',
+                                    'fi-wi-chart-canvas-ctn',
+                                    'fi-wi-chart-frame-no-aspect-ratio',
+                                    'w-full flex items-center justify-center relative',
+                                ])
+                        }}
+                        style="height: {{ $maxHeight }}; max-height: {{ $maxHeight }};"
                     >
                         <canvas
                             x-ref="canvas"
                             aria-hidden="true"
-                            style="width: 100%; max-height: 250px;"
+                            @style([
+                                'width: 100%',
+                                'height: 100%',
+                                'max-height: ' . e($maxHeight),
+                            ])
                         ></canvas>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="backgroundColorElement"
+                            class="fi-wi-chart-bg-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="borderColorElement"
+                            class="fi-wi-chart-border-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="gridColorElement"
+                            class="fi-wi-chart-grid-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="textColorElement"
+                            class="fi-wi-chart-text-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="tooltipBackgroundColorElement"
+                            class="fi-wi-chart-tooltip-bg-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="tooltipTextColorElement"
+                            class="fi-wi-chart-tooltip-text-color"
+                        ></span>
+
+                        <span
+                            aria-hidden="true"
+                            x-ref="tooltipBorderColorElement"
+                            class="fi-wi-chart-tooltip-border-color"
+                        ></span>
                     </div>
+
+                    @if ($tableData['total_paise'] === 0)
+                        <div class="pointer-events-none absolute inset-x-0 top-4 bottom-16 flex flex-col items-center justify-center px-4 text-center">
+                            <div class="w-28 h-28 rounded-full border-[12px] border-slate-200/80 dark:border-slate-800/80 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90">
+                                <span class="text-xs font-extrabold font-mono text-slate-700 dark:text-slate-200">₹0.00</span>
+                                <span class="text-[9px] font-semibold uppercase tracking-wider text-slate-400">No Sales</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Department Metrics Grid -->
@@ -136,7 +200,7 @@
                                 {{ $tableData['total_formatted'] }}
                             </span>
                             <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                                {{ $tableData['total_bills'] }} Paid Bills
+                                {{ $tableData['total_bills'] }} Paid {{ \Illuminate\Support\Str::plural('Bill', $tableData['total_bills']) }}
                             </span>
                         </div>
                     </div>
@@ -204,7 +268,7 @@
                             </td>
                             <td class="py-3 px-4 text-center font-mono text-xs">
                                 <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">
-                                    {{ $tableData['total_bills'] }} bills
+                                    {{ $tableData['total_bills'] }} {{ \Illuminate\Support\Str::plural('bill', $tableData['total_bills']) }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right font-mono text-base text-emerald-600 dark:text-emerald-400 font-extrabold">

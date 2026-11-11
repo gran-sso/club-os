@@ -1294,23 +1294,30 @@
 
                 <!-- Section A: Subscriptions -->
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
                         <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                             <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
                             <span>Active &amp; Historical Facility Subscriptions</span>
                         </h3>
+                        @if (auth()->user()?->hasClubPermission('subscriptions.manage'))
+                            <a href="{{ \App\Filament\Resources\Subscriptions\FacilitySubscriptionResource::getUrl('create', ['member_id' => $member->id]) }}"
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-2xs transition">
+                                <span>+ Enroll &amp; Collect Sports Plan Fee</span>
+                            </a>
+                        @endif
                     </div>
 
                     <div class="border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs bg-white dark:bg-slate-900">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs min-w-[580px]">
+                            <table class="w-full text-left text-xs min-w-[680px]">
                                 <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-[11px]">
                                     <tr>
                                         <th class="p-3.5">Sub #</th>
                                         <th class="p-3.5">Facility / Plan</th>
                                         <th class="p-3.5">Validity Range</th>
+                                        <th class="p-3.5">Receipt &amp; Tender</th>
                                         <th class="p-3.5 text-right">Fee (₹)</th>
                                         <th class="p-3.5 text-center">Status</th>
                                     </tr>
@@ -1322,10 +1329,18 @@
                                                 {{ $sub->subscription_number }}
                                             </td>
                                             <td class="p-3.5 font-bold text-slate-800 dark:text-slate-200">
-                                                {{ $sub->tariff?->facility?->name ?? 'Badminton / Gym' }} — {{ $sub->plan_type }}
+                                                {{ $sub->tariff?->name ?? ucfirst($sub->facility_code ?? 'Sports') }} &mdash; {{ ucfirst($sub->plan_type) }}
                                             </td>
                                             <td class="p-3.5 text-slate-600 dark:text-slate-400 font-mono text-xs">
                                                 {{ $sub->starts_at?->format('d M Y') }} &rarr; {{ $sub->ends_at?->format('d M Y') }}
+                                            </td>
+                                            <td class="p-3.5 text-xs">
+                                                @if ($sub->paymentReceipt)
+                                                    <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400">{{ $sub->paymentReceipt->receipt_number }}</span>
+                                                    <span class="text-slate-500 ml-1">({{ $sub->paymentReceipt->tender_type instanceof \App\Domain\Shared\Enums\TenderType ? $sub->paymentReceipt->tender_type->label() : ucfirst((string) $sub->paymentReceipt->tender_type) }})</span>
+                                                @else
+                                                    <span class="text-slate-400">&mdash;</span>
+                                                @endif
                                             </td>
                                             <td class="p-3.5 text-right font-mono font-bold text-sm">
                                                 ₹{{ number_format(($sub->total_fee_paise ?? 0) / 100, 2) }}
@@ -1338,7 +1353,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="p-6 text-center text-slate-400 text-xs">
+                                            <td colspan="6" class="p-6 text-center text-slate-400 text-xs">
                                                 No active or historical facility subscriptions found for this member.
                                             </td>
                                         </tr>

@@ -1133,7 +1133,7 @@ class ViewMember extends ViewRecord
         $bills = $billsQuery->take(50)->get();
 
         // Facilities Data
-        $subscriptions = $member->subscriptions()->with('tariff')->latest()->get();
+        $subscriptions = $member->subscriptions()->with(['tariff', 'paymentReceipt'])->latest()->get();
         $courtBookings = $member->courtBookings()->with('facility')->latest()->take(30)->get();
         $roomReservations = $member->roomReservations()->with(['facility', 'guest'])->latest()->take(20)->get();
         $assignedLockers = $member->lockers()->get();

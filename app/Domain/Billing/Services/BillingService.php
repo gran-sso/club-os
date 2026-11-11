@@ -11,6 +11,7 @@ use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Billing\Models\Promotion;
 use App\Domain\Billing\Models\Refund;
 use App\Domain\Billing\Models\Shift;
+use App\Domain\Facility\Services\SubscriptionService;
 use App\Domain\Finance\Services\JournalService;
 use App\Domain\Integrations\Contracts\ReceiptPrinterInterface;
 use App\Domain\Integrations\Models\OutboxMessage;
@@ -25,6 +26,7 @@ use App\Domain\Shared\Exceptions\DuplicatePaymentException;
 use App\Domain\Shared\Exceptions\InsufficientFundsException;
 use App\Domain\Shared\Exceptions\ShiftNotOpenException;
 use App\Domain\Shared\Exceptions\UnauthorizedActionException;
+use App\Domain\Tariff\Models\Tariff;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -238,12 +240,12 @@ class BillingService
                         'debit_paise' => $amount,
                         'narration' => "Cash collected for {$bill->bill_number}",
                     ];
-                } elseif ($tenderType === TenderType::DIGITAL) {
+                } elseif (in_array($tenderType, [TenderType::DIGITAL, TenderType::BANK_TRANSFER, TenderType::CHEQUE], true)) {
                     // Accounting: Debit Bank Clearing (1020)
                     $journalDebitLines[] = [
                         'account_code' => '1020',
                         'debit_paise' => $amount,
-                        'narration' => "Digital clearing for {$bill->bill_number}",
+                        'narration' => "{$tenderType->label()} clearing for {$bill->bill_number}",
                     ];
                 }
 
@@ -365,6 +367,27 @@ class BillingService
                             facilityCode: $bill->department_code === 'bar' ? 'bar' : 'bar_card_room',
                             billLineId: $line->id,
                             paidAmountPaise: $line->line_total_paise
+                        );
+                    }
+                }
+            }
+
+            // Activate/extend any paid Sports Facility Subscriptions billed as Tariff lines
+            $subscriptionService = app(SubscriptionService::class);
+            foreach ($bill->lines as $line) {
+                if ($line->item_type === 'tariff' && $line->department_code === 'sports' && $line->item_id) {
+                    $tariff = Tariff::find($line->item_id);
+                    if ($tariff && $subscriptionService->resolvePlanDetailsFromTariff($tariff) !== null) {
+                        if (! ($customer instanceof Member)) {
+                            throw new UnauthorizedActionException("Sports plan memberships ({$tariff->name}) can only be issued to active primary Club Members.");
+                        }
+
+                        $subscriptionService->activateFromPaidTariffLine(
+                            member: $customer,
+                            tariff: $tariff,
+                            billLine: $line,
+                            receipt: $createdReceipts[0] ?? null,
+                            userId: $userId ?? auth()->id()
                         );
                     }
                 }

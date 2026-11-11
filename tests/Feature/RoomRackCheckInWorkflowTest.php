@@ -353,4 +353,127 @@ class RoomRackCheckInWorkflowTest extends TestCase
         $readyPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
         $this->assertEquals('available', $readyPulse['status']);
     }
+
+    public function test_vacant_room_without_reservations_can_switch_between_clean_dirty_and_maintenance(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->call('openHousekeeping', $room->id, 'clean')
+            ->set('housekeepingStatus', 'dirty')
+            ->call('confirmHousekeeping')
+            ->assertHasNoErrors();
+
+        $room->refresh();
+        $this->assertEquals('dirty', $room->housekeeping_status);
+
+        $dirtyData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('vacant_dirty', $dirtyData['status']);
+        $component->assertSee('DIRTY')->assertSee('Needs Cleaning');
+
+        $this->actingAs($reception);
+        $dirtyPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('cleaning', $dirtyPulse['status']);
+
+        // Future reservation while room is dirty can be created, but check-in must fail until cleaned
+        $service = app(\App\Domain\Facility\Services\RoomReservationService::class);
+        $res = $service->createReservation([
+            'facility_id' => $room->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Membership\Models\Member::class,
+            'payer_id' => $member->id,
+            'check_in_date' => now()->toDateString(),
+            'check_out_date' => now()->addDay()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'paid_amount_paise' => 250000,
+        ], $reception);
+
+        try {
+            $service->checkIn($res, $reception);
+            $this->fail('Expected FacilityNotReadyException when physical room facility status is dirty.');
+        } catch (\App\Domain\Facility\Exceptions\FacilityNotReadyException $e) {
+            $this->assertStringContainsString('not clean', $e->getMessage());
+        }
+
+        // Cancel reservation, then switch vacant room to Under Maintenance and back to Clean & Ready
+        $res->update(['status' => 'cancelled']);
+
+        $resumeDate = now()->addDays(2)->toDateString();
+        $component
+            ->call('openHousekeeping', $room->id, 'dirty')
+            ->set('housekeepingStatus', 'maintenance')
+            ->set('maintenanceReason', 'Split AC compressor replacement')
+            ->set('maintenanceEndDate', $resumeDate)
+            ->call('confirmHousekeeping')
+            ->assertHasNoErrors();
+
+        $maintData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('maintenance', $maintData['status']);
+        $this->assertEquals('Split AC compressor replacement', $maintData['maintenance_reason']);
+        $component->assertSee('MAINTENANCE')->assertSee('Split AC compressor replacement');
+
+        $maintPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('maintenance', $maintPulse['status']);
+
+        $this->assertDatabaseHas('facility_maintenance_blocks', [
+            'facility_id' => $room->id,
+            'reason' => 'Split AC compressor replacement',
+            'status' => 'active',
+        ]);
+
+        // Clearing maintenance back to Clean completes block and restores Ready status
+        $component
+            ->call('openHousekeeping', $room->id, 'maintenance')
+            ->set('housekeepingStatus', 'clean')
+            ->call('confirmHousekeeping')
+            ->assertHasNoErrors();
+
+        $room->refresh();
+        $this->assertEquals('clean', $room->housekeeping_status);
+        $this->assertEquals(0, \App\Domain\Facility\Models\FacilityMaintenanceBlock::where('facility_id', $room->id)->where('status', 'active')->count());
+
+        $cleanData = collect($component->get('roomsData'))->firstWhere('id', $room->id);
+        $this->assertEquals('vacant_ready', $cleanData['status']);
+        $cleanPulse = collect((new \App\Filament\Widgets\FrontDeskPulseWidget())->getViewData()['roomStatuses'])->firstWhere('id', $room->id);
+        $this->assertEquals('available', $cleanPulse['status']);
+    }
+
+    public function test_cannot_put_occupied_room_under_maintenance_via_status_modal(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('type', 'room')->orderBy('code')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::where('membership_number', 'MC-001')->firstOrFail();
+
+        $res = \App\Domain\Facility\Models\RoomReservation::create([
+            'reservation_number' => 'RES-OCCUPIED-MAINT-GUARD',
+            'facility_id' => $room->id,
+            'sponsor_member_id' => $member->id,
+            'payer_type' => \App\Domain\Membership\Models\Member::class,
+            'payer_id' => $member->id,
+            'check_in_date' => now()->toDateString(),
+            'check_out_date' => now()->addDay()->toDateString(),
+            'rate_per_night_paise' => 250000,
+            'total_charge_paise' => 250000,
+            'paid_amount_paise' => 250000,
+            'status' => 'reserved',
+            'housekeeping_status' => 'clean',
+            'created_by_user_id' => $reception->id,
+        ]);
+
+        app(\App\Domain\Facility\Services\RoomReservationService::class)->checkIn($res, $reception);
+
+        $component = \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->call('openHousekeeping', $room->id, 'clean')
+            ->set('housekeepingStatus', 'maintenance')
+            ->set('maintenanceReason', 'Geyser fault')
+            ->set('maintenanceEndDate', now()->addDay()->toDateString())
+            ->call('confirmHousekeeping');
+
+        $this->assertTrue($component->get('showHousekeepingModal'));
+        $this->assertEquals(0, \App\Domain\Facility\Models\FacilityMaintenanceBlock::where('facility_id', $room->id)->count());
+    }
 }

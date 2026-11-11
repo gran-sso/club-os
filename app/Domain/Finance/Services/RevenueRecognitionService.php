@@ -66,7 +66,21 @@ class RevenueRecognitionService
                     return $existing; // Idempotent return without duplicating
                 }
 
-                $locked = RevenueRecognitionSchedule::where('id', $schedule->id)->lockForUpdate()->firstOrFail();
+                $locked = RevenueRecognitionSchedule::with('subscription.paymentReceipt')
+                    ->where('id', $schedule->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                // Subscriptions paid upfront through a settled Bill already posted GL 4040
+                // and settled cash/bank/prepaid wallet; avoid double-counting or corrupting A/C 2010.
+                if ($locked->subscription?->paymentReceipt?->bill_id !== null) {
+                    $locked->update([
+                        'recognised_amount_paise' => $locked->total_amount_paise,
+                        'status' => 'completed',
+                    ]);
+
+                    return null;
+                }
 
                 // If last day of the service period, recognise remaining unrecognised paise (deterministic rounding, D14)
                 $isLastDay = ($dateStr === $locked->service_end_date->copy()->subDay()->toDateString());

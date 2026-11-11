@@ -82,7 +82,7 @@ class FrontDeskPulseWidget extends Widget
                     ?? $reservedToday->sponsorMember?->name
                     ?? 'Guest';
                 $occupantName = 'Arriving: ' . $guestName;
-            } elseif ($latestCheckedOut?->housekeeping_status === 'dirty') {
+            } elseif (($room->housekeeping_status ?? 'clean') === 'dirty' || $latestCheckedOut?->housekeeping_status === 'dirty') {
                 $status = 'cleaning';
             }
 

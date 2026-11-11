@@ -15,6 +15,11 @@ class Facility extends Model
         'type',
         'capacity',
         'is_active',
+        'housekeeping_status',
+    ];
+
+    protected $attributes = [
+        'housekeeping_status' => 'clean',
     ];
 
     protected $casts = [

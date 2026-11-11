@@ -33,6 +33,15 @@ class FacilitiesTable
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
+                TextColumn::make('housekeeping_status')
+                    ->label('Room Status')
+                    ->badge()
+                    ->state(fn ($record): string => $record->type === 'room' ? ucfirst($record->housekeeping_status ?? 'clean') : '—')
+                    ->color(fn ($record, string $state): string => match (true) {
+                        $record->type !== 'room' => 'gray',
+                        strtolower($state) === 'dirty' => 'warning',
+                        default => 'success',
+                    }),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('type')
@@ -46,7 +55,22 @@ class FacilitiesTable
                     ]),
             ])
             ->recordActions([
-                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\EditAction::make()
+                    ->after(function ($record): void {
+                        if ($record->type === 'room' && $record->wasChanged('housekeeping_status')) {
+                            $status = in_array($record->housekeeping_status, ['clean', 'dirty'], true)
+                                ? $record->housekeeping_status
+                                : 'clean';
+
+                            app(\App\Domain\Facility\Services\RoomReservationService::class)
+                                ->updateRoomOperationalStatus(
+                                    facilityId: $record->id,
+                                    targetStatus: $status,
+                                    dateStr: now()->toDateString(),
+                                    user: auth()->user(),
+                                );
+                        }
+                    }),
             ]);
     }
 }

@@ -67,6 +67,8 @@ class RoomRackPage extends Page
     public ?int $selectedRoomId = null;
     public string $selectedRoomName = '';
     public string $housekeepingStatus = 'clean';
+    public string $maintenanceReason = 'Scheduled maintenance / repair';
+    public string $maintenanceEndDate = '';
 
     // Payment modal state
     public int $paymentAmountRupees = 0;
@@ -238,16 +240,18 @@ class RoomRackPage extends Page
             $currentHousekeeping = 'clean';
 
             if ($activeReservation && $activeReservation->status === 'checked_in') {
-                $currentHousekeeping = $activeReservation->housekeeping_status ?? 'clean';
+                $currentHousekeeping = $activeReservation->housekeeping_status ?? $room->housekeeping_status ?? 'clean';
             } elseif ($date->isToday()) {
-                if ($activeReservation?->housekeeping_status === 'dirty' || $latestCheckedOut?->housekeeping_status === 'dirty') {
+                if (($room->housekeeping_status ?? 'clean') === 'dirty'
+                    || $activeReservation?->housekeeping_status === 'dirty'
+                    || $latestCheckedOut?->housekeeping_status === 'dirty') {
                     $currentHousekeeping = 'dirty';
                 }
             } elseif ($activeReservation) {
                 $currentHousekeeping = $activeReservation->housekeeping_status ?? 'clean';
             }
 
-            if ($maintenance) {
+            if (!$room->is_active || $maintenance) {
                 $displayStatus = 'maintenance';
             } elseif ($activeReservation) {
                 if ($activeReservation->status === 'checked_in') {
@@ -271,6 +275,8 @@ class RoomRackPage extends Page
                 'capacity' => $room->capacity,
                 'status' => $displayStatus,
                 'housekeeping_status' => $currentHousekeeping,
+                'is_inactive' => !$room->is_active,
+                'has_maintenance_block' => $maintenance !== null,
                 'active_reservation' => $activeReservation ? [
                     'id' => $activeReservation->id,
                     'reservation_number' => $activeReservation->reservation_number,
@@ -296,7 +302,10 @@ class RoomRackPage extends Page
                     'check_in_date' => $upcomingReservation->check_in_date->format('d M Y'),
                     'is_arriving_on_selected_date' => $upcomingReservation->check_in_date->toDateString() <= $dateStr,
                 ] : null,
-                'maintenance_reason' => $maintenance?->reason,
+                'maintenance_reason' => !$room->is_active
+                    ? 'Room deactivated in Master Setup (Rooms & Facilities).'
+                    : $maintenance?->reason,
+                'maintenance_until' => $maintenance?->end_date?->format('d M Y'),
                 'forecast' => $forecastStrip,
             ];
         }
@@ -487,9 +496,33 @@ class RoomRackPage extends Page
     {
         abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
         $room = Facility::findOrFail($roomId);
+
+        if (! $room->is_active) {
+            Notification::make()
+                ->title('Room Disabled in Facility Master')
+                ->body("Re-enable {$room->name} under Club Master Setup -> Rooms & Facilities to resume operations.")
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $dateStr = Carbon::parse($this->selectedDate)->toDateString();
+        $activeBlock = FacilityMaintenanceBlock::where('facility_id', $room->id)
+            ->where('status', 'active')
+            ->where('start_date', '<=', $dateStr)
+            ->where('end_date', '>', $dateStr)
+            ->first();
+
+        $this->resetValidation();
         $this->selectedRoomId = $room->id;
         $this->selectedRoomName = $room->name;
-        $this->housekeepingStatus = $currentStatus;
+        $this->housekeepingStatus = in_array($currentStatus, ['clean', 'dirty', 'maintenance'], true)
+            ? $currentStatus
+            : 'clean';
+        $this->maintenanceReason = $activeBlock?->reason ?? 'Scheduled maintenance / repair';
+        $this->maintenanceEndDate = $activeBlock?->end_date?->toDateString()
+            ?? Carbon::parse($dateStr)->addDay()->toDateString();
         $this->showHousekeepingModal = true;
     }
 
@@ -500,52 +533,48 @@ class RoomRackPage extends Page
             return;
         }
 
-        $service = app(RoomReservationService::class);
-        $activeReservations = RoomReservation::where('facility_id', $this->selectedRoomId)
-            ->whereIn('status', ['reserved', 'checked_in'])
-            ->get();
-
-        if ($this->housekeepingStatus === 'clean') {
-            foreach ($activeReservations as $res) {
-                $service->setHousekeepingStatus($res, 'clean');
-            }
-
-            $dirtyCheckedOut = RoomReservation::where('facility_id', $this->selectedRoomId)
-                ->where('status', 'checked_out')
-                ->where('housekeeping_status', 'dirty')
-                ->get();
-
-            foreach ($dirtyCheckedOut as $checkedOutRes) {
-                $service->setHousekeepingStatus($checkedOutRes, 'clean');
-            }
-        } else {
-            foreach ($activeReservations as $res) {
-                if ($res->status === 'checked_in' || $res->check_in_date->toDateString() <= $this->selectedDate) {
-                    $service->setHousekeepingStatus($res, $this->housekeepingStatus);
-                }
-            }
-
-            if ($activeReservations->where('status', 'checked_in')->isEmpty()) {
-                $latestCheckedOut = RoomReservation::where('facility_id', $this->selectedRoomId)
-                    ->where('status', 'checked_out')
-                    ->orderByDesc('checked_out_at')
-                    ->orderByDesc('id')
-                    ->first();
-
-                if ($latestCheckedOut) {
-                    $service->setHousekeepingStatus($latestCheckedOut, $this->housekeepingStatus);
-                }
-            }
+        $rules = [
+            'housekeepingStatus' => 'required|in:clean,dirty,maintenance',
+        ];
+        if ($this->housekeepingStatus === 'maintenance') {
+            $rules['maintenanceReason'] = 'nullable|string|max:200';
+            $rules['maintenanceEndDate'] = 'required|date|after:' . $this->selectedDate;
         }
 
-        Notification::make()
-            ->title("Housekeeping Updated")
-            ->body("Room {$this->selectedRoomName} marked as " . ucfirst($this->housekeepingStatus) . ".")
-            ->success()
-            ->send();
+        $this->validate($rules);
 
-        $this->showHousekeepingModal = false;
-        $this->refreshRooms();
+        try {
+            app(RoomReservationService::class)->updateRoomOperationalStatus(
+                facilityId: $this->selectedRoomId,
+                targetStatus: $this->housekeepingStatus,
+                dateStr: $this->selectedDate,
+                maintenanceReason: $this->maintenanceReason,
+                maintenanceEndDate: $this->maintenanceEndDate,
+                user: auth()->user(),
+            );
+
+            $statusLabel = match ($this->housekeepingStatus) {
+                'clean' => 'Clean & Ready',
+                'dirty' => 'Needs Cleaning (Dirty)',
+                'maintenance' => 'Under Maintenance (until ' . Carbon::parse($this->maintenanceEndDate)->format('d M Y') . ')',
+                default => ucfirst($this->housekeepingStatus),
+            };
+
+            Notification::make()
+                ->title('Room Status Updated')
+                ->body("Room {$this->selectedRoomName} is now {$statusLabel}.")
+                ->success()
+                ->send();
+
+            $this->showHousekeepingModal = false;
+            $this->refreshRooms();
+        } catch (FacilityNotReadyException|RoomUnavailableException|\InvalidArgumentException $e) {
+            Notification::make()
+                ->title('Cannot Change Room Status')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function openPaymentModal(int $reservationId): void

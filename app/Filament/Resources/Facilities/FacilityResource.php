@@ -128,10 +128,23 @@ class FacilityResource extends Resource
                                 ->helperText('Max simultaneous occupants (e.g. 2 for standard room, 4 for badminton court).'),
                         ]),
 
-                        \Filament\Forms\Components\Toggle::make('is_active')
-                            ->label('Operational & Available for Bookings')
-                            ->default(true)
-                            ->helperText('When disabled, this facility is removed from reservation schedules and front-desk booking.'),
+                        \Filament\Schemas\Components\Grid::make(2)->schema([
+                            \Filament\Forms\Components\Toggle::make('is_active')
+                                ->label('Operational & Available for Bookings')
+                                ->default(true)
+                                ->helperText('When disabled, this facility is removed from reservation schedules and front-desk booking.'),
+
+                            \Filament\Forms\Components\Select::make('housekeeping_status')
+                                ->label('Room Housekeeping Status')
+                                ->options([
+                                    'clean' => 'Clean & Ready',
+                                    'dirty' => 'Needs Cleaning (Dirty)',
+                                ])
+                                ->default('clean')
+                                ->required(fn ($get): bool => $get('type') === 'room')
+                                ->visible(fn ($get): bool => $get('type') === 'room')
+                                ->helperText('Live room cleanliness state shown on Accommodation Deck & Dashboard.'),
+                        ]),
                     ]),
             ]);
     }

@@ -2,8 +2,9 @@
 
 namespace App\Domain\Facility\Models;
 
+use App\Domain\Billing\Models\Bill;
+use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Membership\Models\Member;
-use App\Domain\Payment\Models\PaymentReceipt;
 use App\Domain\Tariff\Models\Tariff;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -48,6 +49,11 @@ class FacilitySubscription extends Model
     public function paymentReceipt(): BelongsTo
     {
         return $this->belongsTo(PaymentReceipt::class);
+    }
+
+    public function getBillAttribute(): ?Bill
+    {
+        return $this->paymentReceipt?->bill;
     }
 
     public function creator(): BelongsTo

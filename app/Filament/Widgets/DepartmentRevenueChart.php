@@ -3,9 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Domain\Billing\Models\Bill;
-use Filament\Widgets\DoughnutChartWidget;
+use Filament\Widgets\ChartWidget;
 
-class DepartmentRevenueChart extends DoughnutChartWidget
+class DepartmentRevenueChart extends ChartWidget
 {
     protected static bool $isLazy = false;
 
@@ -35,7 +35,7 @@ class DepartmentRevenueChart extends DoughnutChartWidget
         $tableData = $this->getTableData();
         $rows = $tableData['rows'];
 
-        $amounts = array_map(fn ($r) => (int) round($r['amount_paise'] / 100), $rows);
+        $amounts = array_map(fn ($r) => round($r['amount_paise'] / 100, 2), $rows);
         $labels = array_map(fn ($r) => $r['name'], $rows);
         $colors = array_map(fn ($r) => $r['color'], $rows);
 
@@ -46,7 +46,7 @@ class DepartmentRevenueChart extends DoughnutChartWidget
                     'data' => $amounts,
                     'backgroundColor' => $colors,
                     'borderWidth' => 2,
-                    'borderColor' => '#0f172a',
+                    'hoverOffset' => 6,
                 ],
             ],
             'labels' => $labels,

@@ -111,6 +111,11 @@ class RoomReservationService
     {
         return DB::transaction(function () use ($reservation) {
             $locked = RoomReservation::where('id', $reservation->id)->lockForUpdate()->firstOrFail();
+            $facility = Facility::where('id', $locked->facility_id)->lockForUpdate()->firstOrFail();
+
+            if (!$facility->is_active) {
+                throw new FacilityNotReadyException("Cannot check in: room {$facility->name} is currently inactive.");
+            }
 
             if (!$locked->isFullyPaid()) {
                 $unpaid = $locked->total_charge_paise - $locked->paid_amount_paise;
@@ -127,8 +132,12 @@ class RoomReservationService
                 throw new FacilityNotReadyException("Cannot check in: room is still occupied until current guest checks out.");
             }
 
-            if ($locked->housekeeping_status !== 'clean') {
-                throw new FacilityNotReadyException("Cannot check in: room is not clean (current status: {$locked->housekeeping_status}).");
+            if ($locked->housekeeping_status !== 'clean' || ($facility->housekeeping_status ?? 'clean') !== 'clean') {
+                $state = $locked->housekeeping_status !== 'clean'
+                    ? $locked->housekeeping_status
+                    : $facility->housekeeping_status;
+
+                throw new FacilityNotReadyException("Cannot check in: room is not clean (current status: {$state}).");
             }
 
             $latestCheckedOut = RoomReservation::where('facility_id', $locked->facility_id)
@@ -168,12 +177,15 @@ class RoomReservationService
     {
         return DB::transaction(function () use ($reservation) {
             $locked = RoomReservation::where('id', $reservation->id)->lockForUpdate()->firstOrFail();
+            $facility = Facility::where('id', $locked->facility_id)->lockForUpdate()->firstOrFail();
 
             $locked->update([
                 'status' => 'checked_out',
                 'checked_out_at' => now(),
                 'housekeeping_status' => 'dirty',
             ]);
+
+            $facility->update(['housekeeping_status' => 'dirty']);
 
             return $locked;
         });
@@ -191,6 +203,136 @@ class RoomReservationService
         $reservation->update(['housekeeping_status' => $status]);
 
         return $reservation;
+    }
+
+    /**
+     * Update physical room housekeeping / maintenance status cleanly across Facility,
+     * RoomReservation, and FacilityMaintenanceBlock records inside a single transaction.
+     */
+    public function updateRoomOperationalStatus(
+        int $facilityId,
+        string $targetStatus,
+        string $dateStr,
+        ?string $maintenanceReason = null,
+        ?string $maintenanceEndDate = null,
+        ?User $user = null
+    ): void {
+        if (! in_array($targetStatus, ['clean', 'dirty', 'maintenance'], true)) {
+            throw new InvalidArgumentException("Invalid room status: {$targetStatus}");
+        }
+
+        DB::transaction(function () use ($facilityId, $targetStatus, $dateStr, $maintenanceReason, $maintenanceEndDate, $user) {
+            $facility = Facility::where('id', $facilityId)->lockForUpdate()->firstOrFail();
+            if ($facility->type !== 'room') {
+                throw new InvalidArgumentException("Facility {$facility->code} is not an accommodation room.");
+            }
+
+            $date = Carbon::parse($dateStr)->startOfDay();
+            $dayStr = $date->toDateString();
+
+            $activeReservations = RoomReservation::where('facility_id', $facility->id)
+                ->whereIn('status', ['reserved', 'checked_in'])
+                ->lockForUpdate()
+                ->get();
+
+            if ($targetStatus === 'maintenance') {
+                if ($activeReservations->where('status', 'checked_in')->isNotEmpty()) {
+                    throw new FacilityNotReadyException("Cannot place {$facility->name} under maintenance while a guest is currently checked in. Please check out the occupant first.");
+                }
+
+                $end = $maintenanceEndDate
+                    ? Carbon::parse($maintenanceEndDate)->startOfDay()
+                    : (clone $date)->addDay();
+
+                if ($end->lte($date)) {
+                    throw new InvalidArgumentException('Maintenance resume date must be strictly after the selected date.');
+                }
+
+                $endStr = $end->toDateString();
+                $overlappingReservation = RoomReservation::where('facility_id', $facility->id)
+                    ->where('status', 'reserved')
+                    ->where('check_in_date', '<', $endStr)
+                    ->where('check_out_date', '>', $dayStr)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($overlappingReservation) {
+                    throw new RoomUnavailableException(
+                        "Cannot place {$facility->name} under maintenance from {$dayStr} to {$endStr}: overlapping reservation {$overlappingReservation->reservation_number} exists. Cancel or move the reservation first."
+                    );
+                }
+
+                $reason = trim((string) ($maintenanceReason ?? ''));
+                if ($reason === '') {
+                    $reason = 'Scheduled maintenance / repair';
+                }
+
+                $existingBlock = FacilityMaintenanceBlock::where('facility_id', $facility->id)
+                    ->where('status', 'active')
+                    ->where('start_date', '<=', $dayStr)
+                    ->where('end_date', '>', $dayStr)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existingBlock) {
+                    $existingBlock->update([
+                        'end_date' => $endStr,
+                        'reason' => $reason,
+                    ]);
+                } else {
+                    $this->createMaintenanceBlock($facility->id, $dayStr, $endStr, $reason, $user);
+                }
+
+                return;
+            }
+
+            // Leaving maintenance -> complete any active block covering the selected date
+            FacilityMaintenanceBlock::where('facility_id', $facility->id)
+                ->where('status', 'active')
+                ->where('start_date', '<=', $dayStr)
+                ->where('end_date', '>', $dayStr)
+                ->update(['status' => 'completed']);
+
+            if ($targetStatus === 'clean') {
+                $facility->update(['housekeeping_status' => 'clean']);
+
+                foreach ($activeReservations as $res) {
+                    $this->setHousekeepingStatus($res, 'clean');
+                }
+
+                $dirtyCheckedOut = RoomReservation::where('facility_id', $facility->id)
+                    ->where('status', 'checked_out')
+                    ->whereIn('housekeeping_status', ['dirty', 'maintenance'])
+                    ->get();
+
+                foreach ($dirtyCheckedOut as $checkedOutRes) {
+                    $this->setHousekeepingStatus($checkedOutRes, 'clean');
+                }
+
+                return;
+            }
+
+            // Target: 'dirty'
+            $facility->update(['housekeeping_status' => 'dirty']);
+
+            foreach ($activeReservations as $res) {
+                if ($res->status === 'checked_in' || $res->check_in_date->toDateString() <= $dayStr) {
+                    $this->setHousekeepingStatus($res, 'dirty');
+                }
+            }
+
+            if ($activeReservations->where('status', 'checked_in')->isEmpty()) {
+                $latestCheckedOut = RoomReservation::where('facility_id', $facility->id)
+                    ->where('status', 'checked_out')
+                    ->orderByDesc('checked_out_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($latestCheckedOut) {
+                    $this->setHousekeepingStatus($latestCheckedOut, 'dirty');
+                }
+            }
+        });
     }
 
     /**

@@ -3,10 +3,15 @@
 namespace Tests\Feature;
 
 use App\Domain\Billing\Models\Bill;
+use App\Domain\Billing\Models\Counter;
 use App\Domain\Billing\Models\PaymentReceipt;
+use App\Domain\Billing\Models\Shift;
 use App\Domain\Facility\Models\CourtBooking;
 use App\Domain\Facility\Models\RoomReservation;
+use App\Domain\Membership\Models\Member;
 use App\Domain\Prepaid\Models\WalletAccount;
+use App\Domain\Shared\Enums\BillStatus;
+use App\Domain\Shared\Enums\ShiftStatus;
 use App\Domain\Tariff\Models\Facility;
 use App\Filament\Widgets\ContractorAndShiftStatusWidget;
 use App\Filament\Widgets\DepartmentRevenueChart;
@@ -54,6 +59,16 @@ class AdminDashboardWidgetsTest extends TestCase
         $response->assertSee('Departmental Revenue');
         $response->assertSee('Graph View');
         $response->assertSee('Tabular View');
+        $response->assertSee('x-ref="canvas"', false);
+        $response->assertSee('x-ref="backgroundColorElement"', false);
+        $response->assertSee('x-ref="borderColorElement"', false);
+        $response->assertSee('x-ref="gridColorElement"', false);
+        $response->assertSee('x-ref="textColorElement"', false);
+        $response->assertSee('x-ref="tooltipBackgroundColorElement"', false);
+        $response->assertSee('x-ref="tooltipTextColorElement"', false);
+        $response->assertSee('x-ref="tooltipBorderColorElement"', false);
+        $response->assertSee('fi-wi-chart-bg-color', false);
+        $response->assertSee('fi-wi-chart-frame-no-aspect-ratio', false);
         $response->assertSee('Contractor &amp; Counter Shifts', false);
         $response->assertSee('Qualified Food Sales');
         $response->assertSee('System Integrity &amp; Tally Bridge', false);
@@ -129,6 +144,64 @@ class AdminDashboardWidgetsTest extends TestCase
         $chartData = invade($widget)->getData();
         $this->assertArrayHasKey('datasets', $chartData);
         $this->assertCount(5, $chartData['datasets'][0]['data']);
+        $this->assertArrayNotHasKey('borderColor', $chartData['datasets'][0]);
+    }
+
+    public function test_department_revenue_widget_renders_chart_sentinels_and_live_sales_correctly(): void
+    {
+        $this->actingAs($this->admin);
+
+        // When no sales exist in today or past 7 days, widget shows the empty doughnut placeholder
+        Bill::where('status', 'paid')->delete();
+        $emptyResponse = $this->actingAs($this->admin)->get('/admin');
+        $emptyResponse->assertStatus(200);
+        $emptyResponse->assertSee('No Sales');
+        $emptyResponse->assertSee('0 Paid Bills');
+
+        // Record a ₹118.50 Bar bill today
+        $counter = Counter::firstOrCreate(
+            ['code' => 'BAR-01'],
+            ['name' => 'Main Bar Counter', 'department_code' => 'bar']
+        );
+        $shift = Shift::create([
+            'shift_number' => 'SH-WIDGET-TEST-01',
+            'counter_id' => $counter->id,
+            'user_id' => $this->admin->id,
+            'business_date' => now()->toDateString(),
+            'opened_at' => now(),
+            'opening_float_paise' => 0,
+            'expected_cash_paise' => 0,
+            'status' => ShiftStatus::OPEN,
+        ]);
+        $member = Member::firstOrFail();
+
+        Bill::create([
+            'bill_number' => 'BILL-WIDGET-BAR-01',
+            'shift_id' => $shift->id,
+            'customer_type' => Member::class,
+            'customer_id' => $member->id,
+            'department_code' => 'bar',
+            'status' => BillStatus::PAID,
+            'business_date' => now()->toDateString(),
+            'gross_amount_paise' => 11850,
+            'discount_amount_paise' => 0,
+            'tax_amount_paise' => 0,
+            'net_amount_paise' => 11850,
+            'paid_amount_paise' => 11850,
+            'created_by_user_id' => $this->admin->id,
+            'idempotency_key' => 'IDEM-WIDGET-BAR-01',
+            'idempotency_hash' => hash('sha256', 'IDEM-WIDGET-BAR-01'),
+        ]);
+
+        $widget = new DepartmentRevenueChart();
+        $chartData = invade($widget)->getData();
+        $this->assertEquals(118.5, $chartData['datasets'][0]['data'][0]);
+
+        $liveResponse = $this->actingAs($this->admin)->get('/admin');
+        $liveResponse->assertStatus(200);
+        $liveResponse->assertSee('1 Paid Bill');
+        $liveResponse->assertDontSee('1 Paid Bills');
+        $liveResponse->assertDontSee('>No Sales<', false);
     }
 
     public function test_contractor_and_shift_widget_tracks_qualified_food_and_open_registers(): void
