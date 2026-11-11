@@ -211,4 +211,63 @@ class SystemSettingsTest extends TestCase
             ->call('saveSettings')
             ->assertHasErrors(['clubName', 'tallyPort', 'defaultOpeningFloat']);
     }
+
+    public function test_allow_zero_stock_sales_persists_across_database_cache_hits_and_self_heals_incomplete_class(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+
+        // Simulate production/local cache configuration where Eloquent models fail unserialization
+        config([
+            'cache.default' => 'database',
+            'cache.serializable_classes' => false,
+        ]);
+        app('cache')->forgetDriver('database');
+
+        // 1. Save setting from SystemSettingsPage (billing tab)
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->call('setTab', 'billing')
+            ->set('allowZeroStockSales', true)
+            ->call('saveSettings')
+            ->assertHasNoErrors();
+
+        // 2. First read warms the database cache; second read MUST hit serialized cache without reverting to false
+        $this->assertEquals('1', SystemSetting::get('allow_zero_stock_sales'));
+        $this->assertEquals('1', SystemSetting::get('allow_zero_stock_sales'));
+        $this->assertTrue(SystemSetting::getBool('allow_zero_stock_sales'));
+
+        // 3. Re-mounting SystemSettingsPage must reflect the saved checked state across cache hits
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->assertSet('allowZeroStockSales', true);
+
+        // 4. Seed a poisoned serialized Model (simulating pre-fix production DB cache entry)
+        $rawModel = SystemSetting::where('key', 'allow_zero_stock_sales')->firstOrFail();
+        \Illuminate\Support\Facades\Cache::store('database')->put('system_setting.allow_zero_stock_sales', $rawModel, 300);
+
+        $this->assertEquals('1', SystemSetting::get('allow_zero_stock_sales'));
+        $this->assertTrue(SystemSetting::getBool('allow_zero_stock_sales'));
+
+        // 5. Restoring defaults disables zero-stock sales cleanly
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->call('resetToDefaults')
+            ->assertHasNoErrors()
+            ->assertSet('allowZeroStockSales', false);
+
+        $this->assertFalse(SystemSetting::getBool('allow_zero_stock_sales'));
+    }
+
+    public function test_cross_tab_validation_error_switches_to_failing_tab(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->call('setTab', 'billing')
+            ->set('clubName', '')
+            ->call('saveSettings')
+            ->assertHasErrors(['clubName'])
+            ->assertSet('activeTab', 'identity');
+    }
 }

@@ -17,8 +17,7 @@
     $firstName = strtok(trim((string) $member->name), ' ') ?: $member->name;
 @endphp
 
-<div class="space-y-4 md:space-y-6"
-    x-data="{
+<div x-data="{
         scrollToTop() {
             const scroller = document.getElementById('member-main');
             if (scroller) {
@@ -51,6 +50,7 @@
         }
     }">
 
+    <div class="space-y-4 md:space-y-6">
     <!-- ============================================================= -->
     <!-- PROMINENT STICKY ALERT BANNERS (DUES & URGENT CLUB NOTICES)   -->
     <!-- ============================================================= -->
@@ -906,6 +906,7 @@
         </div>
     @endif
     </div><!-- End Livewire Loading Region -->
+    </div><!-- End Scrollable Content Stack -->
 
     <!-- ============================================================= -->
     <!-- MODAL: Itemized Bill Receipt (Bottom Sheet on Mobile)         -->

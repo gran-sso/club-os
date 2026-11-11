@@ -1626,7 +1626,7 @@ class CounterPos extends Component
 
     public function allowZeroStockSales(): bool
     {
-        return (bool) \App\Domain\Shared\Models\SystemSetting::get('allow_zero_stock_sales', false);
+        return \App\Domain\Shared\Models\SystemSetting::getBool('allow_zero_stock_sales', false);
     }
 
     public function render()

@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Validation\ValidationException;
 
 class SystemSettingsPage extends Page
 {
@@ -93,8 +94,8 @@ class SystemSettingsPage extends Page
         $this->minWalletRecharge = (float) SystemSetting::get('min_wallet_recharge', 500.00);
         $this->maxWalletRecharge = (float) SystemSetting::get('max_wallet_recharge', 50000.00);
         $this->lostCardFee = (float) SystemSetting::get('lost_card_fee', 150.00);
-        $this->allowSplitTender = (bool) SystemSetting::get('allow_split_tender', true);
-        $this->allowZeroStockSales = (bool) SystemSetting::get('allow_zero_stock_sales', false);
+        $this->allowSplitTender = SystemSetting::getBool('allow_split_tender', true);
+        $this->allowZeroStockSales = SystemSetting::getBool('allow_zero_stock_sales', false);
 
         // Tab 3
         $this->checkInTime = (string) SystemSetting::get('check_in_time', '14:00');
@@ -114,9 +115,9 @@ class SystemSettingsPage extends Page
 
         // Tab 5
         $this->receiptPaperWidth = (string) SystemSetting::get('receipt_paper_width', '80mm');
-        $this->autoPrintReceipt = (bool) SystemSetting::get('auto_print_receipt', false);
-        $this->printWalletBalanceOnReceipt = (bool) SystemSetting::get('print_wallet_balance_on_receipt', true);
-        $this->printGstBreakdownOnReceipt = (bool) SystemSetting::get('print_gst_breakdown_on_receipt', true);
+        $this->autoPrintReceipt = SystemSetting::getBool('auto_print_receipt', false);
+        $this->printWalletBalanceOnReceipt = SystemSetting::getBool('print_wallet_balance_on_receipt', true);
+        $this->printGstBreakdownOnReceipt = SystemSetting::getBool('print_gst_breakdown_on_receipt', true);
     }
 
     public function setTab(string $tab): void
@@ -128,19 +129,47 @@ class SystemSettingsPage extends Page
 
     public function saveSettings(): void
     {
-        $this->validate([
-            'clubName' => 'required|string|max:150',
-            'clubAddress' => 'required|string|max:255',
-            'clubGstin' => 'nullable|string|max:20',
-            'clubPan' => 'nullable|string|max:15',
-            'defaultOpeningFloat' => 'required|numeric|min:0',
-            'minWalletRecharge' => 'required|numeric|min:1',
-            'maxWalletRecharge' => 'required|numeric|min:1000',
-            'lostCardFee' => 'required|numeric|min:0',
-            'tallyHost' => 'required|string',
-            'tallyPort' => 'required|numeric|min:1|max:65535',
-            'tallyCompany' => 'required|string',
-        ]);
+        try {
+            $this->validate([
+                'clubName' => 'required|string|max:150',
+                'clubAddress' => 'required|string|max:255',
+                'clubGstin' => 'nullable|string|max:20',
+                'clubPan' => 'nullable|string|max:15',
+                'defaultOpeningFloat' => 'required|numeric|min:0',
+                'minWalletRecharge' => 'required|numeric|min:1',
+                'maxWalletRecharge' => 'required|numeric|min:1000',
+                'lostCardFee' => 'required|numeric|min:0',
+                'tallyHost' => 'required|string',
+                'tallyPort' => 'required|numeric|min:1|max:65535',
+                'tallyCompany' => 'required|string',
+            ]);
+        } catch (ValidationException $e) {
+            $firstErrorField = array_key_first($e->errors());
+            $tabByField = [
+                'clubName' => 'identity',
+                'clubAddress' => 'identity',
+                'clubGstin' => 'identity',
+                'clubPan' => 'identity',
+                'defaultOpeningFloat' => 'billing',
+                'minWalletRecharge' => 'billing',
+                'maxWalletRecharge' => 'billing',
+                'lostCardFee' => 'billing',
+                'tallyHost' => 'tally',
+                'tallyPort' => 'tally',
+                'tallyCompany' => 'tally',
+            ];
+            if ($firstErrorField && isset($tabByField[$firstErrorField])) {
+                $this->activeTab = $tabByField[$firstErrorField];
+            }
+
+            Notification::make()
+                ->title('Cannot Save Settings')
+                ->body(implode(' ', $e->validator->errors()->all()))
+                ->danger()
+                ->send();
+
+            throw $e;
+        }
 
         // Save Tab 1
         SystemSetting::set('club_name', $this->clubName, 'identity');
@@ -233,6 +262,7 @@ class SystemSettingsPage extends Page
         $this->maxWalletRecharge = 50000.00;
         $this->lostCardFee = 150.00;
         $this->allowSplitTender = true;
+        $this->allowZeroStockSales = false;
 
         $this->checkInTime = '14:00';
         $this->checkOutTime = '12:00';

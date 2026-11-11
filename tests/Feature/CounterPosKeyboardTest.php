@@ -346,6 +346,40 @@ class CounterPosKeyboardTest extends TestCase
         $this->assertLessThan(0, (float) $movement->balance_after_qty);
     }
 
+    public function test_zero_stock_pos_search_add_increment_and_checkout_work_with_database_cache(): void
+    {
+        $this->actingAs($this->cashier);
+
+        config([
+            'cache.default' => 'database',
+            'cache.serializable_classes' => false,
+        ]);
+        app('cache')->forgetDriver('database');
+
+        \App\Domain\Shared\Models\SystemSetting::set('allow_zero_stock_sales', '1', 'billing');
+
+        // Warm database cache once before mounting CounterPos to mirror production cache hits
+        $this->assertTrue(\App\Domain\Shared\Models\SystemSetting::getBool('allow_zero_stock_sales', false));
+
+        $test = Livewire::test(CounterPos::class)
+            ->set('searchQuery', 'CARD-VENU-001')
+            ->call('searchMember')
+            ->set('itemSearch', 'Vodka')
+            ->assertSet('itemSearchResults.0.is_in_stock', true)
+            ->call('selectServingAndAddToCart', $this->outOfStockTariff->id)
+            ->assertSet('errorMessage', null)
+            ->assertCount('cart', 1)
+            ->call('updateQuantity', 0, 1)
+            ->assertSet('errorMessage', null)
+            ->assertSet('cart.0.quantity', 2)
+            ->call('initiateCheckout', 'prepaid')
+            ->assertSet('showPaymentConfirmModal', true)
+            ->call('confirmCheckout')
+            ->assertSet('showReceiptModal', true);
+
+        $this->assertLessThan(0, (float) $this->outOfStockItem->fresh()->current_stock_qty);
+    }
+
     public function test_payment_failure_does_not_lose_draft_cart(): void
     {
         $this->actingAs($this->cashier);

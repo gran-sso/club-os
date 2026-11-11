@@ -48,6 +48,21 @@
             </div>
         </div>
 
+        <!-- Validation Errors Summary Banner (covers hidden tabs too) -->
+        @if ($errors->any())
+            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs space-y-1.5">
+                <div class="font-extrabold flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>Please fix the following setting errors before saving:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-0.5 text-[11px] font-medium">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <!-- Settings Navigation Tabs -->
         <div class="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto select-none">
             <button type="button"

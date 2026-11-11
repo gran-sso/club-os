@@ -1060,10 +1060,14 @@
                                                 </span>
                                             @endif
                                             <span
-                                                class="{{ $itemMatch['is_in_stock'] ? 'text-emerald-700' : 'text-rose-600 font-bold' }}">
+                                                class="{{ !$itemMatch['is_in_stock'] ? 'text-rose-600 font-bold' : (($itemMatch['stock_qty'] !== null && (float) $itemMatch['stock_qty'] <= 0) ? 'text-amber-700 font-semibold' : 'text-emerald-700') }}">
                                                 @if ($itemMatch['stock_qty'] !== null)
                                                     ●
-                                                    {{ $itemMatch['is_in_stock'] ? "Stock: {$itemMatch['stock_qty']} {$itemMatch['base_unit']}" : "OUT OF STOCK" }}
+                                                    @if ($itemMatch['is_in_stock'])
+                                                        Stock: {{ $itemMatch['stock_qty'] }} {{ $itemMatch['base_unit'] }}@if ((float) $itemMatch['stock_qty'] <= 0) (Negative Allowed)@endif
+                                                    @else
+                                                        OUT OF STOCK
+                                                    @endif
                                                 @else
                                                     ● Available
                                                 @endif
