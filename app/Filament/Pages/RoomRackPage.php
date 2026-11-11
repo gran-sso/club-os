@@ -46,7 +46,7 @@ class RoomRackPage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->hasPermissionTo('rooms.view_rack')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->checkPermissionTo('rooms.view_rack')));
     }
 
     public string $selectedDate = '';

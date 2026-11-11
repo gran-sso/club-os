@@ -55,7 +55,7 @@ class IntegrationStatusPage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->hasPermissionTo('integrations.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('integrations.manage')));
     }
 
     public function mount(): void

@@ -59,7 +59,7 @@ class ContractorSettlementBatchResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->hasPermissionTo('contractor.settle')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('contractor.settle')));
     }
 
     public static function form(Schema $schema): Schema

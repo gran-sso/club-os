@@ -2053,3 +2053,19 @@ For environments where full browser automation is unavailable, operators should 
   - `php artisan test tests/Feature/SystemSettingsTest.php`: **8 passed, 35 assertions, 0 failures**.
   - `php artisan test tests/Feature/CounterPosKeyboardTest.php`: **17 passed, 91 assertions, 0 failures** (including `test_out_of_stock_item_cannot_be_added_to_bill` and `test_out_of_stock_item_can_be_added_and_settled_when_allow_zero_stock_sales_enabled`).
   - `php artisan test --filter=Pos`: **51 passed, 312 assertions, 0 failures**.
+
+---
+
+## Global Search Exception Fix & Permission Guard Hardening (Delivered)
+
+- **Root Cause Identified**:
+  1. **Shift Status Enum `TypeError` ([`ShiftResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Shifts/ShiftResource.php))**: `Shift::$casts['status']` casts to `ShiftStatus` (`BackedEnum`), whereas `ShiftResource::getGlobalSearchResultDetails()` called `ucfirst($record->status ?? 'open')` directly. On PHP 8.4, any global search matching a `Shift` record (by `shift_number`, `cashier.name`, `counter.name`, or `business_date`) threw `TypeError: ucfirst(): Argument #1 ($string) must be of type string, App\Domain\Shared\Enums\ShiftStatus given`.
+  2. **Uncaught `PermissionDoesNotExist` Risk in Panel/Search Access Checks**: `ClubGlobalSearchProvider` and Filament resource/page authorization methods (`canViewAny()`, `canAccess()`, etc.) used `$user->hasPermissionTo(...)`, which throws `Spatie\Permission\Exceptions\PermissionDoesNotExist` when a non-whitelisted role searches or loads navigation before a newly introduced permission (such as `notices.manage`) is seeded.
+  3. **Quick-Link Route Mismatch & Navigation Group Enum Safety ([`ClubGlobalSearchProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Services/ClubGlobalSearchProvider.php))**: Updated the Club System Settings quick-jump URL from `/admin/system-settings` to the registered `/admin/settings` route (`SystemSettingsPage::$slug = 'settings'`), and normalized `string|UnitEnum|BackedEnum` navigation group labels.
+- **Implementation Highlights**:
+  - Unwrapped `ShiftStatus` via `instanceof BackedEnum` before `ucfirst()` in [`ShiftResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Shifts/ShiftResource.php).
+  - Replaced `hasPermissionTo(...)` with Spatie's non-throwing `checkPermissionTo(...)` across [`ClubGlobalSearchProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Services/ClubGlobalSearchProvider.php), 11 Filament resources (`AccountResource`, `BankAccountResource`, `ContractorSettlementBatchResource`, `ContractorResource`, `ExpenseResource`, `MemberNoticeResource`, `MembershipCategoryResource`, `PurchaseReceiptResource`, `SupplierResource`, `TariffResource`, `UserResource`), and 5 Filament pages (`CourtSchedulePage`, `FinancialReportsPage`, `IntegrationStatusPage`, `RoomRackPage`, `SystemSettingsPage`).
+  - Expanded [`GlobalSearchScalingTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/GlobalSearchScalingTest.php) to include `MemberNoticeResource`, Livewire `Filament\Livewire\GlobalSearch` tests against populated `Shift` records, missing-permission resilience tests, and `/admin/settings` route verification.
+- **Automated Verification**:
+  - `php artisan test tests/Feature/GlobalSearchScalingTest.php`: **12 passed, 95 assertions, 0 failures**.
+  - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **353 passed, 1,885 assertions, 0 failures**.

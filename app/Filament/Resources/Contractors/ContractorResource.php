@@ -63,25 +63,25 @@ class ContractorResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->hasPermissionTo('contractor.settle')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant']) || $user->checkPermissionTo('contractor.settle')));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('contractor.settle')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('contractor.settle')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('contractor.settle')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('contractor.settle')));
     }
 
     public static function form(Schema $schema): Schema

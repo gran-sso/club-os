@@ -77,21 +77,21 @@ class UserResource extends Resource
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->hasPermissionTo('users.manage')));
+        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->hasPermissionTo('users.manage')));
+        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->hasPermissionTo('users.manage')));
+        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
     }
 
     public static function canDelete(Model $record): bool
@@ -102,7 +102,7 @@ class UserResource extends Resource
             return false;
         }
 
-        return (bool) ($user && ($user->hasRole('admin') || $user->hasPermissionTo('users.manage')));
+        return (bool) ($user && ($user->hasRole('admin') || $user->checkPermissionTo('users.manage')));
     }
 
     public static function getPages(): array

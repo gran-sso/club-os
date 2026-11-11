@@ -2,11 +2,14 @@
 
 namespace App\Domain\Shared\Services;
 
+use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\GlobalSearch\GlobalSearchResult;
 use Filament\GlobalSearch\GlobalSearchResults;
 use Filament\GlobalSearch\Providers\Contracts\GlobalSearchProvider;
+use Filament\Support\Contracts\HasLabel;
 use Illuminate\Support\Collection;
+use UnitEnum;
 
 class ClubGlobalSearchProvider implements GlobalSearchProvider
 {
@@ -45,8 +48,14 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
             }
 
             $groupName = $resource::getNavigationGroup();
-            $categoryLabel = $groupName
-                ? "{$groupName} — " . $resource::getPluralModelLabel()
+            $groupLabel = match (true) {
+                $groupName instanceof HasLabel => $groupName->getLabel(),
+                $groupName instanceof BackedEnum => (string) $groupName->value,
+                $groupName instanceof UnitEnum => $groupName->name,
+                default => $groupName,
+            };
+            $categoryLabel = $groupLabel
+                ? "{$groupLabel} — " . $resource::getPluralModelLabel()
                 : $resource::getPluralModelLabel();
 
             $builder->category($categoryLabel, $resourceResults);
@@ -96,7 +105,7 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
             ],
             [
                 'title' => '⚙️ Club System Settings (Bylaws, GSTIN & Identity)',
-                'url' => url('/admin/system-settings'),
+                'url' => url('/admin/settings'),
                 'details' => ['Section' => 'Club Master Setup', 'Action' => 'Configure Club Profile & Policies'],
                 'keywords' => ['settings', 'config', 'system settings', 'bylaws', 'club profile', 'gstin', 'address', 'policies', 'rules'],
             ],
@@ -111,14 +120,14 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'url' => url('/admin/accounts'),
                 'details' => ['Section' => 'Finance & Audit Ledger', 'Action' => 'Manage GL Ledgers & Expense Heads'],
                 'keywords' => ['account', 'accounts', 'chart of accounts', 'coa', 'gl', 'ledger', 'expense head', 'expense heads', '5000', '5100', 'kseb', 'electricity', 'diesel', 'generator', 'maintenance'],
-                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole(['admin', 'accountant']) || auth()->user()?->hasPermissionTo('reports.view')),
+                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole(['admin', 'accountant']) || auth()->user()?->checkPermissionTo('reports.view')),
             ],
             [
                 'title' => '🛡️ Staff & User Access Control (RBAC, Roles & Credentials)',
                 'url' => url('/admin/users'),
                 'details' => ['Section' => 'System & Access Control', 'Action' => 'Manage Staff & Roles'],
                 'keywords' => ['user', 'users', 'staff', 'role', 'roles', 'permission', 'permissions', 'access control', 'rbac', 'cashier account', 'password', 'deactivate', 'employee'],
-                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole('admin') || auth()->user()?->hasPermissionTo('users.manage')),
+                'visible' => fn (): bool => (bool) (auth()->user()?->hasRole('admin') || auth()->user()?->checkPermissionTo('users.manage')),
             ],
             [
                 'title' => '📖 Help (User Guide, Cashier Shortcuts & Operating Manual)',

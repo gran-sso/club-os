@@ -43,12 +43,15 @@ class ShiftResource extends Resource
     public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
     {
         $date = $record->business_date ? $record->business_date->format('d M Y') : 'N/A';
+        $status = $record->status instanceof BackedEnum
+            ? (string) $record->status->value
+            : (string) ($record->status ?? 'open');
 
         return [
             'Counter' => $record->counter?->name ?? 'POS',
             'Cashier' => $record->cashier?->name ?? 'Staff',
             'Business Date' => $date,
-            'Status' => ucfirst($record->status ?? 'open'),
+            'Status' => ucfirst($status),
         ];
     }
 

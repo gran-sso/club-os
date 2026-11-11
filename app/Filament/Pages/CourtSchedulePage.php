@@ -32,7 +32,7 @@ class CourtSchedulePage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->hasPermissionTo('courts.view_schedule')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'reception', 'cashier']) || $user->checkPermissionTo('courts.view_schedule')));
     }
 
     public string $selectedDate = '';

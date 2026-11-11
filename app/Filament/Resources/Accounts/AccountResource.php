@@ -78,7 +78,7 @@ class AccountResource extends Resource
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->hasRole(['admin', 'accountant']) || $user->hasPermissionTo('reports.view')));
+        return (bool) ($user && ($user->hasRole(['admin', 'accountant']) || $user->checkPermissionTo('reports.view')));
     }
 
     public static function canCreate(): bool

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Domain\Access\Models\Guest;
 use App\Domain\Billing\Models\Bill;
 use App\Domain\Billing\Models\Counter;
+use App\Domain\Billing\Models\Shift;
+use App\Domain\Communication\Models\MemberNotice;
 use App\Domain\Contractor\Models\Contractor;
 use App\Domain\Contractor\Models\ContractorSettlementBatch;
 use App\Domain\Facility\Models\CourtBooking;
@@ -19,6 +21,7 @@ use App\Domain\Inventory\Models\PurchaseReceipt;
 use App\Domain\Membership\Models\Member;
 use App\Domain\Membership\Models\MembershipCategory;
 use App\Domain\Membership\Models\Person;
+use App\Domain\Shared\Enums\ShiftStatus;
 use App\Domain\Shared\Services\ClubGlobalSearchProvider;
 use App\Domain\Tariff\Models\Facility;
 use App\Domain\Tariff\Models\Tariff;
@@ -33,6 +36,7 @@ use App\Filament\Resources\FinancialPeriods\FinancialPeriodResource;
 use App\Filament\Resources\Guests\GuestResource;
 use App\Filament\Resources\Inventory\InventoryItemResource;
 use App\Filament\Resources\JournalHeaders\JournalHeaderResource;
+use App\Filament\Resources\MemberNotices\MemberNoticeResource;
 use App\Filament\Resources\Members\MemberResource;
 use App\Filament\Resources\MembershipCategories\MembershipCategoryResource;
 use App\Filament\Resources\Purchases\PurchaseReceiptResource;
@@ -42,8 +46,11 @@ use App\Filament\Resources\Subscriptions\FacilitySubscriptionResource;
 use App\Filament\Resources\Tariffs\TariffResource;
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Livewire\GlobalSearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class GlobalSearchScalingTest extends TestCase
@@ -88,6 +95,7 @@ class GlobalSearchScalingTest extends TestCase
             \App\Filament\Resources\Suppliers\SupplierResource::class,
             \App\Filament\Resources\Users\UserResource::class,
             \App\Filament\Resources\Accounts\AccountResource::class,
+            MemberNoticeResource::class,
         ];
 
         foreach ($resources as $resource) {
@@ -320,5 +328,105 @@ class GlobalSearchScalingTest extends TestCase
         $response = $this->get('/admin');
         $response->assertSuccessful();
         $response->assertDontSee('Club-Wide Global Search &amp; Command Hub', false);
+    }
+
+    public function test_shift_resource_and_livewire_global_search_with_enum_statuses(): void
+    {
+        $this->actingAs($this->admin);
+        Filament::setCurrentPanel('admin');
+
+        $counter = Counter::first() ?? Counter::create([
+            'name' => 'Main Bar POS',
+            'code' => 'BAR-1',
+            'department_code' => 'bar',
+            'is_active' => true,
+        ]);
+
+        Shift::create([
+            'shift_number' => 'SHF-SRCH-OPEN',
+            'counter_id' => $counter->id,
+            'user_id' => $this->admin->id,
+            'business_date' => today(),
+            'opened_at' => now(),
+            'opening_float_paise' => 100000,
+            'status' => ShiftStatus::OPEN,
+        ]);
+
+        Shift::create([
+            'shift_number' => 'SHF-SRCH-CLOSED',
+            'counter_id' => $counter->id,
+            'user_id' => $this->admin->id,
+            'business_date' => today()->subDay(),
+            'opened_at' => now()->subDay(),
+            'closed_at' => now()->subDay()->addHours(4),
+            'opening_float_paise' => 100000,
+            'closing_cash_counted_paise' => 100000,
+            'expected_cash_paise' => 100000,
+            'discrepancy_paise' => 0,
+            'status' => ShiftStatus::CLOSED,
+        ]);
+
+        $results = ShiftResource::getGlobalSearchResults('SHF-SRCH');
+        $this->assertCount(2, $results);
+        $statuses = $results->map(fn ($r) => $r->details['Status'] ?? null)->sort()->values()->all();
+        $this->assertSame(['Closed', 'Open'], $statuses);
+
+        Livewire::actingAs($this->admin)
+            ->test(GlobalSearch::class)
+            ->set('search', 'SHF-SRCH')
+            ->assertSee('Shift #SHF-SRCH-OPEN')
+            ->assertSee('Shift #SHF-SRCH-CLOSED');
+
+        Livewire::actingAs($this->admin)
+            ->test(GlobalSearch::class)
+            ->set('search', 'a')
+            ->assertSuccessful();
+    }
+
+    public function test_global_search_handles_missing_permissions_and_non_admin_roles(): void
+    {
+        Filament::setCurrentPanel('admin');
+
+        MemberNotice::create([
+            'title' => 'Club Maintenance Bulletin',
+            'content' => 'Pool closed Friday morning.',
+            'department' => 'admin',
+            'priority' => 'info',
+            'target_type' => 'all',
+            'is_active' => true,
+            'created_by' => $this->admin->id,
+        ]);
+
+        // Simulate a deployment where a newly introduced permission was not yet seeded in DB
+        Permission::where('name', 'notices.manage')->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+
+        Livewire::actingAs($cashier)
+            ->test(GlobalSearch::class)
+            ->set('search', 'Club Maintenance')
+            ->assertSuccessful();
+
+        Livewire::actingAs($this->admin)
+            ->test(GlobalSearch::class)
+            ->set('search', 'Club Maintenance')
+            ->assertSee('Club Maintenance Bulletin');
+    }
+
+    public function test_settings_quick_link_points_to_valid_settings_route(): void
+    {
+        $this->actingAs($this->admin);
+        $provider = new ClubGlobalSearchProvider();
+
+        $results = $provider->getResults('settings');
+        $this->assertNotNull($results);
+
+        $quickLinks = collect($results->getCategories()->get('Operational Screens & Quick Links'));
+        $settingsResult = $quickLinks->first(fn ($res) => str_contains($res->title, 'Club System Settings'));
+
+        $this->assertNotNull($settingsResult);
+        $this->assertSame(url('/admin/settings'), $settingsResult->url);
+        $this->get('/admin/settings')->assertSuccessful();
     }
 }

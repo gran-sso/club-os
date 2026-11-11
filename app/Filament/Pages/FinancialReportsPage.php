@@ -46,7 +46,7 @@ class FinancialReportsPage extends Page
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'auditor']) || $user->hasPermissionTo('reports.view')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'auditor']) || $user->checkPermissionTo('reports.view')));
     }
 
     public function mount(): void

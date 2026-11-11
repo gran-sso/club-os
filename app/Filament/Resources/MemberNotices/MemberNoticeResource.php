@@ -34,25 +34,25 @@ class MemberNoticeResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->hasPermissionTo('notices.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->checkPermissionTo('notices.manage')));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->hasPermissionTo('notices.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->checkPermissionTo('notices.manage')));
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->hasPermissionTo('notices.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager', 'accountant', 'reception']) || $user->checkPermissionTo('notices.manage')));
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('notices.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('notices.manage')));
     }
 
     public static function form(Schema $schema): Schema

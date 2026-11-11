@@ -60,25 +60,25 @@ class TariffResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('tariffs.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('tariffs.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('tariffs.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
         $user = auth()->user();
-        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->hasPermissionTo('tariffs.manage')));
+        return (bool) ($user && ($user->hasRole(['admin', 'manager']) || $user->checkPermissionTo('tariffs.manage')));
     }
 
     public static function form(Schema $schema): Schema
