@@ -31,6 +31,7 @@ class PosHeldTab extends Model
         'notes',
         'cart_items',
         'gross_amount_paise',
+        'discount_amount_paise',
         'tax_amount_paise',
         'net_amount_paise',
         'status',
@@ -42,6 +43,7 @@ class PosHeldTab extends Model
     protected $casts = [
         'cart_items' => 'array',
         'gross_amount_paise' => 'integer',
+        'discount_amount_paise' => 'integer',
         'tax_amount_paise' => 'integer',
         'net_amount_paise' => 'integer',
         'settled_at' => 'datetime',

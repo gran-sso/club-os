@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Purchases\Schemas;
 use App\Domain\Inventory\Models\InventoryItem;
 use App\Domain\Inventory\Models\Supplier;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -103,28 +104,118 @@ class PurchaseReceiptForm
                                         ))
                                         ->searchable()
                                         ->preload()
+                                        ->live()
                                         ->columnSpan(2),
 
+                                    TextInput::make('bottle_count')
+                                        ->label('Bottles / Packs (Helper)')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->dehydrated(false)
+                                        ->live(onBlur: true)
+                                        ->placeholder('e.g. 12')
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $count = (float) ($state ?? 0);
+                                            $packSize = (float) ($get('pack_size_qty') ?? 0);
+                                            if ($count > 0 && $packSize > 0) {
+                                                $qty = round($count * $packSize, 3);
+                                                $set('quantity', $qty);
+                                                $gross = (float) ($get('line_gross_paise') ?? 0);
+                                                if ($gross > 0 && $qty > 0) {
+                                                    $set('unit_cost_paise', round($gross / $qty, 2));
+                                                }
+                                            }
+                                        })
+                                        ->helperText('Optional helper to auto-fill ml'),
+
+                                    TextInput::make('pack_size_qty')
+                                        ->label('Size per Bottle (ml / unit)')
+                                        ->numeric()
+                                        ->minValue(0.001)
+                                        ->dehydrated(false)
+                                        ->live(onBlur: true)
+                                        ->placeholder('e.g. 750')
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $packSize = (float) ($state ?? 0);
+                                            $count = (float) ($get('bottle_count') ?? 0);
+                                            if ($count > 0 && $packSize > 0) {
+                                                $qty = round($count * $packSize, 3);
+                                                $set('quantity', $qty);
+                                                $gross = (float) ($get('line_gross_paise') ?? 0);
+                                                if ($gross > 0 && $qty > 0) {
+                                                    $set('unit_cost_paise', round($gross / $qty, 2));
+                                                }
+                                            }
+                                        })
+                                        ->helperText('e.g. 750 for 750ml bottle'),
+                                ]),
+
+                                Grid::make(4)->schema([
                                     TextInput::make('quantity')
-                                        ->label('Received Quantity')
+                                        ->label('Total Received Qty (Base Unit)')
                                         ->required()
                                         ->numeric()
                                         ->minValue(0.001)
-                                        ->placeholder('e.g. 750 or 12')
-                                        ->helperText('In base unit (e.g. ml)'),
+                                        ->live(onBlur: true)
+                                        ->placeholder('e.g. 9000')
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $qty = (float) ($state ?? 0);
+                                            $gross = (float) ($get('line_gross_paise') ?? 0);
+                                            if ($qty > 0 && $gross > 0) {
+                                                $set('unit_cost_paise', round($gross / $qty, 2));
+                                            }
+                                        })
+                                        ->helperText('All received qty including scheme bottles (e.g. 12 × 750ml = 9000 ml)'),
+
+                                    TextInput::make('line_gross_paise')
+                                        ->label('Invoice Gross Cost (₹ Total)')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->prefix('₹')
+                                        ->live(onBlur: true)
+                                        ->placeholder('e.g. 12000.00')
+                                        ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : null)
+                                        ->dehydrateStateUsing(fn ($state) => $state !== null && $state !== '' ? (int) round(((float) $state) * 100) : null)
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $qty = (float) ($get('quantity') ?? 0);
+                                            $gross = (float) ($state ?? 0);
+                                            if ($qty > 0 && $gross >= 0) {
+                                                $set('unit_cost_paise', round($gross / $qty, 2));
+                                            }
+                                        })
+                                        ->helperText('Total invoice cost before cash discount (avoids ₹/ml rounding loss)'),
 
                                     TextInput::make('unit_cost_paise')
-                                        ->label('Unit Cost (₹)')
+                                        ->label('Gross Unit Cost (₹/unit)')
                                         ->required()
                                         ->numeric()
                                         ->minValue(0)
                                         ->prefix('₹')
+                                        ->live(onBlur: true)
                                         ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : null)
                                         ->dehydrateStateUsing(fn ($state) => (int) round(((float) $state) * 100))
-                                        ->helperText('Per base unit in ₹'),
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $qty = (float) ($get('quantity') ?? 0);
+                                            $unit = (float) ($state ?? 0);
+                                            if ($qty > 0 && $unit >= 0) {
+                                                $set('line_gross_paise', round($qty * $unit, 2));
+                                            }
+                                        })
+                                        ->helperText('Per base unit before discount'),
+
+                                    TextInput::make('discount_paise')
+                                        ->label('Cash / Trade Discount (₹)')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->default(0)
+                                        ->prefix('₹')
+                                        ->live(onBlur: true)
+                                        ->formatStateUsing(fn ($state) => $state !== null ? $state / 100 : 0)
+                                        ->dehydrateStateUsing(fn ($state) => (int) round(((float) ($state ?? 0)) * 100))
+                                        ->helperText('e.g. ₹6,000 supplier cash discount on 12-bottle case'),
                                 ]),
 
-                                Grid::make(2)->schema([
+                                Grid::make(3)->schema([
                                     Select::make('tax_percent')
                                         ->label('Input GST Slabs (%)')
                                         ->options([
@@ -135,11 +226,34 @@ class PurchaseReceiptForm
                                             '28.00' => '28% (Luxury / Carbonated Drinks)',
                                         ])
                                         ->default('0.00')
+                                        ->live()
                                         ->required(),
 
-                                    TextInput::make('notes')
-                                        ->label('Line Notes / Batch #')
-                                        ->placeholder('e.g. Batch 492 / Exp 2028'),
+                                    TextInput::make('scheme_notes')
+                                        ->label('Scheme / Batch Notes')
+                                        ->maxLength(255)
+                                        ->placeholder('e.g. 12-bottle case with 6-bottle cash discount'),
+
+                                    Placeholder::make('effective_cost_preview')
+                                        ->label('Net Effective Stock Valuation')
+                                        ->content(function ($get) {
+                                            $qty = (float) ($get('quantity') ?? 0);
+                                            $gross = $get('line_gross_paise');
+                                            $unit = (float) ($get('unit_cost_paise') ?? 0);
+                                            $grossAmount = ($gross !== null && $gross !== '') ? (float) $gross : ($qty * $unit);
+                                            $discount = (float) ($get('discount_paise') ?? 0);
+                                            $netGoods = max(0, $grossAmount - $discount);
+                                            $taxPct = (float) ($get('tax_percent') ?? 0);
+                                            $netWithTax = $netGoods + ($netGoods * $taxPct / 100);
+                                            $effectivePerUnit = $qty > 0 ? ($netGoods / $qty) : 0;
+
+                                            return sprintf(
+                                                'Net: ₹%.2f (₹%.2f/base unit) | Incl. GST: ₹%.2f',
+                                                $netGoods,
+                                                $effectivePerUnit,
+                                                $netWithTax
+                                            );
+                                        }),
                                 ]),
                             ])
                             ->defaultItems(1)

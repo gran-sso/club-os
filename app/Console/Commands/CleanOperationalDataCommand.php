@@ -67,6 +67,7 @@ class CleanOperationalDataCommand extends Command
             'inventory_movements',
             'purchase_receipt_lines',
             'purchase_receipts',
+            'pos_held_tabs',
             'bank_transactions',
             'expenses',
             'outbox_messages',
@@ -113,6 +114,15 @@ class CleanOperationalDataCommand extends Command
                 'updated_at' => now(),
             ]);
             $this->info("   ✓ All club lockers marked as available.");
+        }
+
+        // Reset promotion redemption counters while keeping master offers intact
+        if (Schema::hasTable('promotions')) {
+            DB::table('promotions')->update([
+                'redeemed_free_units' => 0,
+                'updated_at' => now(),
+            ]);
+            $this->info("   ✓ All promotion redemption counters reset to 0.");
         }
 
         $this->line("7. Re-enabling foreign key constraints...");
@@ -211,12 +221,17 @@ class CleanOperationalDataCommand extends Command
                        OR NEW.department_code != OLD.department_code
                        OR NEW.item_name != OLD.item_name
                        OR NEW.quantity != OLD.quantity
+                       OR NEW.free_quantity != OLD.free_quantity
                        OR NEW.unit_price_paise != OLD.unit_price_paise
+                       OR NEW.gross_amount_paise != OLD.gross_amount_paise
+                       OR NEW.discount_amount_paise != OLD.discount_amount_paise
+                       OR IFNULL(NEW.promotion_id, 0) != IFNULL(OLD.promotion_id, 0)
+                       OR IFNULL(NEW.promotion_name, '') != IFNULL(OLD.promotion_name, '')
                        OR NEW.tax_percent != OLD.tax_percent
                        OR NEW.tax_amount_paise != OLD.tax_amount_paise
                        OR NEW.line_total_paise != OLD.line_total_paise THEN
                         SIGNAL SQLSTATE '45000'
-                        SET MESSAGE_TEXT = 'Bill lines of posted bills are immutable: quantities, rates, and totals cannot be updated.';
+                        SET MESSAGE_TEXT = 'Bill lines of posted bills are immutable: quantities, rates, discounts, and totals cannot be updated.';
                     END IF;
                 END IF;
             END;

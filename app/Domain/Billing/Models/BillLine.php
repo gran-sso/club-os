@@ -17,16 +17,25 @@ class BillLine extends Model
         'item_type',
         'item_id',
         'item_name',
+        'promotion_id',
+        'promotion_name',
         'quantity',
+        'free_quantity',
         'unit_price_paise',
+        'gross_amount_paise',
+        'discount_amount_paise',
         'tax_percent',
         'tax_amount_paise',
         'line_total_paise',
     ];
 
     protected $casts = [
+        'promotion_id' => 'integer',
         'quantity' => 'decimal:2',
+        'free_quantity' => 'decimal:2',
         'unit_price_paise' => 'integer',
+        'gross_amount_paise' => 'integer',
+        'discount_amount_paise' => 'integer',
         'tax_percent' => 'decimal:2',
         'tax_amount_paise' => 'integer',
         'line_total_paise' => 'integer',
@@ -35,6 +44,11 @@ class BillLine extends Model
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
     }
 
     public function getUnitPriceAttribute(): float

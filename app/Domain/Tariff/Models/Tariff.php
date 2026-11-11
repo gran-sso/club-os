@@ -35,6 +35,11 @@ class Tariff extends Model
         return $this->hasOne(\App\Domain\Inventory\Models\ServingMapping::class);
     }
 
+    public function promotions(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(\App\Domain\Billing\Models\Promotion::class, 'promotion_tariffs')->withTimestamps();
+    }
+
     public function getRateMoney(): Money
     {
         return Money::fromPaise($this->rate_paise);

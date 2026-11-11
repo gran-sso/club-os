@@ -52,14 +52,29 @@ TXT;
             foreach ($bill->lines as $line) {
                 $qty = (float) $line->quantity;
                 $unit = $line->unit_price_paise / 100.0;
-                $total = $line->line_total_paise / 100.0;
-                $linesText .= sprintf("%-20.20s %2.0f x %6.2f = %7.2f\n", $line->item_name, $qty, $unit, $total);
+                $lineGrossPaise = (int) ($line->gross_amount_paise ?: round($qty * $line->unit_price_paise));
+                $lineDiscountPaise = (int) ($line->discount_amount_paise ?? 0);
+                $lineGrossDisplay = $lineGrossPaise / 100.0;
+
+                $linesText .= sprintf("%-20.20s %2.0f x %6.2f = %7.2f\n", $line->item_name, $qty, $unit, $lineGrossDisplay);
+
+                if ($lineDiscountPaise > 0 || (float) ($line->free_quantity ?? 0) > 0) {
+                    $freeQty = (float) ($line->free_quantity ?? 0);
+                    $offerLabel = $line->promotion_name
+                        ? substr($line->promotion_name, 0, 26)
+                        : ($freeQty > 0 ? sprintf("%.0f Free Offer", $freeQty) : 'Promo Discount');
+                    $linesText .= sprintf("  Offer: %-27.27s -%6.2f\n", $offerLabel, $lineDiscountPaise / 100.0);
+                }
             }
         }
 
-        $gross = ($bill?->gross_amount_paise ?? 0) / 100.0;
-        $tax = ($bill?->tax_amount_paise ?? 0) / 100.0;
-        $net = ($bill?->net_amount_paise ?? 0) / 100.0;
+        $gross = number_format(($bill?->gross_amount_paise ?? 0) / 100.0, 2);
+        $discountPaise = (int) ($bill?->discount_amount_paise ?? 0);
+        $discountLine = $discountPaise > 0
+            ? sprintf("Promo Discount:                       -₹%s\n", number_format($discountPaise / 100.0, 2))
+            : "";
+        $tax = number_format(($bill?->tax_amount_paise ?? 0) / 100.0, 2);
+        $net = number_format(($bill?->net_amount_paise ?? 0) / 100.0, 2);
         $tender = $receipt ? $receipt->tender_type->label() : 'Paid';
 
         $customerName = 'Guest';
@@ -85,7 +100,7 @@ Item                  Qty    Price    Total(INR)
 ------------------------------------------------
 {$linesText}------------------------------------------------
 Gross Total:                           ₹{$gross}
-GST / Tax:                             ₹{$tax}
+{$discountLine}GST / Tax:                             ₹{$tax}
 Net Payable:                           ₹{$net}
 Tender: {$tender}
 Status: Confirmed Paid

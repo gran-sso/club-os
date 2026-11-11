@@ -309,7 +309,7 @@ class FinancialReportService
 
         // 2. Bar Consumed Inventory COGS
         $barCogs = (int) InventoryMovement::whereBetween('created_at', [$start, $end])
-            ->where('type', 'sale')
+            ->whereIn('type', ['sale_issue', 'sale'])
             ->whereHas('item', fn($q) => $q->where('department_code', 'bar'))
             ->sum('total_cost_paise');
 
@@ -503,9 +503,9 @@ class FinancialReportService
 
         foreach ($items as $item) {
             $stockVal = (int) round($item->current_stock_qty * $item->current_avg_cost_paise);
-            $salesQty = (float) $item->movements->where('type', 'sale')->sum('quantity');
-            $salesCost = (int) $item->movements->where('type', 'sale')->sum('total_cost_paise');
-            $receiptsQty = (float) $item->movements->where('type', 'receipt')->sum('quantity');
+            $salesQty = (float) $item->movements->whereIn('type', ['sale_issue', 'sale'])->sum(fn($m) => abs((float) $m->quantity));
+            $salesCost = (int) $item->movements->whereIn('type', ['sale_issue', 'sale'])->sum('total_cost_paise');
+            $receiptsQty = (float) $item->movements->whereIn('type', ['purchase_receipt', 'receipt'])->sum('quantity');
             $wastageQty = (float) $item->movements->where('type', 'wastage')->sum('quantity');
             $wastageCost = (int) $item->movements->where('type', 'wastage')->sum('total_cost_paise');
             $isLow = $item->current_stock_qty <= $item->reorder_level;

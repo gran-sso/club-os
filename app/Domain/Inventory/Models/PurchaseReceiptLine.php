@@ -15,13 +15,18 @@ class PurchaseReceiptLine extends Model
         'inventory_item_id',
         'quantity',
         'unit_cost_paise',
+        'gross_unit_cost_paise',
+        'discount_paise',
         'tax_percent',
         'line_total_paise',
+        'scheme_notes',
     ];
 
     protected $casts = [
         'quantity' => 'float',
         'unit_cost_paise' => 'integer',
+        'gross_unit_cost_paise' => 'integer',
+        'discount_paise' => 'integer',
         'tax_percent' => 'float',
         'line_total_paise' => 'integer',
     ];

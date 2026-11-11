@@ -62,8 +62,17 @@
                             @if ($line->serving_name)
                                 <span class="text-[10px] text-slate-500 font-normal block">Dispense Serving: {{ $line->serving_name }}</span>
                             @endif
+                            @if (($line->discount_amount_paise ?? 0) > 0 || (float) ($line->free_quantity ?? 0) > 0)
+                                <span class="inline-flex items-center px-1.5 py-0.5 mt-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    Offer: {{ $line->promotion_name ?? 'Promo Discount' }}
+                                    @if ((float) ($line->free_quantity ?? 0) > 0)
+                                        ({{ (float) $line->free_quantity }} Free)
+                                    @endif
+                                    &bull; -₹{{ number_format(($line->discount_amount_paise ?? 0) / 100, 2) }}
+                                </span>
+                            @endif
                         </td>
-                        <td class="p-3 text-right font-mono text-slate-700">₹{{ number_format($line->unit_rate_paise / 100, 2) }}</td>
+                        <td class="p-3 text-right font-mono text-slate-700">₹{{ number_format(($line->unit_price_paise ?? 0) / 100, 2) }}</td>
                         <td class="p-3 text-center font-bold text-slate-900">{{ $line->quantity }}</td>
                         <td class="p-3 text-right text-slate-500 font-mono">₹{{ number_format($line->tax_amount_paise / 100, 2) }}</td>
                         <td class="p-3 text-right font-bold text-slate-900 font-mono text-sm">₹{{ number_format($line->line_total_paise / 100, 2) }}</td>
@@ -106,9 +115,15 @@
         <div class="sm:col-span-6">
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-2 text-xs shadow-2xs">
                 <div class="flex justify-between text-slate-600">
-                    <span>Taxable Subtotal:</span>
-                    <span class="font-mono font-semibold">₹{{ number_format(($bill->net_amount_paise - $bill->tax_amount_paise) / 100, 2) }}</span>
+                    <span>Gross Subtotal:</span>
+                    <span class="font-mono font-semibold">₹{{ number_format($bill->gross_amount_paise / 100, 2) }}</span>
                 </div>
+                @if (($bill->discount_amount_paise ?? 0) > 0)
+                    <div class="flex justify-between text-emerald-700 font-semibold">
+                        <span>Promo / Offer Discount:</span>
+                        <span class="font-mono">-₹{{ number_format($bill->discount_amount_paise / 100, 2) }}</span>
+                    </div>
+                @endif
                 <div class="flex justify-between text-slate-600">
                     <span>Statutory GST:</span>
                     <span class="font-mono font-semibold">₹{{ number_format($bill->tax_amount_paise / 100, 2) }}</span>

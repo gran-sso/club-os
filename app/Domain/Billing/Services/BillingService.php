@@ -8,6 +8,7 @@ use App\Domain\Billing\Models\Bill;
 use App\Domain\Billing\Models\BillLine;
 use App\Domain\Billing\Models\PaymentAllocation;
 use App\Domain\Billing\Models\PaymentReceipt;
+use App\Domain\Billing\Models\Promotion;
 use App\Domain\Billing\Models\Refund;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Finance\Services\JournalService;
@@ -36,13 +37,17 @@ class BillingService
         protected JournalService $journalService,
         protected GuestService $guestService,
         protected ReceiptPrinterInterface $printer,
-        protected ?InventoryService $inventoryService = null
+        protected ?InventoryService $inventoryService = null,
+        protected ?PromotionService $promotionService = null
     ) {
         $this->inventoryService = $this->inventoryService ?? app(InventoryService::class);
+        $this->promotionService = $this->promotionService ?? app(PromotionService::class);
     }
 
     /**
      * Create a draft sales bill.
+     *
+     * @param array{is_room_resident?: bool, is_guest_sale?: bool} $promotionContext
      */
     public function createDraftBill(
         Shift $shift,
@@ -51,18 +56,20 @@ class BillingService
         array $items,
         string $idempotencyKey,
         ?string $notes = null,
-        ?int $userId = null
+        ?int $userId = null,
+        array $promotionContext = []
     ): Bill {
         if (!$shift->isOpen()) {
             throw new ShiftNotOpenException("Cannot create bills on a closed shift.");
         }
 
-        return DB::transaction(function () use ($shift, $customer, $departmentCode, $items, $idempotencyKey, $notes, $userId) {
+        return DB::transaction(function () use ($shift, $customer, $departmentCode, $items, $idempotencyKey, $notes, $userId, $promotionContext) {
             $payloadHash = hash('sha256', json_encode([
                 'customer_type' => get_class($customer),
                 'customer_id' => $customer->getKey(),
                 'department_code' => $departmentCode,
                 'items' => $items,
+                'promotion_context' => $promotionContext,
             ]));
 
             $existingBill = Bill::where('idempotency_key', $idempotencyKey)->first();
@@ -77,36 +84,44 @@ class BillingService
             $count = Bill::where('bill_number', 'LIKE', "BILL-{$yearMonth}-%")->count() + 1;
             $billNumber = sprintf("BILL-%s-%05d", $yearMonth, $count);
 
-            $grossPaise = 0;
-            $taxPaise = 0;
+            $businessDateStr = app(\App\Domain\Shared\Services\BusinessDateService::class)->getBusinessDate(now());
+            $businessDate = \Carbon\Carbon::parse($businessDateStr);
+
+            $evaluated = $this->promotionService->evaluateCart(
+                lines: $items,
+                customer: $customer,
+                businessDate: $businessDate,
+                context: $promotionContext
+            );
+
             $lineItemsData = [];
-
-            foreach ($items as $item) {
-                $qty = (float) ($item['quantity'] ?? 1);
-                $unitPrice = (int) $item['unit_price_paise'];
-                $taxPercent = (float) ($item['tax_percent'] ?? 0);
-
-                $lineSubtotal = (int) round($qty * $unitPrice);
-                $lineTax = (int) round(($lineSubtotal * $taxPercent) / 100);
-                $lineTotal = $lineSubtotal + $lineTax;
-
-                $grossPaise += $lineSubtotal;
-                $taxPaise += $lineTax;
+            foreach ($evaluated['lines'] as $idx => $evalLine) {
+                $originalItem = $items[$idx] ?? [];
+                if (array_key_exists('expected_discount_paise', $originalItem)
+                    && (int) $originalItem['expected_discount_paise'] > (int) $evalLine['discount_amount_paise']
+                ) {
+                    throw new InvalidArgumentException(
+                        "Promotional discount on '{$evalLine['item_name']}' is no longer available or quota was exhausted. Please review the cart total."
+                    );
+                }
 
                 $lineItemsData[] = [
-                    'department_code' => $item['department_code'] ?? $departmentCode,
-                    'item_type' => $item['item_type'] ?? 'service',
-                    'item_id' => $item['item_id'] ?? null,
-                    'item_name' => $item['item_name'],
-                    'quantity' => $qty,
-                    'unit_price_paise' => $unitPrice,
-                    'tax_percent' => $taxPercent,
-                    'tax_amount_paise' => $lineTax,
-                    'line_total_paise' => $lineTotal,
+                    'department_code' => $evalLine['department_code'] ?? $departmentCode,
+                    'item_type' => $evalLine['item_type'] ?? 'service',
+                    'item_id' => $evalLine['item_id'] ?? null,
+                    'item_name' => $evalLine['item_name'],
+                    'promotion_id' => $evalLine['promotion_id'] ?? null,
+                    'promotion_name' => $evalLine['promotion_name'] ?? null,
+                    'quantity' => $evalLine['quantity'],
+                    'free_quantity' => $evalLine['free_quantity'] ?? 0,
+                    'unit_price_paise' => $evalLine['unit_price_paise'],
+                    'gross_amount_paise' => $evalLine['gross_amount_paise'],
+                    'discount_amount_paise' => $evalLine['discount_amount_paise'],
+                    'tax_percent' => $evalLine['tax_percent'],
+                    'tax_amount_paise' => $evalLine['tax_amount_paise'],
+                    'line_total_paise' => $evalLine['line_total_paise'],
                 ];
             }
-
-            $netPaise = $grossPaise + $taxPaise;
 
             $bill = Bill::create([
                 'bill_number' => $billNumber,
@@ -115,10 +130,10 @@ class BillingService
                 'customer_id' => $customer->getKey(),
                 'department_code' => $departmentCode,
                 'status' => BillStatus::DRAFT,
-                'gross_amount_paise' => $grossPaise,
-                'discount_amount_paise' => 0,
-                'tax_amount_paise' => $taxPaise,
-                'net_amount_paise' => $netPaise,
+                'gross_amount_paise' => $evaluated['gross_paise'],
+                'discount_amount_paise' => $evaluated['discount_paise'],
+                'tax_amount_paise' => $evaluated['tax_paise'],
+                'net_amount_paise' => $evaluated['net_paise'],
                 'paid_amount_paise' => 0,
                 'idempotency_key' => $idempotencyKey,
                 'idempotency_hash' => $payloadHash,
@@ -262,9 +277,30 @@ class BillingService
                 $createdReceipts[] = $receipt;
             }
 
+            $billBusinessDateStr = $bill->business_date
+                ? $bill->business_date->toDateString()
+                : app(\App\Domain\Shared\Services\BusinessDateService::class)->getBusinessDate($bill->created_at ?? now());
+            $billBusinessDate = \Carbon\Carbon::parse($billBusinessDateStr);
+
+            // Atomically claim promotion quotas under row locks before journal/fulfilment
+            foreach ($bill->lines as $line) {
+                if ($line->promotion_id && (float) $line->free_quantity > 0) {
+                    /** @var Promotion $promo */
+                    $promo = Promotion::whereKey($line->promotion_id)->lockForUpdate()->firstOrFail();
+                    if (!$promo->isEffectiveOn($billBusinessDate)) {
+                        throw new InvalidArgumentException("Promotion '{$promo->name}' is no longer active for {$billBusinessDateStr}.");
+                    }
+                    $freeUnitsNeeded = (int) round((float) $line->free_quantity);
+                    if (!$promo->hasAvailableQuota($freeUnitsNeeded)) {
+                        throw new InvalidArgumentException("Promotion '{$promo->name}' has reached its maximum free-unit quota.");
+                    }
+                    $promo->increment('redeemed_free_units', $freeUnitsNeeded);
+                }
+            }
+
             // Post balanced journal entry:
             // Debits: Cash / Bank / Prepaid liability (already in $journalDebitLines)
-            // Credits: Department Revenue (4010 Guest / 4020 Bar / 4030 Room / 4040 Sports) + GST (2030)
+            // Credits: Net Department Revenue (Gross - Discount) + GST (2030)
             $revenueAccountCode = match ($bill->department_code) {
                 'bar' => '4020',
                 'card_room' => '4010',
@@ -273,13 +309,19 @@ class BillingService
                 default => '4010',
             };
 
+            $netRevenuePaise = max(0, (int) $bill->gross_amount_paise - (int) $bill->discount_amount_paise);
+
             $journalLines = $journalDebitLines;
-            $journalLines[] = [
-                'account_code' => $revenueAccountCode,
-                'credit_paise' => $bill->gross_amount_paise,
-                'narration' => "Sales revenue for {$bill->bill_number}",
-                'department_code' => $bill->department_code,
-            ];
+            if ($netRevenuePaise > 0) {
+                $journalLines[] = [
+                    'account_code' => $revenueAccountCode,
+                    'credit_paise' => $netRevenuePaise,
+                    'narration' => $bill->discount_amount_paise > 0
+                        ? "Net sales revenue (after promo discount) for {$bill->bill_number}"
+                        : "Sales revenue for {$bill->bill_number}",
+                    'department_code' => $bill->department_code,
+                ];
+            }
 
             if ($bill->tax_amount_paise > 0) {
                 $journalLines[] = [
@@ -288,11 +330,6 @@ class BillingService
                     'narration' => "GST collected on {$bill->bill_number}",
                 ];
             }
-
-            $billBusinessDateStr = $bill->business_date
-                ? $bill->business_date->toDateString()
-                : app(\App\Domain\Shared\Services\BusinessDateService::class)->getBusinessDate($bill->created_at ?? now());
-            $billBusinessDate = \Carbon\Carbon::parse($billBusinessDateStr);
 
             $journal = $this->journalService->post(
                 sourceType: 'bill',

@@ -48,31 +48,49 @@ class InventoryService
             $receiptNumber = sprintf("PUR-%s-%05d", $yearMonth, $count);
 
             $totalGrossPaise = 0;
+            $totalDiscountPaise = 0;
             $totalTaxPaise = 0;
             $linesData = [];
 
             foreach ($items as $itemData) {
                 $qty = (float) $itemData['quantity'];
-                $unitCostPaise = (int) $itemData['unit_cost_paise'];
+                $explicitGrossPaise = isset($itemData['line_gross_paise']) ? (int) $itemData['line_gross_paise'] : null;
+                $rawUnitCostPaise = (int) ($itemData['unit_cost_paise'] ?? 0);
+                $discountPaise = (int) ($itemData['discount_paise'] ?? 0);
                 $taxPercent = (float) ($itemData['tax_percent'] ?? 0);
+                $schemeNotes = $itemData['scheme_notes'] ?? null;
 
-                if ($qty <= 0 || $unitCostPaise < 0) {
+                if ($qty <= 0 || $rawUnitCostPaise < 0 || ($explicitGrossPaise !== null && $explicitGrossPaise < 0)) {
                     throw new InvalidArgumentException("Quantity must be positive and unit cost cannot be negative.");
                 }
 
-                $lineGross = (int) round($qty * $unitCostPaise);
-                $lineTax = (int) round(($lineGross * $taxPercent) / 100);
-                $lineTotal = $lineGross + $lineTax;
+                $lineGrossBeforeDiscount = $explicitGrossPaise ?? (int) round($qty * $rawUnitCostPaise);
+                if ($explicitGrossPaise !== null && $rawUnitCostPaise === 0) {
+                    $rawUnitCostPaise = (int) round($lineGrossBeforeDiscount / $qty);
+                }
+                if ($discountPaise < 0 || $discountPaise > $lineGrossBeforeDiscount) {
+                    throw new InvalidArgumentException("Supplier cash/trade discount cannot be negative or exceed gross consignment value.");
+                }
 
-                $totalGrossPaise += $lineGross;
+                $lineNetGoodsCost = $lineGrossBeforeDiscount - $discountPaise;
+                $effectiveUnitCostPaise = (int) round($lineNetGoodsCost / $qty);
+                $lineTax = (int) round(($lineNetGoodsCost * $taxPercent) / 100);
+                $lineTotal = $lineNetGoodsCost + $lineTax;
+
+                $totalGrossPaise += $lineNetGoodsCost;
+                $totalDiscountPaise += $discountPaise;
                 $totalTaxPaise += $lineTax;
 
                 $linesData[] = [
                     'inventory_item_id' => $itemData['inventory_item_id'],
                     'quantity' => $qty,
-                    'unit_cost_paise' => $unitCostPaise,
+                    'unit_cost_paise' => $effectiveUnitCostPaise,
+                    'gross_unit_cost_paise' => $rawUnitCostPaise,
+                    'discount_paise' => $discountPaise,
                     'tax_percent' => $taxPercent,
                     'line_total_paise' => $lineTotal,
+                    'scheme_notes' => $schemeNotes,
+                    '_net_goods_cost_paise' => $lineNetGoodsCost,
                 ];
             }
 
@@ -86,6 +104,7 @@ class InventoryService
                 'invoice_number' => $invoiceNumber,
                 'invoice_date' => $invoiceDate,
                 'total_gross_paise' => $totalGrossPaise,
+                'total_discount_paise' => $totalDiscountPaise,
                 'total_tax_paise' => $totalTaxPaise,
                 'total_net_paise' => $totalNetPaise,
                 'status' => 'received',
@@ -93,7 +112,10 @@ class InventoryService
             ]);
 
             foreach ($linesData as $lData) {
-                $line = $receipt->lines()->create($lData);
+                $netGoodsCostPaise = $lData['_net_goods_cost_paise'];
+                unset($lData['_net_goods_cost_paise']);
+
+                $receipt->lines()->create($lData);
 
                 // Lock inventory item and recalculate moving weighted-average cost
                 /** @var InventoryItem $item */
@@ -104,13 +126,17 @@ class InventoryService
                 $newQty = $oldQty + $lData['quantity'];
 
                 $newAvgCost = $newQty > 0
-                    ? (int) round((($oldQty * $oldAvgCost) + ($lData['quantity'] * $lData['unit_cost_paise'])) / $newQty)
+                    ? (int) round((($oldQty * $oldAvgCost) + $netGoodsCostPaise) / $newQty)
                     : $lData['unit_cost_paise'];
 
                 $item->update([
                     'current_stock_qty' => $newQty,
                     'current_avg_cost_paise' => $newAvgCost,
                 ]);
+
+                $discountNote = $lData['discount_paise'] > 0
+                    ? sprintf(" [Supplier discount: ₹%.2f]", $lData['discount_paise'] / 100)
+                    : '';
 
                 // Record immutable movement
                 InventoryMovement::create([
@@ -124,7 +150,7 @@ class InventoryService
                     'avg_cost_after_paise' => $newAvgCost,
                     'reference_type' => 'purchase_receipt',
                     'reference_id' => $receipt->id,
-                    'notes' => "Purchase from {$supplier->name} (Inv #{$invoiceNumber})",
+                    'notes' => "Purchase from {$supplier->name} (Inv #{$invoiceNumber}){$discountNote}",
                     'created_by_user_id' => $userId ?? auth()->id(),
                 ]);
             }
@@ -209,6 +235,10 @@ class InventoryService
 
             $item->update(['current_stock_qty' => $newQty]);
 
+            $promoNote = ((float) ($line->free_quantity ?? 0) > 0)
+                ? " (incl. {$line->free_quantity} promo free)"
+                : '';
+
             // Record immutable stock movement
             InventoryMovement::create([
                 'inventory_item_id' => $item->id,
@@ -221,7 +251,7 @@ class InventoryService
                 'avg_cost_after_paise' => $unitCost,
                 'reference_type' => 'bill_line',
                 'reference_id' => $line->id,
-                'notes' => "Sold {$line->quantity} x {$mapping->serving_name} on Bill #{$line->bill->bill_number}",
+                'notes' => "Sold {$line->quantity} x {$mapping->serving_name}{$promoNote} on Bill #{$line->bill->bill_number}",
                 'created_by_user_id' => $userId ?? auth()->id(),
             ]);
 

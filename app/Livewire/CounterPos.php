@@ -8,6 +8,7 @@ use App\Domain\Billing\Models\Counter;
 use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Billing\Services\BillingService;
+use App\Domain\Billing\Services\PromotionService;
 use App\Domain\Billing\Services\ShiftService;
 use App\Domain\Facility\Models\RoomReservation;
 use App\Domain\Integrations\Contracts\ReceiptPrinterInterface;
@@ -76,6 +77,7 @@ class CounterPos extends Component
     // Cart & Sales state
     public array $cart = [];
     public float $cartGross = 0.00;
+    public float $cartDiscount = 0.00;
     public float $cartTax = 0.00;
     public float $cartNet = 0.00;
 
@@ -316,6 +318,7 @@ class CounterPos extends Component
             $guestName = $res->guest?->name ?? $res->sponsorMember?->name ?? 'Guest';
             $this->searchQuery = "{$res->facility->name} - {$guestName}";
             $this->customerSearchResults = [];
+            $this->recalculateCart();
             $this->dispatch('focus-item-search');
         }
     }
@@ -414,6 +417,7 @@ class CounterPos extends Component
         $this->activeCard = $card ?? $member->activeCard;
         $this->memberWalletBalancePaise = (int) ($member->wallet?->balance_paise ?? 0);
         $this->searchQuery = $member->membership_number;
+        $this->recalculateCart();
     }
 
     public function resetMember(): void
@@ -427,7 +431,13 @@ class CounterPos extends Component
         $this->searchQuery = '';
         $this->customerSearchResults = [];
         $this->highlightedCustomerIndex = 0;
+        $this->recalculateCart();
         $this->dispatch('focus-customer-search');
+    }
+
+    public function updatedIsGuestSale(): void
+    {
+        $this->recalculateCart();
     }
 
     // ==========================================
@@ -456,6 +466,9 @@ class CounterPos extends Component
 
         $results = [];
         $allowZeroStock = $this->allowZeroStockSales();
+        $promoService = $this->promotionService();
+        $promoCustomer = $this->getPromotionCustomer();
+        $promoContext = $this->getPromotionContext();
 
         // 1. Search Inventory Items (which may have multiple servings or single serving)
         $inventoryItems = InventoryItem::with(['servingMappings.tariff'])
@@ -476,8 +489,9 @@ class CounterPos extends Component
                 // Item has MULTIPLE serving sizes (e.g. 30ml, 60ml, Bottle)
                 $minRate = $mappings->min(fn($m) => $m->tariff->rate_paise);
                 $servingNames = $mappings->pluck('serving_name')->implode(', ');
-                $servingOptions = $mappings->map(function (ServingMapping $sm) use ($invItem) {
+                $servingOptions = $mappings->map(function (ServingMapping $sm) use ($invItem, $promoService, $promoCustomer, $promoContext) {
                     $taxPaise = (int) round(($sm->tariff->rate_paise * $sm->tariff->tax_percent) / 100);
+                    $promoBadge = $promoService->getOfferBadgeForTariff($sm->tariff->id, $promoCustomer, null, $promoContext);
                     return [
                         'tariff_id' => $sm->tariff->id,
                         'code' => $sm->tariff->code,
@@ -488,8 +502,11 @@ class CounterPos extends Component
                         'rate_paise' => $sm->tariff->rate_paise,
                         'tax_percent' => (float) $sm->tariff->tax_percent,
                         'net_rate_paise' => $sm->tariff->rate_paise + $taxPaise,
+                        'promo_badge' => $promoBadge,
                     ];
                 })->values()->toArray();
+
+                $promoBadges = collect($servingOptions)->pluck('promo_badge')->filter()->unique()->values()->all();
 
                 $results[] = [
                     'type' => 'inventory_parent',
@@ -506,6 +523,7 @@ class CounterPos extends Component
                     'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty > 0),
                     'has_multiple_servings' => true,
                     'serving_options' => $servingOptions,
+                    'promo_badge' => !empty($promoBadges) ? implode(' • ', $promoBadges) : null,
                 ];
             } elseif ($count === 1) {
                 // Single serving inventory item (e.g. Beer bottle)
@@ -528,6 +546,7 @@ class CounterPos extends Component
                     'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty >= $sm->serving_qty),
                     'has_multiple_servings' => false,
                     'serving_options' => [],
+                    'promo_badge' => $promoService->getOfferBadgeForTariff($tariff->id, $promoCustomer, null, $promoContext),
                 ];
             }
         }
@@ -557,7 +576,7 @@ class CounterPos extends Component
                     $alreadyPresent = collect($results)->contains(fn($r) => ($r['inventory_item_id'] ?? null) === $invItem->id);
                     if (!$alreadyPresent) {
                         $minRate = Tariff::whereIn('id', $allMappings->pluck('tariff_id'))->min('rate_paise') ?? $tariff->rate_paise;
-                        $servingOptions = $allMappings->map(function (ServingMapping $sm) use ($invItem) {
+                        $servingOptions = $allMappings->map(function (ServingMapping $sm) use ($invItem, $promoService, $promoCustomer, $promoContext) {
                             $t = $sm->tariff;
                             $taxPaise = (int) round(($t->rate_paise * $t->tax_percent) / 100);
                             return [
@@ -570,8 +589,11 @@ class CounterPos extends Component
                                 'rate_paise' => $t->rate_paise,
                                 'tax_percent' => (float) $t->tax_percent,
                                 'net_rate_paise' => $t->rate_paise + $taxPaise,
+                                'promo_badge' => $promoService->getOfferBadgeForTariff($t->id, $promoCustomer, null, $promoContext),
                             ];
                         })->values()->toArray();
+
+                        $promoBadges = collect($servingOptions)->pluck('promo_badge')->filter()->unique()->values()->all();
 
                         $results[] = [
                             'type' => 'inventory_parent',
@@ -588,6 +610,7 @@ class CounterPos extends Component
                             'is_in_stock' => $allowZeroStock || ($invItem->current_stock_qty > 0),
                             'has_multiple_servings' => true,
                             'serving_options' => $servingOptions,
+                            'promo_badge' => !empty($promoBadges) ? implode(' • ', $promoBadges) : null,
                         ];
                     }
                     continue;
@@ -620,6 +643,7 @@ class CounterPos extends Component
                 'is_in_stock' => $isInStock,
                 'has_multiple_servings' => false,
                 'serving_options' => [],
+                'promo_badge' => $promoService->getOfferBadgeForTariff($tariff->id, $promoCustomer, null, $promoContext),
             ];
         }
 
@@ -681,8 +705,12 @@ class CounterPos extends Component
             return;
         }
 
+        $promoService = $this->promotionService();
+        $promoCustomer = $this->getPromotionCustomer();
+        $promoContext = $this->getPromotionContext();
+
         $mappings = $invItem->servingMappings->filter(fn($m) => $m->tariff && $m->tariff->is_active);
-        $servingOptions = $mappings->map(function (ServingMapping $sm) use ($invItem) {
+        $servingOptions = $mappings->map(function (ServingMapping $sm) use ($invItem, $promoService, $promoCustomer, $promoContext) {
             $taxPaise = (int) round(($sm->tariff->rate_paise * $sm->tariff->tax_percent) / 100);
             return [
                 'tariff_id' => $sm->tariff->id,
@@ -694,6 +722,7 @@ class CounterPos extends Component
                 'rate_paise' => $sm->tariff->rate_paise,
                 'tax_percent' => (float) $sm->tariff->tax_percent,
                 'net_rate_paise' => $sm->tariff->rate_paise + $taxPaise,
+                'promo_badge' => $promoService->getOfferBadgeForTariff($sm->tariff->id, $promoCustomer, null, $promoContext),
             ];
         })->values()->toArray();
 
@@ -787,20 +816,18 @@ class CounterPos extends Component
                 $this->openServingModalForInventoryItem($invItem->id);
                 return;
             }
+        }
 
-            // Check stock availability (only when zero stock sales are disallowed)
-            $requiredQty = (float) $mapping->serving_qty;
-            if (!$allowZeroStock && $invItem->current_stock_qty < $requiredQty) {
-                $this->errorMessage = sprintf(
-                    "Item '%s' is out of stock (Available: %.2f %s, Required: %.2f %s). Cannot add to bill.",
-                    $invItem->name,
-                    $invItem->current_stock_qty,
-                    $invItem->base_unit,
-                    $requiredQty,
-                    $invItem->base_unit
-                );
-                return;
+        // Check cumulative stock availability across existing cart + this increment
+        $existingQty = 0;
+        foreach ($this->cart as $existingItem) {
+            if ((int) ($existingItem['tariff_id'] ?? 0) === $tariffId) {
+                $existingQty += (int) ($existingItem['quantity'] ?? 0);
             }
+        }
+
+        if (!$this->canAccommodateTariffQuantity($tariffId, $existingQty + 1)) {
+            return;
         }
 
         // Check if already in cart -> increment quantity
@@ -835,11 +862,16 @@ class CounterPos extends Component
 
     public function setCartQuantity(int $index, $quantity): void
     {
+        $this->clearMessages();
         $qty = (int) $quantity;
         if (isset($this->cart[$index])) {
             if ($qty <= 0) {
                 $this->removeFromCart($index);
             } else {
+                $tariffId = (int) ($this->cart[$index]['tariff_id'] ?? 0);
+                if (!$this->canAccommodateTariffQuantity($tariffId, $qty)) {
+                    return;
+                }
                 $this->cart[$index]['quantity'] = $qty;
                 $this->recalculateCart();
             }
@@ -849,14 +881,50 @@ class CounterPos extends Component
 
     public function updateQuantity(int $index, int $delta): void
     {
+        $this->clearMessages();
         if (isset($this->cart[$index])) {
-            $this->cart[$index]['quantity'] += $delta;
-            if ($this->cart[$index]['quantity'] <= 0) {
+            $targetQty = (int) $this->cart[$index]['quantity'] + $delta;
+            if ($targetQty <= 0) {
                 unset($this->cart[$index]);
                 $this->cart = array_values($this->cart);
+                $this->recalculateCart();
+            } else {
+                $tariffId = (int) ($this->cart[$index]['tariff_id'] ?? 0);
+                if ($delta > 0 && !$this->canAccommodateTariffQuantity($tariffId, $targetQty)) {
+                    return;
+                }
+                $this->cart[$index]['quantity'] = $targetQty;
+                $this->recalculateCart();
             }
-            $this->recalculateCart();
         }
+    }
+
+    public function claimPromoFreeItem(int $index): void
+    {
+        $this->clearMessages();
+        if (!isset($this->cart[$index])) {
+            return;
+        }
+
+        $addQty = (int) ($this->cart[$index]['promo_cta_add_qty'] ?? 0);
+        if ($addQty <= 0) {
+            $this->recalculateCart();
+            $addQty = (int) ($this->cart[$index]['promo_cta_add_qty'] ?? 0);
+        }
+
+        if ($addQty <= 0) {
+            return;
+        }
+
+        $targetQty = (int) $this->cart[$index]['quantity'] + $addQty;
+        $tariffId = (int) ($this->cart[$index]['tariff_id'] ?? 0);
+        if (!$this->canAccommodateTariffQuantity($tariffId, $targetQty)) {
+            return;
+        }
+
+        $this->cart[$index]['quantity'] = $targetQty;
+        $this->recalculateCart();
+        $this->dispatch('focus-item-search');
     }
 
     public function removeFromCart(int $index): void
@@ -880,19 +948,111 @@ class CounterPos extends Component
 
     protected function recalculateCart(): void
     {
-        $gross = 0;
-        $tax = 0;
-
-        foreach ($this->cart as $item) {
-            $lineSubtotal = (int) round($item['quantity'] * $item['unit_price_paise']);
-            $lineTax = (int) round(($lineSubtotal * $item['tax_percent']) / 100);
-            $gross += $lineSubtotal;
-            $tax += $lineTax;
+        if (empty($this->cart)) {
+            $this->cartGross = 0.00;
+            $this->cartDiscount = 0.00;
+            $this->cartTax = 0.00;
+            $this->cartNet = 0.00;
+            return;
         }
 
-        $this->cartGross = $gross / 100.0;
-        $this->cartTax = $tax / 100.0;
-        $this->cartNet = ($gross + $tax) / 100.0;
+        $evaluation = $this->promotionService()->evaluateCart(
+            lines: $this->cart,
+            customer: $this->getPromotionCustomer(),
+            context: $this->getPromotionContext()
+        );
+
+        $this->cart = $evaluation['lines'];
+        $this->cartGross = $evaluation['gross_paise'] / 100.0;
+        $this->cartDiscount = $evaluation['discount_paise'] / 100.0;
+        $this->cartTax = $evaluation['tax_paise'] / 100.0;
+        $this->cartNet = $evaluation['net_paise'] / 100.0;
+    }
+
+    protected function promotionService(): PromotionService
+    {
+        return app(PromotionService::class);
+    }
+
+    /**
+     * @return array{is_room_resident: bool, is_guest_sale: bool}
+     */
+    protected function getPromotionContext(): array
+    {
+        return [
+            'is_room_resident' => $this->selectedRoomReservation !== null || $this->customerType === 'room_guest',
+            'is_guest_sale' => $this->isGuestSale,
+        ];
+    }
+
+    protected function getPromotionCustomer(): ?\Illuminate\Database\Eloquent\Model
+    {
+        if ($this->selectedRoomReservation) {
+            return $this->selectedGuest ?? $this->selectedMember ?? $this->selectedRoomReservation->sponsorMember;
+        }
+
+        return $this->selectedMember;
+    }
+
+    protected function canAccommodateTariffQuantity(int $tariffId, int|float $targetLineQty): bool
+    {
+        if ($this->allowZeroStockSales()) {
+            return true;
+        }
+
+        $tariff = Tariff::with('servingMapping.inventoryItem')->find($tariffId);
+        $mapping = $tariff?->servingMapping;
+        if (!$mapping || !$mapping->inventoryItem) {
+            return true;
+        }
+
+        $invItem = $mapping->inventoryItem;
+        if ((float) $invItem->current_stock_qty <= 0) {
+            $this->errorMessage = sprintf(
+                "Item '%s' is out of stock (Available: %.2f %s). Cannot add to bill.",
+                $invItem->name,
+                $invItem->current_stock_qty,
+                $invItem->base_unit
+            );
+            return false;
+        }
+
+        $otherTariffIds = collect($this->cart)
+            ->pluck('tariff_id')
+            ->filter(fn ($id) => (int) $id !== $tariffId)
+            ->unique()
+            ->values();
+
+        $otherMappings = $otherTariffIds->isNotEmpty()
+            ? ServingMapping::whereIn('tariff_id', $otherTariffIds)
+                ->where('inventory_item_id', $invItem->id)
+                ->get()
+                ->keyBy('tariff_id')
+            : collect();
+
+        $otherQtyRequired = 0.0;
+        foreach ($this->cart as $cartLine) {
+            $lineTariffId = (int) ($cartLine['tariff_id'] ?? 0);
+            if ($lineTariffId !== $tariffId && isset($otherMappings[$lineTariffId])) {
+                $otherQtyRequired += (float) $cartLine['quantity'] * (float) $otherMappings[$lineTariffId]->serving_qty;
+            }
+        }
+
+        $requiredQty = $otherQtyRequired + ((float) $targetLineQty * (float) $mapping->serving_qty);
+
+        if (round((float) $invItem->current_stock_qty, 4) < round($requiredQty, 4)) {
+            $this->errorMessage = sprintf(
+                "Insufficient stock for '%s' (Available: %.2f %s, Required: %.2f %s).",
+                $invItem->name,
+                $invItem->current_stock_qty,
+                $invItem->base_unit,
+                $requiredQty,
+                $invItem->base_unit
+            );
+            return false;
+        }
+
+        return true;
     }
 
     // ==========================================
@@ -973,6 +1133,7 @@ class CounterPos extends Component
         }
 
         $grossPaise = (int) round($this->cartGross * 100);
+        $discountPaise = (int) round($this->cartDiscount * 100);
         $taxPaise = (int) round($this->cartTax * 100);
         $netPaise = (int) round($this->cartNet * 100);
 
@@ -992,6 +1153,7 @@ class CounterPos extends Component
                     'notes' => $this->tabNotes,
                     'cart_items' => $this->cart,
                     'gross_amount_paise' => $grossPaise,
+                    'discount_amount_paise' => $discountPaise,
                     'tax_amount_paise' => $taxPaise,
                     'net_amount_paise' => $netPaise,
                 ]);
@@ -1016,6 +1178,7 @@ class CounterPos extends Component
                 'notes' => $this->tabNotes,
                 'cart_items' => $this->cart,
                 'gross_amount_paise' => $grossPaise,
+                'discount_amount_paise' => $discountPaise,
                 'tax_amount_paise' => $taxPaise,
                 'net_amount_paise' => $netPaise,
                 'status' => 'open',
@@ -1049,6 +1212,7 @@ class CounterPos extends Component
                     $currentTab->update([
                         'cart_items' => $this->cart,
                         'gross_amount_paise' => (int) round($this->cartGross * 100),
+                        'discount_amount_paise' => (int) round($this->cartDiscount * 100),
                         'tax_amount_paise' => (int) round($this->cartTax * 100),
                         'net_amount_paise' => (int) round($this->cartNet * 100),
                     ]);
@@ -1080,6 +1244,9 @@ class CounterPos extends Component
         }
 
         $this->cart = $tab->cart_items ?? [];
+        $this->isGuestSale = collect($this->cart)->contains(
+            fn ($item) => str_contains(strtolower((string) ($item['name'] ?? '')), 'guest')
+        );
         $this->recalculateCart();
         $this->showHeldTabsListModal = false;
         $this->successMessage = "Loaded Tab #{$tab->tab_number}: {$tab->customer_name} ({$tab->formatted_net_amount}).";
@@ -1251,7 +1418,7 @@ class CounterPos extends Component
             $primaryDept = $this->cart[0]['department_code'] ?? 'bar';
 
             foreach ($this->cart as $item) {
-                $billItems[] = [
+                $itemPayload = [
                     'department_code' => $item['department_code'],
                     'item_type' => 'tariff',
                     'item_id' => $item['tariff_id'],
@@ -1260,6 +1427,12 @@ class CounterPos extends Component
                     'unit_price_paise' => $item['unit_price_paise'],
                     'tax_percent' => $item['tax_percent'],
                 ];
+
+                if (!empty($item['discount_amount_paise'])) {
+                    $itemPayload['expected_discount_paise'] = (int) $item['discount_amount_paise'];
+                }
+
+                $billItems[] = $itemPayload;
             }
 
             // Server-side unique idempotency key
@@ -1272,7 +1445,8 @@ class CounterPos extends Component
                 items: $billItems,
                 idempotencyKey: $idempotencyKey,
                 notes: $notes,
-                userId: auth()->id()
+                userId: auth()->id(),
+                promotionContext: $this->getPromotionContext()
             );
 
             $checkoutResult = $billingService->checkout(

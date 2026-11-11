@@ -21,8 +21,11 @@ class CreatePurchaseReceipt extends CreateRecord
             return [
                 'inventory_item_id' => (int) $line['inventory_item_id'],
                 'quantity' => (float) $line['quantity'],
-                'unit_cost_paise' => (int) $line['unit_cost_paise'],
+                'unit_cost_paise' => (int) ($line['unit_cost_paise'] ?? 0),
+                'line_gross_paise' => isset($line['line_gross_paise']) ? (int) $line['line_gross_paise'] : null,
+                'discount_paise' => (int) ($line['discount_paise'] ?? 0),
                 'tax_percent' => (float) ($line['tax_percent'] ?? 0),
+                'scheme_notes' => $line['scheme_notes'] ?? null,
             ];
         }, $data['lines'] ?? []);
 

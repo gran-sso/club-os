@@ -18,6 +18,7 @@ class PurchaseReceipt extends Model
         'invoice_number',
         'invoice_date',
         'total_gross_paise',
+        'total_discount_paise',
         'total_tax_paise',
         'total_net_paise',
         'status',
@@ -28,6 +29,7 @@ class PurchaseReceipt extends Model
     protected $casts = [
         'invoice_date' => 'date',
         'total_gross_paise' => 'integer',
+        'total_discount_paise' => 'integer',
         'total_tax_paise' => 'integer',
         'total_net_paise' => 'integer',
     ];

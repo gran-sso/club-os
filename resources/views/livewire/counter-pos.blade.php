@@ -983,6 +983,11 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold {{ $itemMatch['has_multiple_servings'] ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700' }}">
                                             {{ $itemMatch['serving_display'] }}
                                         </span>
+                                        @if (!empty($itemMatch['promo_badge']))
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                🎁 {{ $itemMatch['promo_badge'] }}
+                                            </span>
+                                        @endif
                                         <span class="{{ $itemMatch['is_in_stock'] ? 'text-emerald-700' : 'text-rose-600 font-bold' }}">
                                             @if ($itemMatch['stock_qty'] !== null)
                                                 ● {{ $itemMatch['is_in_stock'] ? "Stock: {$itemMatch['stock_qty']} {$itemMatch['base_unit']}" : "OUT OF STOCK" }}
@@ -1177,9 +1182,12 @@
                                 <tbody class="divide-y divide-slate-100 text-slate-800">
                                     @foreach ($cart as $index => $item)
                                         @php
-                                            $lineGross = ($item['quantity'] * $item['unit_price_paise']) / 100.0;
-                                            $lineTax = round(($lineGross * $item['tax_percent']) / 100, 2);
-                                            $lineNet = $lineGross + $lineTax;
+                                            $lineGrossPaise = (int) ($item['gross_amount_paise'] ?? round($item['quantity'] * $item['unit_price_paise']));
+                                            $lineDiscountPaise = (int) ($item['discount_amount_paise'] ?? 0);
+                                            $lineTaxPaise = (int) ($item['tax_amount_paise'] ?? round((max(0, $lineGrossPaise - $lineDiscountPaise) * $item['tax_percent']) / 100));
+                                            $lineNetPaise = (int) ($item['line_total_paise'] ?? (max(0, $lineGrossPaise - $lineDiscountPaise) + $lineTaxPaise));
+                                            $freeQty = (float) ($item['free_quantity'] ?? 0);
+                                            $ctaAddQty = (int) ($item['promo_cta_add_qty'] ?? 0);
                                         @endphp
                                         <tr class="hover:bg-slate-50/80 transition-colors">
                                             <td class="py-3 pl-4 pr-2 text-center font-mono text-[11px] text-slate-400">
@@ -1193,9 +1201,28 @@
                                                             {{ $item['serving_name'] }}
                                                         </span>
                                                     @endif
+                                                    @if ($freeQty > 0 && !empty($item['promotion_badge']))
+                                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                                                            🎁 {{ $item['promotion_badge'] }} • {{ rtrim(rtrim(number_format($freeQty, 2, '.', ''), '0'), '.') }} Free
+                                                        </span>
+                                                    @elseif ($ctaAddQty > 0)
+                                                        <button type="button" wire:click="claimPromoFreeItem({{ $index }})"
+                                                            class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs transition-colors cursor-pointer">
+                                                            +{{ $ctaAddQty }} Free Offer Available
+                                                        </button>
+                                                    @elseif (!empty($item['promo_pending_member_label']))
+                                                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 font-semibold">
+                                                            {{ $item['promo_pending_member_label'] }}
+                                                        </span>
+                                                    @endif
                                                 </div>
                                                 <div class="text-[11px] text-slate-500 font-mono mt-0.5">
                                                     Base: ₹{{ number_format($item['unit_price_paise'] / 100, 2) }}
+                                                    @if ($lineDiscountPaise > 0)
+                                                        <span class="text-emerald-700 font-semibold ml-1.5">
+                                                            • Saved ₹{{ number_format($lineDiscountPaise / 100, 2) }}
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             </td>
                                             <td class="py-3 px-3 text-right font-mono text-[11px] text-slate-600">
@@ -1234,7 +1261,12 @@
                                                 </div>
                                             </td>
                                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900 text-sm">
-                                                ₹{{ number_format($lineNet, 2) }}
+                                                @if ($lineDiscountPaise > 0)
+                                                    <div class="text-[11px] text-slate-400 line-through font-normal">
+                                                        ₹{{ number_format(($lineGrossPaise + (int) round(($lineGrossPaise * $item['tax_percent']) / 100)) / 100, 2) }}
+                                                    </div>
+                                                @endif
+                                                <div>₹{{ number_format($lineNetPaise / 100, 2) }}</div>
                                             </td>
                                             <td class="py-3 pl-2 pr-4 text-center">
                                                 <button type="button" wire:click="removeFromCart({{ $index }})"
@@ -1259,6 +1291,12 @@
                             <span>Gross Subtotal</span>
                             <span class="font-mono text-slate-900 font-semibold">₹{{ number_format($cartGross, 2) }}</span>
                         </div>
+                        @if ($cartDiscount > 0)
+                            <div class="flex justify-between text-xs text-emerald-700 font-semibold">
+                                <span>Promotional Discount</span>
+                                <span class="font-mono">-₹{{ number_format($cartDiscount, 2) }}</span>
+                            </div>
+                        @endif
                         <div class="flex justify-between text-xs text-slate-600">
                             <span>GST & Taxes (Statutory Breakdown)</span>
                             <span class="font-mono text-slate-900 font-semibold">₹{{ number_format($cartTax, 2) }}</span>
@@ -1388,7 +1426,14 @@
                                     {{ $sIdx + 1 }}
                                 </span>
                                 <div>
-                                    <div class="font-bold text-slate-900 text-sm">{{ $sOpt['serving_name'] }}</div>
+                                    <div class="font-bold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
+                                        <span>{{ $sOpt['serving_name'] }}</span>
+                                        @if (!empty($sOpt['promo_badge']))
+                                            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                                                🎁 {{ $sOpt['promo_badge'] }}
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="text-[11px] text-slate-500 font-mono mt-0.5">
                                         Rate: ₹{{ number_format($sOpt['rate_paise'] / 100, 2) }} + {{ $sOpt['tax_percent'] }}% GST
                                     </div>
@@ -1464,6 +1509,12 @@
                             <span>Settlement Tender</span>
                             <span class="font-bold text-amber-800 font-mono text-sm">{{ $tenderLabel }}</span>
                         </div>
+                        @if ($cartDiscount > 0)
+                            <div class="flex justify-between items-center text-emerald-700 font-semibold mb-1.5">
+                                <span>Promo Savings Applied</span>
+                                <span class="font-mono">-₹{{ number_format($cartDiscount, 2) }}</span>
+                            </div>
+                        @endif
                         <div class="flex justify-between items-center pt-2 border-t border-amber-200">
                             <span class="font-bold text-slate-900 text-sm">Total Amount Payable</span>
                             <span class="text-2xl font-extrabold font-mono text-amber-700">₹{{ number_format($cartNet, 2) }}</span>

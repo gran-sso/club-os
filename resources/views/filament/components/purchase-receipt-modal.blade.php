@@ -68,19 +68,38 @@
                         <td class="px-4 py-3">
                             <span class="font-bold text-slate-900 block">{{ $line->item?->name ?? 'Stock Item' }}</span>
                             <span class="text-[10px] text-slate-500 font-mono font-semibold">SKU: {{ $line->item?->sku ?? '—' }} &bull; Base Dispense Unit: {{ $line->item?->base_unit ?? 'unit' }}</span>
+                            @if(($line->discount_paise ?? 0) > 0)
+                                <span class="inline-flex items-center px-1.5 py-0.5 mt-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    Supplier Cash Discount: -₹{{ number_format($line->discount_paise / 100, 2) }}
+                                </span>
+                            @endif
+                            @if(!empty($line->scheme_notes))
+                                <span class="text-[10px] text-slate-500 italic block mt-0.5">{{ $line->scheme_notes }}</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-right font-mono font-bold text-slate-900 text-sm">
                             {{ number_format($line->quantity, 3) }} <span class="text-xs font-normal text-slate-500">{{ $line->item?->base_unit }}</span>
                         </td>
-                        <td class="px-4 py-3 text-right font-mono text-slate-700">₹{{ number_format($line->unit_cost_paise / 100, 2) }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-slate-700">
+                            <div>₹{{ number_format($line->unit_cost_paise / 100, 2) }}</div>
+                            @if(($line->gross_unit_cost_paise ?? 0) > $line->unit_cost_paise)
+                                <div class="text-[10px] text-slate-400 line-through">₹{{ number_format($line->gross_unit_cost_paise / 100, 2) }}</div>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-right font-mono font-semibold text-slate-600">{{ number_format($line->tax_percent, 1) }}%</td>
                         <td class="px-4 py-3 text-right font-mono font-bold text-slate-900 text-sm">₹{{ number_format($line->line_total_paise / 100, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900">
+                @if(($receipt->total_discount_paise ?? 0) > 0)
+                    <tr>
+                        <td colspan="4" class="px-4 py-2 text-right text-emerald-700 uppercase tracking-wider text-xs">Supplier Cash / Scheme Discount Applied:</td>
+                        <td class="px-4 py-2 text-right font-mono text-emerald-700 font-semibold">-₹{{ number_format($receipt->total_discount_paise / 100, 2) }}</td>
+                    </tr>
+                @endif
                 <tr>
-                    <td colspan="4" class="px-4 py-2.5 text-right uppercase tracking-wider text-xs">Taxable Consignment Subtotal:</td>
+                    <td colspan="4" class="px-4 py-2.5 text-right uppercase tracking-wider text-xs">Net Stock Cost Subtotal:</td>
                     <td class="px-4 py-2.5 text-right font-mono font-bold">₹{{ number_format($receipt->total_gross_paise / 100, 2) }}</td>
                 </tr>
                 @if($receipt->total_tax_paise > 0)
