@@ -34,19 +34,23 @@ class MemberAuthController extends Controller
 
         $cleanInput = preg_replace('/[^0-9]/', '', $input);
         $member = Member::with(['person', 'category'])
-            ->where('membership_number', $input)
-            ->orWhere(function ($q) use ($input, $cleanInput) {
-                if (in_array($input, ['9876543210', '9895011111']) || in_array($cleanInput, ['9876543210', '9895011111'])) {
-                    $q->where('membership_number', 'MC-001');
-                } elseif (in_array($input, ['9876543211', '9895022222']) || in_array($cleanInput, ['9876543211', '9895022222'])) {
-                    $q->where('membership_number', 'MC-002');
-                } elseif (in_array($input, ['9876543212', '9895033333']) || in_array($cleanInput, ['9876543212', '9895033333'])) {
-                    $q->where('membership_number', 'MC-003');
-                }
-            })
-            ->orWhereHas('person', function ($query) use ($input, $cleanInput) {
-                $query->where('phone', $input)
-                    ->orWhere('phone', $cleanInput);
+            ->where(function ($outer) use ($input, $cleanInput) {
+                $outer->where('membership_number', $input)
+                    ->when(! app()->environment('production'), function ($q) use ($input, $cleanInput) {
+                        $q->orWhere(function ($demoQuery) use ($input, $cleanInput) {
+                            if (in_array($input, ['9876543210', '9895011111'], true) || in_array($cleanInput, ['9876543210', '9895011111'], true)) {
+                                $demoQuery->where('membership_number', 'MC-001');
+                            } elseif (in_array($input, ['9876543211', '9895022222'], true) || in_array($cleanInput, ['9876543211', '9895022222'], true)) {
+                                $demoQuery->where('membership_number', 'MC-002');
+                            } elseif (in_array($input, ['9876543212', '9895033333'], true) || in_array($cleanInput, ['9876543212', '9895033333'], true)) {
+                                $demoQuery->where('membership_number', 'MC-003');
+                            }
+                        });
+                    })
+                    ->orWhereHas('person', function ($query) use ($input, $cleanInput) {
+                        $query->where('phone', $input)
+                            ->when($cleanInput !== '', fn ($q) => $q->orWhere('phone', $cleanInput));
+                    });
             })
             ->first();
 
@@ -62,7 +66,7 @@ class MemberAuthController extends Controller
         }
 
         $passwordValid = Hash::check($credentials['password'], $member->password)
-            || in_array($credentials['password'], ['1234', 'Member@123']);
+            || (! app()->environment('production') && in_array($credentials['password'], ['1234', 'Member@123'], true));
 
         if (!$passwordValid) {
             throw ValidationException::withMessages([

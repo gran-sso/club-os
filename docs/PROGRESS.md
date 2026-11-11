@@ -2069,3 +2069,24 @@ For environments where full browser automation is unavailable, operators should 
 - **Automated Verification**:
   - `php artisan test tests/Feature/GlobalSearchScalingTest.php`: **12 passed, 95 assertions, 0 failures**.
   - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **353 passed, 1,885 assertions, 0 failures**.
+
+---
+
+## Unified Login Experience, Role-Based Landing & Security Hardening (Delivered)
+
+- **Feature Summary**:
+  - Consolidated authentication entry at `/` and `/login` into a unified, accessible login experience with segmented tabs (**Staff Terminal** | **Member Portal**), client-side `localStorage` tab memory (`malabar_login_tab`), `?tab=staff|member` query-string support, and automatic preservation of the active tab on validation failure (`_portal` old input).
+  - Centralized post-login landing resolution into [`UserLandingService`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Services/UserLandingService.php):
+    - `admin`, `manager`, `accountant`, `auditor` &rarr; `/admin`
+    - `reception` &rarr; `/admin/room-rack`
+    - `cashier` &rarr; `/pos`
+    - Club members (`auth:member`) &rarr; `/member/dashboard`
+    - Protected deep-links still honor `redirect()->intended(...)`.
+  - Preserved Filament's `/admin/login` route registration via [`AdminLoginRedirectController`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Http/Controllers/AdminLoginRedirectController.php) (redirecting guests cleanly to `/login?tab=staff` while keeping `session('url.intended')` intact) and preserved standalone `/member/login` & `/member/activate` routes for Member PWA `scope: "/member/"`.
+  - Hardened [`AuthController`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Http/Controllers/AuthController.php) and [`MemberAuthController`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Http/Controllers/Member/MemberAuthController.php) by gating development fallback passwords (`password`/`Password@123`, `1234`/`Member@123`) and demo member phone shortcuts behind `!app()->environment('production')`, and blocking deactivated (`is_active === false`) staff logins on `/login`.
+  - Applied `modern-web-guidance` tablist/form standards across [`resources/views/auth/login.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/login.blade.php) and [`resources/views/member/auth/login.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/member/auth/login.blade.php) (WAI-ARIA `tablist`/`tab`/`tabpanel`, roving `tabindex`, Left/Right/Home/End keys, `hidden="until-found"` with `beforematch`, structural active underline indicator alongside tint, `autocomplete="username"`/`current-password`, show/hide password toggles with `aria-pressed`, `>=48px` tap targets, `>=16px` input sizing).
+- **Automated Verification**:
+  - `npm run build`: compiled updated Vite production assets (`public/build/assets/app-B2B6Kd4W.css`, `public/build/manifest.json`) with 0 errors.
+  - `php artisan test tests/Feature/UnifiedLoginTest.php tests/Feature/MemberPortalTest.php tests/Feature/HelpCenterTest.php tests/Feature/ExampleTest.php tests/Feature/MemberProfileViewTest.php tests/Feature/AdminPanelTest.php`: **70 passed, 421 assertions, 0 failures**.
+  - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **362 passed, 1,992 assertions, 0 failures**.
+

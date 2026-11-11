@@ -1,13 +1,22 @@
 <?php
 
+use App\Domain\Shared\Services\UserLandingService;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Member\MemberAuthController;
 use App\Livewire\CounterPos;
 use App\Livewire\Member\MemberDashboard;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check() ? redirect()->route('pos') : redirect()->route('login');
+Route::get('/', function (UserLandingService $landingService) {
+    if (($user = auth('web')->user()) && $user->is_active !== false) {
+        return redirect($landingService->resolveHomeUrlForUser($user));
+    }
+
+    if ($member = auth('member')->user()) {
+        return redirect($landingService->resolveHomeUrlForMember($member));
+    }
+
+    return redirect()->route('login');
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
