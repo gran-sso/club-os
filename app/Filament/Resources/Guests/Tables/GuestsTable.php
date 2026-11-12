@@ -77,7 +77,7 @@ class GuestsTable
                             ->default('bar_card_room')
                             ->required(),
                         Select::make('tender_type')
-                            ->label('Payment Tender Method')
+                            ->label('Payment Method')
                             ->options([
                                 'cash' => 'Cash in Drawer (₹236.00)',
                                 'digital' => 'UPI / QR / EDC Card (₹236.00)',

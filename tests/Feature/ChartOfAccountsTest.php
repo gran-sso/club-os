@@ -162,7 +162,7 @@ class ChartOfAccountsTest extends TestCase
 
         $response = $this->get('/admin/expenses/create');
         $response->assertSuccessful();
-        $response->assertSee('General Ledger Expense Head');
+        $response->assertSee('Expense Category');
 
         Livewire::test(CreateExpense::class)
             ->assertFormFieldExists('account_id');

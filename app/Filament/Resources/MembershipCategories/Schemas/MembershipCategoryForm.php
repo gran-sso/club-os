@@ -30,7 +30,7 @@ class MembershipCategoryForm
                                 ->helperText('Short reference code stored in membership records.'),
 
                             TextInput::make('name')
-                                ->label('Category Title / Designation')
+                                ->label('Category Name')
                                 ->required()
                                 ->maxLength(100)
                                 ->placeholder('e.g. Honorary Member or Associate Member')
@@ -38,7 +38,7 @@ class MembershipCategoryForm
                         ]),
                     ]),
 
-                Section::make('Statutory Fees & Subscription Schedule')
+                Section::make('Admission & Annual Fees')
                     ->description('Configure one-time admission capital fee, recurring annual subscription dues, and general meeting voting eligibility under Malabar Club bylaws.')
                     ->columnSpanFull()
                     ->schema([
@@ -55,7 +55,7 @@ class MembershipCategoryForm
                                 ->helperText('Capital entrance fee charged once upon member admission.'),
 
                             TextInput::make('annual_fee_paise')
-                                ->label('Annual Subscription Dues (₹)')
+                                ->label('Annual Membership Fee (₹)')
                                 ->required()
                                 ->numeric()
                                 ->minValue(0)

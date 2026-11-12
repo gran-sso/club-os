@@ -197,7 +197,7 @@
                             </button>
 
                             <p class="text-[11px] text-slate-400 text-center">
-                                Routes automatically to Admin Console, Accommodation Deck, or Counter POS based on your role.
+                                Routes automatically to Admin Console, Guest Rooms (101–105), or Counter POS based on your role.
                             </p>
                         </form>
 
@@ -219,7 +219,7 @@
                                     <button type="button" data-demo-staff="reception@malabarclub.local"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                         <div class="font-bold text-amber-400">Reception</div>
-                                        <div class="text-[10px] text-slate-400">Accommodation Deck</div>
+                                        <div class="text-[10px] text-slate-400">Guest Rooms (101–105)</div>
                                     </button>
                                     <button type="button" data-demo-staff="cashier1@malabarclub.local"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">

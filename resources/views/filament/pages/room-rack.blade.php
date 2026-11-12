@@ -390,7 +390,7 @@
 
                         <!-- Section 2: Dates & Financial Tariff -->
                         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">2. Stay Dates &amp; Tariff Charges</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">2. Stay Dates &amp; Room Charges</span>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
@@ -425,7 +425,7 @@
                             </div>
 
                             <div>
-                                <label for="new-booking-payment-mode" class="block text-xs font-bold text-slate-700 mb-1">Payment Tender Mode</label>
+                                <label for="new-booking-payment-mode" class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
                                 <select id="new-booking-payment-mode" wire:model="newBooking.payment_mode"
                                     class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
                                     <option value="cash">💵 Cash (Front Desk Till Drawer)</option>
@@ -536,7 +536,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Payment Tender Mode</label>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Payment Method</label>
                                     <select wire:model="paymentMode"
                                         class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs">
                                         <option value="cash">💵 Cash (Till Drawer)</option>
@@ -647,7 +647,7 @@
                 <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 space-y-4">
                     <div class="flex items-start justify-between border-b border-slate-100 pb-3">
                         <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Housekeeping Protocol</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Room Cleaning Status</span>
                             <h3 id="housekeeping-modal-title" class="text-base font-extrabold text-slate-900">{{ $selectedRoomName }}</h3>
                         </div>
                         <button wire:click="$set('showHousekeepingModal', false)" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer">&times;</button>
@@ -740,7 +740,7 @@
                     </div>
 
                     <div>
-                        <label for="payment-advance-mode" class="block text-xs font-bold text-slate-700 mb-1.5">Tender Mode</label>
+                        <label for="payment-advance-mode" class="block text-xs font-bold text-slate-700 mb-1.5">Payment Method</label>
                         <select id="payment-advance-mode" wire:model="paymentMode"
                             class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
                             <option value="cash">💵 Cash (Front Desk Till Drawer)</option>

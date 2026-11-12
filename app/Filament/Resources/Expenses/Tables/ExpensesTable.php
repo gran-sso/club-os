@@ -26,7 +26,7 @@ class ExpensesTable
                     ->sortable(),
 
                 TextColumn::make('account.name')
-                    ->label('Expense Head')
+                    ->label('Expense Category')
                     ->badge()
                     ->color('primary')
                     ->searchable(),
@@ -42,7 +42,7 @@ class ExpensesTable
                     ->searchable(),
 
                 TextColumn::make('amount_paise')
-                    ->label('Disbursed Amount')
+                    ->label('Amount Paid')
                     ->state(fn ($record) => '₹' . number_format($record->amount_paise / 100, 2))
                     ->sortable()
                     ->weight('bold')

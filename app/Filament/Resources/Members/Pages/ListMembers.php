@@ -18,14 +18,14 @@ class ListMembers extends ListRecords
     {
         return [
             Action::make('bulkImport')
-                ->label('Bulk Import CSV')
+                ->label('Import Members (CSV)')
                 ->icon(Heroicon::OutlinedArrowUpTray)
                 ->color('info')
                 ->visible(fn (): bool => (bool) auth()->user()?->hasClubPermission('members.manage'))
                 ->url(fn (): string => MemberResource::getUrl('import')),
 
             Action::make('exportRoster')
-                ->label('Export Roster CSV')
+                ->label('Download Member List (CSV)')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->visible(fn (): bool => (bool) auth()->user()?->hasAnyClubPermission(['members.view', 'members.manage']))

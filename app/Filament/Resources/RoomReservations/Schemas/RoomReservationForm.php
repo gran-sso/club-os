@@ -65,8 +65,8 @@ class RoomReservationForm
                         ]),
                     ]),
 
-                Section::make('Stay Schedule & Pricing (Indian Club Tariff)')
-                    ->description('Check-in and check-out dates are evaluated on non-overlapping stay boundaries.')
+                Section::make('Stay Dates & Room Charges')
+                    ->description('Check-in and check-out dates are checked so two guests cannot book the same room on overlapping dates.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(2)->schema([
@@ -85,7 +85,7 @@ class RoomReservationForm
 
                         Grid::make(2)->schema([
                             TextInput::make('rate_per_night_paise')
-                                ->label('Tariff Rate Per Night (₹)')
+                                ->label('Room Rate Per Night (₹)')
                                 ->required()
                                 ->numeric()
                                 ->minValue(0)
@@ -125,11 +125,11 @@ class RoomReservationForm
                                 ->default('reserved'),
 
                             Select::make('housekeeping_status')
-                                ->label('Housekeeping Cleanliness Status')
+                                ->label('Room Cleaning Status')
                                 ->required()
                                 ->options([
                                     'clean' => 'Clean (Ready for Guest Check-In)',
-                                    'dirty' => 'Dirty (Awaiting Housekeeping Turnover)',
+                                    'dirty' => 'Needs Cleaning (After Check-Out)',
                                     'maintenance' => 'Under Maintenance',
                                 ])
                                 ->default('clean'),

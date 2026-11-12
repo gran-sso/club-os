@@ -35,9 +35,9 @@ class RoomRackPage extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Accommodation Deck';
+    protected static ?string $navigationLabel = 'Guest Rooms (101–105)';
 
-    protected static ?string $title = 'Accommodation Deck';
+    protected static ?string $title = 'Guest Rooms (101–105)';
 
     protected static ?string $slug = 'room-rack';
 

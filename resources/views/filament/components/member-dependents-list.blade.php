@@ -5,7 +5,7 @@
                 <th class="px-4 py-3">Family Dependent Name</th>
                 <th class="px-4 py-3">Relationship</th>
                 <th class="px-4 py-3">Contact Phone</th>
-                <th class="px-4 py-3 text-center">Prepaid Wallet Tender Authority</th>
+                <th class="px-4 py-3 text-center">Smartcard Spending Allowed</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white">

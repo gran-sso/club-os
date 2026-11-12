@@ -88,7 +88,7 @@ class AdminPhase4FacilitiesAndBookingsTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/room-reservations/create');
         $response->assertStatus(200);
         $response->assertSee('Room &amp; Occupant Identification', false);
-        $response->assertSee('Stay Schedule &amp; Pricing (Indian Club Tariff)', false);
+        $response->assertSee('Stay Dates &amp; Room Charges', false);
     }
 
     public function test_admin_can_create_room_reservation(): void

@@ -29,8 +29,8 @@ class AdminPhase3PurchasesAndExpensesTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/purchases/purchase-receipts/create');
         $response->assertStatus(200);
-        $response->assertSee('Supplier &amp; Consignment Information', false);
-        $response->assertSee('Inward Stock Consignment Lines');
+        $response->assertSee('Supplier &amp; Bill Details', false);
+        $response->assertSee('Items Received on This Bill');
     }
 
     public function test_admin_can_create_purchase_receipt_and_update_stock_and_journal(): void

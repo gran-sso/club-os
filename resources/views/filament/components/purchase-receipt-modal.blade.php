@@ -38,14 +38,14 @@
                 <span class="font-bold text-slate-900 block mt-0.5">{{ $receipt->invoice_date?->format('d M Y') ?? '—' }}</span>
             </div>
             <div>
-                <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Net Consignment Total</span>
+                <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Net Purchase Bill Total</span>
                 <span class="font-mono font-extrabold text-emerald-800 block text-sm mt-0.5">₹{{ number_format($receipt->total_net_paise / 100, 2) }}</span>
             </div>
         </div>
 
         @if($receipt->notes)
             <div class="border-t border-slate-200/80 pt-2 text-slate-600 italic text-xs">
-                Delivery Challan &amp; Notes: {{ $receipt->notes }}
+                Delivery &amp; Bill Notes: {{ $receipt->notes }}
             </div>
         @endif
     </div>

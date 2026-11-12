@@ -98,12 +98,12 @@ class MembersTable
                                     return 'No card currently registered';
                                 }
                                 $fee = number_format((float) \App\Domain\Shared\Models\SystemSetting::get('lost_card_fee', 150.00), 2);
-                                return "{$record->activeCard->card_number} (Status: Active) — Statutory Replacement Fee: ₹{$fee}";
+                                return "{$record->activeCard->card_number} (Active) — Replacement Fee: ₹{$fee}";
                             }),
                         \Filament\Forms\Components\TextInput::make('card_number')
-                            ->label('New RFID Card UID / Number')
+                            ->label('New Smartcard Number')
                             ->required()
-                            ->placeholder('e.g. CARD-VENU-002 or scan physical RFID card'),
+                            ->placeholder('e.g. CARD-VENU-002 or tap smartcard'),
                         \Filament\Forms\Components\TextInput::make('reason')
                             ->label('Issuance / Replacement Reason')
                             ->default(fn ($record) => $record->activeCard ? 'Lost / Damaged Card Replacement' : 'Initial Card Issuance')
@@ -214,11 +214,11 @@ class MembersTable
                     }),
 
                 Action::make('changeStatus')
-                    ->label('Lifecycle Status')
+                    ->label('Change Status')
                     ->icon(Heroicon::OutlinedShieldCheck)
                     ->color('warning')
-                    ->modalHeading(fn ($record) => "Member Lifecycle Status — {$record->membership_number}")
-                    ->modalDescription('Manage membership status. Changing to Suspended, Resigned, or Expired automatically revokes and blocks RFID door access.')
+                    ->modalHeading(fn ($record) => "Change Member Status — {$record->membership_number}")
+                    ->modalDescription('Update membership status. Changing to Suspended, Resigned, or Expired automatically blocks smartcard door access.')
                     ->form([
                         Select::make('status')
                             ->label('New Membership Status')
@@ -232,7 +232,7 @@ class MembersTable
                             ->default(fn ($record) => $record->status instanceof \BackedEnum ? $record->status->value : (string) $record->status)
                             ->required(),
                         TextInput::make('reason')
-                            ->label('Reason / Audit Notation')
+                            ->label('Reason / Note')
                             ->placeholder('e.g. Relocated abroad / Disciplinary hold')
                             ->required(fn ($get) => $get('status') !== 'active'),
                     ])
@@ -249,7 +249,7 @@ class MembersTable
                 EditAction::make(),
 
                 DeleteAction::make()
-                    ->label('Delete Unused Profile')
+                    ->label('Delete Empty Profile')
                     ->color('danger')
                     ->visible(fn ($record) => 
                         !$record->bills()->exists() && 
@@ -259,9 +259,9 @@ class MembersTable
                         !$record->roomReservations()->exists()
                     )
                     ->requiresConfirmation()
-                    ->modalHeading('Delete Unused Member Profile')
+                    ->modalHeading('Delete Empty Member Profile')
                     ->modalDescription('Only newly created member profiles with zero financial history, unspent wallet deposits, or facility bookings can be deleted.')
-                    ->successNotificationTitle('Pristine member record removed successfully.'),
+                    ->successNotificationTitle('Empty member profile removed successfully.'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -271,10 +271,10 @@ class MembersTable
                         ->color('danger')
                         ->requiresConfirmation()
                         ->modalHeading('Suspend Selected Members')
-                        ->modalDescription('Selected members will have their access revoked and all active RFID access cards immediately blocked from turnstiles.')
+                        ->modalDescription('Selected members will have their access revoked and all active smartcards immediately blocked.')
                         ->form([
                             TextInput::make('reason')
-                                ->label('Administrative Suspension Reason')
+                                ->label('Suspension Reason')
                                 ->placeholder('e.g. Annual audit / Non-payment of subscription')
                                 ->required(),
                         ])
@@ -298,7 +298,7 @@ class MembersTable
                         ->color('gray')
                         ->requiresConfirmation()
                         ->modalHeading('Mark Members as Resigned')
-                        ->modalDescription('Selected members will be marked as Resigned and active cards blocked. Financial history and wallet ledger remain immutable.')
+                        ->modalDescription('Selected members will be marked as Resigned and active cards blocked. Financial history and wallet ledger remain intact.')
                         ->action(function (Collection $records) {
                             $count = 0;
                             foreach ($records as $member) {
@@ -335,7 +335,7 @@ class MembersTable
                         }),
 
                     BulkAction::make('exportSelected')
-                        ->label('Export Selected CSV')
+                        ->label('Download Selected (CSV)')
                         ->icon(Heroicon::OutlinedArrowDownTray)
                         ->color('info')
                         ->action(function (Collection $records) {

@@ -20,7 +20,7 @@ class TariffsTable
                     ->badge()
                     ->color('gray'),
                 \Filament\Tables\Columns\TextColumn::make('name')
-                    ->label('Tariff Name')
+                    ->label('Item / Service Name')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),

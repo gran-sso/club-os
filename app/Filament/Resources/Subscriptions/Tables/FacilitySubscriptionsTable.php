@@ -43,7 +43,7 @@ class FacilitySubscriptionsTable
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('ends_at')
-                    ->label('Ends (Exclusive)')
+                    ->label('Valid Until')
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('total_fee_paise')

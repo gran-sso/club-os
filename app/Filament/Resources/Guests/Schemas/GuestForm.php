@@ -55,17 +55,17 @@ class GuestForm
 
                         Grid::make(2)->schema([
                             Select::make('id_proof_type')
-                                ->label('Statutory Identity Proof (KYC)')
+                                ->label('Government ID Proof')
                                 ->options([
-                                    'Aadhaar Card' => 'Aadhaar Card (UIDAI 12-digit)',
+                                    'Aadhaar Card' => 'Aadhaar Card (12-digit)',
                                     'Passport' => 'Indian / Foreign Passport',
-                                    'Driving Licence' => 'Driving Licence (MoRTH)',
-                                    'Voter ID Card' => 'Election Photo Identity Card (EPIC)',
-                                    'PAN Card' => 'Permanent Account Number (PAN)',
+                                    'Driving Licence' => 'Driving Licence',
+                                    'Voter ID Card' => 'Voter ID Card (EPIC)',
+                                    'PAN Card' => 'PAN Card',
                                 ])
                                 ->default('Aadhaar Card')
                                 ->required()
-                                ->helperText('Club bylaws mandate KYC verification before granting entry to Bar or Card Room.'),
+                                ->helperText('Club rules require ID proof check before entry to Bar or Card Room.'),
 
                             TextInput::make('id_proof_number')
                                 ->label('Identity Document Number')
@@ -87,7 +87,7 @@ class GuestForm
                     ->schema([
                         Grid::make(2)->schema([
                             Select::make('sponsor_type')
-                                ->label('Sponsor Classification')
+                                ->label('Sponsor Type')
                                 ->required()
                                 ->options([
                                     Member::class => 'Malabar Club Primary Member',

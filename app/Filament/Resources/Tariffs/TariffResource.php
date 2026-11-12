@@ -24,7 +24,7 @@ class TariffResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationLabel = 'Tariffs & Rates';
+    protected static ?string $navigationLabel = 'Menu & Price List';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -39,7 +39,7 @@ class TariffResource extends Resource
 
     public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
     {
-        return "Tariff: {$record->name} [{$record->code}]";
+        return "Item Price: {$record->name} [{$record->code}]";
     }
 
     public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array

@@ -46,7 +46,7 @@ class BankAccountForm
                         ]),
                     ]),
 
-                Section::make('Account Number & Statutory Codes')
+                Section::make('Account Number, IFSC & UPI')
                     ->description('Official account identification and Indian banking clearance codes.')
                     ->columnSpanFull()
                     ->schema([
@@ -60,7 +60,7 @@ class BankAccountForm
                                 ->helperText('Official bank account number.'),
 
                             Select::make('account_type')
-                                ->label('Account Classification')
+                                ->label('Account Type')
                                 ->required()
                                 ->options([
                                     'current' => 'Current Account (Operational)',
@@ -85,13 +85,13 @@ class BankAccountForm
                         ]),
                     ]),
 
-                Section::make('General Ledger Mapping & Initial Balance')
+                Section::make('Ledger Link & Opening Balance')
                     ->description('Chart of Accounts linkage and opening ledger balance.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(['default' => 1, 'md' => 2])->schema([
                             Select::make('gl_account_id')
-                                ->label('Linked General Ledger Asset Head')
+                                ->label('Linked Ledger Account (Tally / Books)')
                                 ->options(fn () => Account::where('type', 'asset')
                                     ->get()
                                     ->mapWithKeys(fn ($a) => [

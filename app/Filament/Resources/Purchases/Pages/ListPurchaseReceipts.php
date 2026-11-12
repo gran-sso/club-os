@@ -14,7 +14,7 @@ class ListPurchaseReceipts extends ListRecords
     {
         return [
             CreateAction::make()
-                ->label('Record Stock Inward'),
+                ->label('Add Stock Purchase'),
         ];
     }
 }

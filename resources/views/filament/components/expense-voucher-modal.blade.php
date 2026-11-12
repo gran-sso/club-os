@@ -7,12 +7,12 @@
                     PV
                 </div>
                 <div>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Malabar Club &bull; Disbursement Voucher</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Malabar Club &bull; Payment Voucher</span>
                     <div class="font-mono font-extrabold text-slate-900 text-base">{{ $expense->expense_number }}</div>
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Disbursement Status</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Payment Status</span>
                 <div>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {{ ucfirst($expense->status) }}
@@ -31,7 +31,7 @@
                 <span class="font-bold text-slate-900 block mt-0.5">{{ $expense->expense_date?->format('d M Y') ?? '—' }}</span>
             </div>
             <div>
-                <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Disbursed Amount</span>
+                <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Amount Paid</span>
                 <span class="font-mono font-extrabold text-rose-600 block text-lg mt-0.5">₹{{ number_format($expense->amount_paise / 100, 2) }}</span>
             </div>
         </div>

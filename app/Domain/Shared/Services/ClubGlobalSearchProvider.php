@@ -88,10 +88,10 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                     && $user->hasClubPermission('counter.operate'),
             ],
             [
-                'title' => '🏨 Front-Desk Accommodation Deck (Room Rack Grid & Housekeeping)',
+                'title' => '🏨 Guest Rooms (101–105) (Room Status & Cleaning)',
                 'url' => url('/admin/room-rack'),
                 'details' => ['Section' => 'Operations & Front Desk', 'Action' => 'View Deluxe Rooms 101–105'],
-                'keywords' => ['accommodation deck', 'deck', 'room rack', 'room', 'rack', 'accommodation', 'hotel', 'deluxe', 'housekeeping', 'cleaning', 'rooms'],
+                'keywords' => ['guest rooms', 'accommodation deck', 'deck', 'room rack', 'room', 'rack', 'accommodation', 'hotel', 'deluxe', 'housekeeping', 'cleaning', 'rooms'],
                 'visible' => fn (): bool => (bool) auth()->user()?->hasClubPermission('rooms.view_rack'),
             ],
             [
@@ -116,9 +116,9 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
                 'visible' => fn (): bool => (bool) auth()->user()?->hasClubPermission('settings.manage'),
             ],
             [
-                'title' => '📡 Hardware & Integration Diagnostics (Tally & Outbox)',
+                'title' => '📡 Tally & Gate Devices (Status & Sync)',
                 'url' => url('/admin/integration-status'),
-                'details' => ['Section' => 'Audit & System', 'Action' => 'Inspect Outbox & Connectors'],
+                'details' => ['Section' => 'Audit & System', 'Action' => 'Check Tally Sync & Devices'],
                 'keywords' => ['integration', 'status', 'hardware', 'tally', 'tally prime', 'turnstile', 'biometric', 'rfid', 'thermal printer', 'diagnostics'],
                 'visible' => fn (): bool => (bool) auth()->user()?->hasAnyClubPermission(['integrations.view', 'integrations.manage']),
             ],

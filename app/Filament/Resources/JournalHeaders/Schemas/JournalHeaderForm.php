@@ -38,7 +38,7 @@ class JournalHeaderForm
                                     'bill' => 'Counter Sales Bill',
                                     'refund' => 'Bill Refund',
                                     'contractor_settlement' => 'Contractor Settlement',
-                                    'inventory_receipt' => 'Stock Inward Purchase',
+                                    'inventory_receipt' => 'Stock Purchase',
                                     'expense' => 'Operating Expense',
                                     'opening_balance' => 'Opening Balance Migration',
                                 ])

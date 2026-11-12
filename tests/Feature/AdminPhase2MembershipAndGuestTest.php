@@ -28,8 +28,8 @@ class AdminPhase2MembershipAndGuestTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/members/create');
         $response->assertStatus(200);
-        $response->assertSee('Personal Details &amp; Statutory KYC', false);
-        $response->assertSee('Aadhaar Card (UIDAI 12-digit)');
+        $response->assertSee('Personal Details &amp; ID Proof', false);
+        $response->assertSee('Aadhaar Card (12-digit)');
         $response->assertSee('Club Membership Classification');
     }
 

@@ -47,7 +47,7 @@ class RoleForm
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('name')
-                                ->label('Role Identifier (Slug)')
+                                ->label('Role Code')
                                 ->required()
                                 ->maxLength(64)
                                 ->regex('/^[a-z][a-z0-9_-]*$/')

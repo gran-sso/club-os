@@ -140,13 +140,13 @@ class GlobalSearchScalingTest extends TestCase
         $reportItems = collect($reportCategories->get('Operational Screens & Quick Links'));
         $this->assertTrue($reportItems->contains(fn ($res) => str_contains($res->title, 'Executive Reporting Hub')));
 
-        // 4. Search for Accommodation Deck
-        $roomResults = $provider->getResults('accommodation deck');
+        // 4. Search for Guest Rooms
+        $roomResults = $provider->getResults('guest rooms');
         $this->assertNotNull($roomResults);
         $roomCategories = $roomResults->getCategories();
         $this->assertTrue($roomCategories->has('Operational Screens & Quick Links'));
         $roomItems = collect($roomCategories->get('Operational Screens & Quick Links'));
-        $this->assertTrue($roomItems->contains(fn ($res) => str_contains($res->title, 'Front-Desk Accommodation Deck')));
+        $this->assertTrue($roomItems->contains(fn ($res) => str_contains($res->title, 'Guest Rooms (101–105)')));
     }
 
     public function test_member_resource_search_by_name_phone_and_details(): void

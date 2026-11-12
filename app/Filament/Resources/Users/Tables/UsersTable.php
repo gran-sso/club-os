@@ -49,7 +49,7 @@ class UsersTable
 
                 TextColumn::make('permissions_count')
                     ->counts('permissions')
-                    ->label('Direct Perms')
+                    ->label('Extra Permissions')
                     ->badge()
                     ->color('secondary')
                     ->toggleable(),

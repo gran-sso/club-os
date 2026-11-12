@@ -19,8 +19,8 @@ class MemberForm
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Personal Details & Statutory KYC')
-                    ->description('Member identification, contact details, and government-approved KYC documentation.')
+                Section::make('Personal Details & ID Proof')
+                    ->description('Member name, contact numbers, and government ID details.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(2)->schema([
@@ -43,36 +43,36 @@ class MemberForm
                                 ->required()
                                 ->maxLength(25)
                                 ->placeholder('e.g. +91 98470 12345')
-                                ->helperText('Used for SMS/WhatsApp receipts and member identification at the counter.'),
+                                ->helperText('Used for receipts and finding the member at the counter.'),
 
                             TextInput::make('email')
                                 ->label('Email Address')
                                 ->email()
                                 ->maxLength(150)
                                 ->placeholder('e.g. ramesh.menon@example.com')
-                                ->helperText('Used for monthly statements and tax invoices.'),
+                                ->helperText('Used for monthly statements and receipts.'),
                         ]),
 
                         Grid::make(2)->schema([
                             Select::make('id_proof_type')
-                                ->label('Statutory Identity Proof (KYC)')
+                                ->label('Government ID Proof')
                                 ->options([
-                                    'Aadhaar Card' => 'Aadhaar Card (UIDAI 12-digit)',
+                                    'Aadhaar Card' => 'Aadhaar Card (12-digit)',
                                     'Passport' => 'Indian Passport',
-                                    'Driving Licence' => 'Driving Licence (MoRTH)',
-                                    'Voter ID Card' => 'Election Photo Identity Card (EPIC)',
-                                    'PAN Card' => 'Permanent Account Number (PAN)',
+                                    'Driving Licence' => 'Driving Licence',
+                                    'Voter ID Card' => 'Voter ID Card',
+                                    'PAN Card' => 'PAN Card',
                                 ])
                                 ->default('Aadhaar Card')
                                 ->nullable()
-                                ->helperText('Identity verification document under club bylaws.'),
+                                ->helperText('ID document kept on file under club rules.'),
 
                             TextInput::make('id_proof_number')
-                                ->label('Identity Proof Document #')
+                                ->label('ID Proof Number')
                                 ->nullable()
                                 ->maxLength(100)
                                 ->placeholder('e.g. 5432 9876 1234')
-                                ->helperText('Unique government document number (mandatory for new admissions).'),
+                                ->helperText('ID card number (required for new admissions).'),
                         ]),
 
                         Grid::make(2)->schema([
@@ -212,25 +212,25 @@ class MemberForm
                                 ->helperText('Leave empty for Life / Permanent memberships without fixed expiry.'),
 
                             Select::make('fee_status')
-                                ->label('Membership Fee Settlement Status')
+                                ->label('Fee Payment Status')
                                 ->options([
                                     'paid' => 'Paid / Settled in Full',
                                     'pending' => 'Pending Payment / Unpaid',
                                     'waived' => 'Waived / Honorary Exemption',
                                 ])
                                 ->default('pending')
-                                ->helperText('Tracks statutory admission dues settlement.')
+                                ->helperText('Tracks whether admission & subscription dues are paid.')
                                 ->visibleOn('edit'),
                         ]),
                     ]),
 
-                Section::make('Statutory Membership Fees & Admission Collection')
-                    ->description('For new admissions, collect fees and issue a receipt immediately. For existing pre-migration members, mark fees as already paid historically.')
+                Section::make('Joining & Annual Membership Fees')
+                    ->description('For new admissions, collect fees and issue a receipt immediately. For existing members, mark fees as already paid earlier.')
                     ->columnSpanFull()
                     ->schema([
                         \Filament\Forms\Components\Toggle::make('historical_fees_already_paid')
-                            ->label('Existing Club Member — Fees Already Paid Historically (Do Not Ask for Payment)')
-                            ->helperText('Enable when adding an existing member whose admission fee & current dues were already paid prior to software rollout. Records settled status with zero current-day receipt.')
+                            ->label('Existing Member — Fees Already Paid Earlier (Do Not Ask for Payment)')
+                            ->helperText('Turn ON when adding an existing member who already paid their joining & current dues before software rollout. Records them as paid without creating a cash receipt today.')
                             ->default(false)
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
@@ -243,19 +243,19 @@ class MemberForm
                             ->visible(fn ($get) => (bool) $get('historical_fees_already_paid'))
                             ->schema([
                                 DatePicker::make('historical_fee_paid_at')
-                                    ->label('Historical Settlement Date (Optional)')
+                                    ->label('Date Paid (Optional)')
                                     ->nullable()
                                     ->helperText('Defaults to Date of Admission if left blank.'),
 
                                 TextInput::make('historical_receipt_ref')
-                                    ->label('Old Register / Receipt Ref # (Optional)')
+                                    ->label('Old Receipt / Register # (Optional)')
                                     ->maxLength(50)
                                     ->placeholder('e.g. OLD-RCP-1042 or Register Vol 2'),
                             ]),
 
                         \Filament\Forms\Components\Toggle::make('collect_initial_fee')
                             ->label('Collect Membership Fees Now (New Admission)')
-                            ->helperText('If enabled, admission fee and subscription dues are immediately recorded, an official receipt is generated, and annual validity is activated.')
+                            ->helperText('When turned ON, joining and annual fees are collected right away, a receipt is issued, and validity starts immediately.')
                             ->default(false)
                             ->visible(fn ($get) => ! (bool) $get('historical_fees_already_paid'))
                             ->live()
@@ -280,49 +280,49 @@ class MemberForm
                                     ->default(0)
                                     ->prefix('₹')
                                     ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
-                                    ->helperText('Statutory entrance fee paid only once in member lifetime.'),
+                                    ->helperText('One-time joining fee paid once upon admission.'),
 
                                 TextInput::make('annual_fee_amount_rupees')
-                                    ->label('First-Year Annual Subscription Dues (₹)')
+                                    ->label('First-Year Annual Fee (₹)')
                                     ->numeric()
                                     ->minValue(0)
                                     ->default(0)
                                     ->prefix('₹')
                                     ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
-                                    ->helperText('Recurring annual maintenance dues for Year 1 (₹0 if category is exempt).'),
+                                    ->helperText('Yearly subscription charge for Year 1 (₹0 if category is exempt).'),
                             ]),
 
                         Grid::make(2)
                             ->visible(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
                             ->schema([
                                 Select::make('fee_tender_type')
-                                    ->label('Payment Tender / Mode')
+                                    ->label('Payment Method')
                                     ->options([
-                                        'cash' => 'Cash in Hand (Counter)',
-                                        'digital' => 'Digital (UPI / POS Terminal)',
-                                        'bank_transfer' => 'Bank Remittance (NEFT / RTGS)',
-                                        'cheque' => 'Bank Cheque / DD',
+                                        'cash' => 'Cash at Counter',
+                                        'digital' => 'UPI / Card Machine',
+                                        'bank_transfer' => 'Bank Transfer (NEFT / RTGS)',
+                                        'cheque' => 'Cheque / DD',
                                     ])
                                     ->default('cash')
                                     ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid')),
 
                                 TextInput::make('fee_reference')
-                                    ->label('Banking / Instrument Ref #')
+                                    ->label('UPI / Bank / Cheque Ref #')
                                     ->placeholder('e.g. UPI-12345678 or Cheque #004521')
-                                    ->helperText('Optional transaction / instrument reference for audit.'),
+                                    ->helperText('Optional reference number for payment tracking.'),
                             ]),
                     ])
                     ->visibleOn('create'),
 
-                Section::make('Smartcard & RFID Hardware Token')
-                    ->description('Optionally link an RFID Mifare/NFC contactless card UID for high-speed POS checkouts.')
+                Section::make('Member Smartcard (Optional)')
+                    ->description('Link a physical smartcard number so the member can tap & pay quickly at the counter.')
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('rfid_card_number')
-                            ->label('RFID Smartcard UID / Token (Optional)')
+                            ->label('Smartcard Number (Tap or Type)')
                             ->maxLength(64)
-                            ->placeholder('e.g. CARD-RAMESH-001 or tap physical card on USB reader')
-                            ->helperText('If supplied, an active RFID card record will be immediately issued to this member.'),
+                            ->placeholder('e.g. CARD-RAMESH-001 or tap card on USB reader')
+                            ->helperText('If entered, an active smartcard is linked immediately to this member.'),
                     ])
                     ->visibleOn('create'),
             ]);

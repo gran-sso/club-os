@@ -25,7 +25,7 @@ class AdminPhase1Test extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/tariffs/create');
         $response->assertStatus(200);
-        $response->assertSee('Tariff / Item Description');
+        $response->assertSee('Menu / Item Name');
         $response->assertSee('Indian Pricing &amp; GST Slabs', false);
     }
 

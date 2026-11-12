@@ -124,7 +124,7 @@ class MemberProfileViewTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/admin/members/' . $this->member->id);
         $response->assertStatus(200);
-        $response->assertSee('Statutory KYC & Personal Records');
+        $response->assertSee('ID Proof &amp; Personal Records', false);
         $response->assertSee('1234 5678 9012');
         $response->assertSee('Vadakkencherry Town, Palakkad');
         $response->assertSee('Membership Classification & Access');

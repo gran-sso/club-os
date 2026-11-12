@@ -62,7 +62,7 @@ class EditBill extends EditRecord
                 ->color('success')
                 ->form([
                     \Filament\Forms\Components\Select::make('tender_type')
-                        ->label('Settlement Tender Method')
+                        ->label('Payment Method')
                         ->required()
                         ->options([
                             'prepaid' => '💳 Member Prepaid Wallet (Server Ledger)',

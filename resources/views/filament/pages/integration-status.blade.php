@@ -21,7 +21,7 @@
                             📑
                         </div>
                         <div>
-                            <h3 class="font-bold text-sm text-slate-900 tracking-tight">Tally Prime XML Outbox Bridge</h3>
+                            <h3 class="font-bold text-sm text-slate-900 tracking-tight">Tally Accounting Sync</h3>
                             <span class="text-[11px] text-slate-500">Asynchronous Accounting Voucher Sync</span>
                         </div>
                     </div>
@@ -37,11 +37,11 @@
                 <!-- Queue Stats -->
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
-                        <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Pending Outbox</span>
+                        <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Waiting to Send</span>
                         <span class="text-2xl font-extrabold font-mono text-amber-600">{{ $outboxStats['pending'] ?? 0 }}</span>
                     </div>
                     <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
-                        <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Delivered / Ack</span>
+                        <span class="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">Sent to Tally</span>
                         <span class="text-2xl font-extrabold font-mono text-emerald-600">{{ $outboxStats['acknowledged'] ?? 0 }}</span>
                     </div>
                     <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
@@ -56,7 +56,7 @@
                         <svg width="16" height="16" class="w-4 h-4 text-slate-950 shrink-0" style="width: 16px; height: 16px; min-width: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
-                        <span>Dispatch Pending Outbox Messages to Tally</span>
+                        <span>Send Pending Entries to Tally</span>
                     </button>
 
                     @if (($outboxStats['failed'] ?? 0) > 0)
@@ -87,7 +87,7 @@
                         </div>
                         <button wire:click="downloadMastersXml" type="button"
                             class="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-[11px] rounded-lg shadow-2xs transition cursor-pointer shrink-0">
-                            Download Masters XML (Ledgers)
+                            Download Ledger Setup File (Masters XML)
                         </button>
                     </div>
 
@@ -113,11 +113,11 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                             <input type="checkbox" wire:model="markExportedSynced" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                            <span>Mark exported pending vouchers as Synced / Ack</span>
+                            <span>Mark downloaded entries as already sent to Tally</span>
                         </label>
                         <button wire:click="downloadPendingVouchersXml" type="button"
                             class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer">
-                            Download Pending Vouchers XML ({{ $outboxStats['pending'] ?? 0 }})
+                            Download Pending Entries (Vouchers XML) ({{ $outboxStats['pending'] ?? 0 }})
                         </button>
                     </div>
                 </div>
@@ -126,7 +126,7 @@
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-3">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                            <div class="font-bold text-xs text-slate-900">Office PC Authenticated Pull-Sync API</div>
+                            <div class="font-bold text-xs text-slate-900">Office Tally Sync Setup (API)</div>
                             <p class="text-[11px] text-slate-600">Allows the Windows PC running TallyPrime to securely pull pending XML over HTTPS and push to local <code class="font-mono">http://127.0.0.1:{{ $tallyPort }}</code>.</p>
                         </div>
                         <div class="flex items-center gap-2">

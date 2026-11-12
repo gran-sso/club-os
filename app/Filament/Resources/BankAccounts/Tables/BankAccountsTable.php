@@ -90,7 +90,7 @@ class BankAccountsTable
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('success')
                     ->modalHeading('Deposit Counter Cash to Bank Account')
-                    ->modalDescription('Record a physical cash remittance from counter tills into a club bank account. Automatically posts balanced Contra Voucher (Debit: Bank, Credit: Cash in Hand 1010).')
+                    ->modalDescription('Record physical cash deposited from counter tills into a club bank account. Automatically posts a balanced Cash Deposit Entry (Debit: Bank, Credit: Cash in Hand 1010).')
                     ->modalWidth(Width::Large)
                     ->form([
                         Select::make('bank_account_id')
@@ -113,13 +113,13 @@ class BankAccountsTable
                             ->helperText('Exact amount of physical cash deposited at the bank counter or CDM.'),
 
                         DatePicker::make('business_date')
-                            ->label('Deposit / Challan Date')
+                            ->label('Bank Deposit Date')
                             ->required()
                             ->default(today())
                             ->helperText('Date printed on the bank pay-in slip.'),
 
                         TextInput::make('reference_number')
-                            ->label('Bank Pay-in Slip # / Challan # / CDM Txn ID')
+                            ->label('Deposit Slip / Receipt Number')
                             ->required()
                             ->placeholder('e.g. SBI-CHAL-20261109-0041')
                             ->helperText('Auditable external banking slip reference number.'),
@@ -239,7 +239,7 @@ class BankAccountsTable
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('success')
                     ->modalHeading(fn (BankAccount $record) => "Deposit Counter Cash to {$record->account_name}")
-                    ->modalDescription(fn (BankAccount $record) => "Record cash remittance into {$record->bank_name} (A/c: {$record->account_number}). Posts balanced Contra Voucher.")
+                    ->modalDescription(fn (BankAccount $record) => "Record cash deposited into {$record->bank_name} (A/c: {$record->account_number}). Posts a balanced Cash Deposit Entry.")
                     ->modalWidth(Width::Large)
                     ->form(fn (BankAccount $record) => [
                         Placeholder::make('target_info')
@@ -266,12 +266,12 @@ class BankAccountsTable
                             ->helperText('Amount deposited into bank account.'),
 
                         DatePicker::make('business_date')
-                            ->label('Deposit / Challan Date')
+                            ->label('Bank Deposit Date')
                             ->required()
                             ->default(today()),
 
                         TextInput::make('reference_number')
-                            ->label('Pay-in Slip # / Challan # / CDM Txn ID')
+                            ->label('Deposit Slip / Receipt Number')
                             ->required()
                             ->placeholder('e.g. SBI-CHAL-10492'),
 

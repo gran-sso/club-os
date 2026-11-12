@@ -135,7 +135,7 @@ class FacilityResource extends Resource
                                 ->helperText('When disabled, this facility is removed from reservation schedules and front-desk booking.'),
 
                             \Filament\Forms\Components\Select::make('housekeeping_status')
-                                ->label('Room Housekeeping Status')
+                                ->label('Room Cleaning Status')
                                 ->options([
                                     'clean' => 'Clean & Ready',
                                     'dirty' => 'Needs Cleaning (Dirty)',
@@ -143,7 +143,7 @@ class FacilityResource extends Resource
                                 ->default('clean')
                                 ->required(fn ($get): bool => $get('type') === 'room')
                                 ->visible(fn ($get): bool => $get('type') === 'room')
-                                ->helperText('Live room cleanliness state shown on Accommodation Deck & Dashboard.'),
+                                ->helperText('Live room cleaning status shown on Guest Rooms (101–105) & Dashboard.'),
                         ]),
                     ]),
             ]);

@@ -88,7 +88,7 @@ class BillResourceTest extends TestCase
         $response->assertSee('Tax Invoice Metadata');
         $response->assertSee('Customer &amp; Billing Account', false);
         $response->assertSee('Invoice Line Items &amp; Dispensed Services', false);
-        $response->assertSee('Payment Tender Settlement');
+        $response->assertSee('Payment Method &amp; Settlement', false);
     }
 
     public function test_admin_can_create_and_settle_bill_with_member_prepaid_wallet(): void

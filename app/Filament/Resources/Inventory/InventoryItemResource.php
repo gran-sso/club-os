@@ -94,7 +94,7 @@ class InventoryItemResource extends Resource
                     ->schema([
                         \Filament\Schemas\Components\Grid::make(2)->schema([
                             \Filament\Forms\Components\TextInput::make('sku')
-                                ->label('SKU / Inventory Item Code')
+                                ->label('Item Code (SKU)')
                                 ->required()
                                 ->maxLength(64)
                                 ->unique(ignoreRecord: true)
@@ -116,7 +116,7 @@ class InventoryItemResource extends Resource
 
                         \Filament\Schemas\Components\Grid::make(2)->schema([
                             \Filament\Forms\Components\Select::make('department_code')
-                                ->label('Department Attribution')
+                                ->label('Club Department')
                                 ->required()
                                 ->options([
                                     'bar' => 'Bar & Lounge',
@@ -160,7 +160,7 @@ class InventoryItemResource extends Resource
                                 ->helperText('All bar pours (30ml, 60ml) deduct from this base unit.'),
 
                             \Filament\Forms\Components\TextInput::make('reorder_level')
-                                ->label('Low Stock Reorder Alert Level')
+                                ->label('Low Stock Alert Level')
                                 ->numeric()
                                 ->minValue(0)
                                 ->default(1500)
@@ -170,14 +170,14 @@ class InventoryItemResource extends Resource
 
                         \Filament\Schemas\Components\Grid::make(2)->schema([
                             \Filament\Forms\Components\TextInput::make('current_stock_qty')
-                                ->label('Current On-Hand Stock (Base Units)')
+                                ->label('Stock Available Now')
                                 ->numeric()
                                 ->default(0)
                                 ->required()
                                 ->helperText('Physical quantity on hand in cellar & bar counters.'),
 
                             \Filament\Forms\Components\TextInput::make('current_avg_cost_paise')
-                                ->label('Current Moving Avg Unit Cost (₹)')
+                                ->label('Average Purchase Cost (₹)')
                                 ->numeric()
                                 ->minValue(0)
                                 ->prefix('₹')

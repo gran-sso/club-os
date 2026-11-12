@@ -71,7 +71,7 @@ class AdminDashboardWidgetsTest extends TestCase
         $response->assertSee('fi-wi-chart-frame-no-aspect-ratio', false);
         $response->assertSee('Contractor &amp; Counter Shifts', false);
         $response->assertSee('Qualified Food Sales');
-        $response->assertSee('System Integrity &amp; Tally Bridge', false);
+        $response->assertSee('Accounts Health &amp; Tally Sync', false);
         $response->assertSee('Recent Club Billing &amp; Operational Activity', false);
     }
 

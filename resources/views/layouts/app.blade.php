@@ -60,7 +60,7 @@
                 @if ($posUser && $posUser->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')))
                     @if ($posUser->hasClubPermission('rooms.view_rack'))
                         <a href="{{ url('/admin/room-rack') }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all hidden md:inline-flex items-center gap-1.5">
-                            🏨 Accommodation Deck
+                            🏨 Guest Rooms (101–105)
                         </a>
                     @endif
                     @if ($posUser->hasClubPermission('courts.view_schedule'))

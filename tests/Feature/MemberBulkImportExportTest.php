@@ -295,8 +295,8 @@ class MemberBulkImportExportTest extends TestCase
         $this->actingAs($this->admin)
             ->get(MemberResourceUrlHelper::importUrl())
             ->assertOk()
-            ->assertSee('Bulk Member Import')
-            ->assertSee('Download CSV Template');
+            ->assertSee('Import Members from CSV (Excel)')
+            ->assertSee('Download Sample CSV');
 
         Livewire::actingAs($this->admin)
             ->test(ListMembers::class)

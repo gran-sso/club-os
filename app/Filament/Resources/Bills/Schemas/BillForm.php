@@ -215,8 +215,8 @@ class BillForm
                             ->schema([
                                 Grid::make(['default' => 1, 'lg' => 6])->schema([
                                     Select::make('tariff_id')
-                                        ->label('Preset Catalogue Tariff')
-                                        ->placeholder('— Select from Tariff Master —')
+                                        ->label('Select Menu Item')
+                                        ->placeholder('— Select from Menu & Price List —')
                                         ->options(fn () => Tariff::where('is_active', true)
                                             ->get()
                                             ->mapWithKeys(fn ($t) => [
@@ -328,7 +328,7 @@ class BillForm
                                 }),
 
                             Placeholder::make('summary_tax')
-                                ->label('Statutory GST (CGST + SGST)')
+                                ->label('GST Tax (CGST + SGST)')
                                 ->content(function ($get, $record) {
                                     if ($record) {
                                         return '₹' . number_format($record->tax_amount, 2);
@@ -368,7 +368,7 @@ class BillForm
                     ]),
 
                 // 6. Immediate Settlement Section (Creation only)
-                Section::make('Payment Tender Settlement')
+                Section::make('Payment Method & Settlement')
                     ->description('Strict Club Policy: No credit is permitted for any member or guest. Payment must be confirmed immediately.')
                     ->hidden(fn ($record) => $record !== null)
                     ->columnSpanFull()
@@ -378,10 +378,10 @@ class BillForm
                                 ->label('Settle & Post Official Bill Immediately')
                                 ->default(true)
                                 ->live()
-                                ->helperText('If enabled, processes payment tender, posts ledger journal, and generates confirmed receipt.'),
+                                ->helperText('If enabled, records payment, posts accounting entries, and generates confirmed receipt.'),
 
                             Select::make('tender_type')
-                                ->label('Settlement Tender Instrument')
+                                ->label('Payment Method')
                                 ->required(fn ($get) => (bool) $get('settle_immediately'))
                                 ->visible(fn ($get) => (bool) $get('settle_immediately'))
                                 ->options([

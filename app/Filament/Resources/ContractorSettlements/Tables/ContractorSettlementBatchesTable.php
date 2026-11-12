@@ -45,7 +45,7 @@ class ContractorSettlementBatchesTable
                     ->label('Paid')
                     ->state(fn ($record) => '₹' . number_format($record->paid_amount_paise / 100, 2)),
                 TextColumn::make('residual_payable_paise')
-                    ->label('Residual')
+                    ->label('Still Unpaid')
                     ->state(fn ($record) => '₹' . number_format($record->residual_payable_paise / 100, 2))
                     ->color(fn ($record) => $record->residual_payable_paise > 0 ? 'warning' : 'success'),
                 TextColumn::make('status')
@@ -100,7 +100,7 @@ class ContractorSettlementBatchesTable
                     ->visible(fn ($record) => in_array($record->status, ['approved', 'partially_paid']) && $record->residual_payable_paise > 0 && (bool) auth()->user()?->hasClubPermission('contractor.settle'))
                     ->form([
                         Select::make('bank_account_id')
-                            ->label('Disbursing Club Bank Account')
+                            ->label('Paid From Bank Account')
                             ->options(fn () => \App\Domain\Finance\Models\BankAccount::where('is_active', true)->get()->mapWithKeys(
                                 fn ($b) => [$b->id => "{$b->account_name} — {$b->bank_name} ({$b->account_number}) • Bal: ₹" . number_format($b->current_balance, 2)]
                             ))
@@ -109,7 +109,7 @@ class ContractorSettlementBatchesTable
                             ->preload()
                             ->helperText('Club account from which the contractor settlement is paid.'),
                         Select::make('payment_mode')
-                            ->label('Payment Instrument')
+                            ->label('Transfer Method')
                             ->options([
                                 'NEFT' => 'NEFT Bank Transfer',
                                 'RTGS' => 'RTGS Bank Transfer',

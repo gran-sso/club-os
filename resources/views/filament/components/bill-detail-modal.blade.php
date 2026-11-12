@@ -86,7 +86,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start pt-1">
         <!-- Confirmed Tenders -->
         <div class="sm:col-span-6 space-y-2">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Confirmed Tender Settlements</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Confirmed Payments</span>
             @if ($bill->receipts->isNotEmpty())
                 <div class="space-y-2">
                     @foreach ($bill->receipts as $rcp)
@@ -125,7 +125,7 @@
                     </div>
                 @endif
                 <div class="flex justify-between text-slate-600">
-                    <span>Statutory GST:</span>
+                    <span>GST Tax:</span>
                     <span class="font-mono font-semibold">₹{{ number_format($bill->tax_amount_paise / 100, 2) }}</span>
                 </div>
                 <div class="pt-2 border-t border-slate-200 flex justify-between items-center font-bold text-slate-900 text-sm">

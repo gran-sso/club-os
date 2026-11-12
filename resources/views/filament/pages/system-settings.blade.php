@@ -12,7 +12,7 @@
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
-                            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight truncate">Clubhouse &amp; System Configuration</h2>
+                            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight truncate">Club Settings &amp; Rules</h2>
                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
                                 Master
                             </span>
@@ -69,14 +69,14 @@
                 wire:click="setTab('identity')"
                 class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'identity' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                 <span>🏢</span>
-                <span>Club Identity &amp; GSTIN</span>
+                <span>Club Info &amp; GST</span>
             </button>
 
             <button type="button"
                 wire:click="setTab('billing')"
                 class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'billing' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                 <span>💳</span>
-                <span>Billing &amp; Prepaid Wallet</span>
+                <span>Cashier &amp; Smartcard Limits</span>
             </button>
 
             <button type="button"
@@ -90,7 +90,7 @@
                 wire:click="setTab('tally')"
                 class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'tally' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                 <span>📊</span>
-                <span>Tally Prime LAN</span>
+                <span>Tally Connection</span>
             </button>
 
             <button type="button"
@@ -151,13 +151,13 @@
 
                 <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
                     <div>
-                        <h3 class="text-sm font-extrabold text-slate-900">Statutory Tax &amp; Society Compliance</h3>
-                        <p class="text-xs text-slate-500">Government registration numbers mandatory for input tax credit audits.</p>
+                        <h3 class="text-sm font-extrabold text-slate-900">Club Tax Details (GST &amp; PAN)</h3>
+                        <p class="text-xs text-slate-500">Government registration numbers required for tax invoices and audits.</p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
-                            <label for="setting-club-gstin" class="block text-xs font-bold text-slate-700 mb-1">Statutory GSTIN (Goods &amp; Services Tax #)</label>
+                            <label for="setting-club-gstin" class="block text-xs font-bold text-slate-700 mb-1">Club GST Number (GSTIN)</label>
                             <input type="text" id="setting-club-gstin" wire:model="clubGstin" maxlength="20"
                                 class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold uppercase text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                             <span class="text-[10px] text-slate-400 mt-1 block">15-character GSTIN (Kerala state prefix: 32).</span>
@@ -172,7 +172,7 @@
                     </div>
 
                     <div>
-                        <label for="setting-receipt-footer" class="block text-xs font-bold text-slate-700 mb-1">Bill &amp; Receipt Footer Statutory Notation</label>
+                        <label for="setting-receipt-footer" class="block text-xs font-bold text-slate-700 mb-1">Receipt Footer Message</label>
                         <textarea id="setting-receipt-footer" wire:model="receiptFooterNote" rows="2"
                             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
                         <span class="text-[10px] text-slate-400 mt-1 block">Printed at the bottom of all 80mm counter receipts.</span>
@@ -188,8 +188,8 @@
             <div class="space-y-5 animate-fade-in">
                 <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
                     <div>
-                        <h3 class="text-sm font-extrabold text-slate-900">Prepaid Wallet Tender Boundaries</h3>
-                        <p class="text-xs text-slate-500">Enforce monetary limits on top-ups and counter card debits.</p>
+                        <h3 class="text-sm font-extrabold text-slate-900">Smartcard Top-Up &amp; Till Limits</h3>
+                        <p class="text-xs text-slate-500">Set money limits for cashiers opening shifts and topping up member smartcards.</p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -239,7 +239,7 @@
                             <label class="flex items-center gap-3 cursor-pointer select-none">
                                 <input type="checkbox" wire:model="allowSplitTender" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
                                 <div>
-                                    <span class="text-xs font-bold text-slate-900">Allow Split Tender Checkout</span>
+                                    <span class="text-xs font-bold text-slate-900">Allow Split Payment (Two Methods on One Bill)</span>
                                     <p class="text-[10px] text-slate-500">Allow bills to be settled using part Cash and part Digital payment.</p>
                                 </div>
                             </label>

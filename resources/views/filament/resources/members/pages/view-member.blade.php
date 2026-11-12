@@ -551,14 +551,14 @@
                 <!-- Two-Column Cards: KYC & Governance Details -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     
-                    <!-- Card 1: Statutory KYC & Identity Details -->
+                    <!-- Card 1: ID Proof & Identity Details -->
                     <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                 <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
                                 </svg>
-                                <span>Statutory KYC &amp; Personal Records</span>
+                                <span>ID Proof &amp; Personal Records</span>
                             </h3>
                             <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                 Verified
@@ -583,7 +583,7 @@
                                 <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->email ?? '—' }}</dd>
                             </div>
                             <div>
-                                <dt class="text-[11px] font-bold uppercase text-slate-400">Statutory KYC ID Proof</dt>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Government ID Proof</dt>
                                 <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
                                     {{ $member->person?->id_proof_type ?? 'Aadhaar Card' }}
                                 </dd>

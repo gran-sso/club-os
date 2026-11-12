@@ -25,7 +25,7 @@ class ExpenseForm
                     ->schema([
                         Grid::make(3)->schema([
                             Select::make('account_id')
-                                ->label('General Ledger Expense Head')
+                                ->label('Expense Category')
                                 ->required()
                                 ->options(fn () => Account::where('type', 'expense')
                                     ->where('is_active', true)
@@ -107,7 +107,7 @@ class ExpenseForm
                                 ->placeholder('e.g. Kerala State Electricity Board (KSEB) or Vadakkencherry Sanitation'),
 
                             TextInput::make('amount_paise')
-                                ->label('Disbursed Amount (₹)')
+                                ->label('Amount Paid (₹)')
                                 ->required()
                                 ->numeric()
                                 ->minValue(1)
@@ -119,7 +119,7 @@ class ExpenseForm
 
                         Grid::make(['default' => 1, 'md' => 3])->schema([
                             Select::make('payment_method')
-                                ->label('Payment Instrument')
+                                ->label('Payment Method')
                                 ->required()
                                 ->live()
                                 ->options([
@@ -131,7 +131,7 @@ class ExpenseForm
                                 ->helperText('Bank transfer/cheque credits Bank; cash credits Till Cash (1010).'),
 
                             Select::make('bank_account_id')
-                                ->label('Disbursing Club Bank Account')
+                                ->label('Paid From Bank Account')
                                 ->options(fn () => \App\Domain\Finance\Models\BankAccount::where('is_active', true)->get()->mapWithKeys(
                                     fn ($b) => [$b->id => "{$b->account_name} — {$b->bank_name} ({$b->account_number}) • Bal: ₹" . number_format($b->current_balance, 2)]
                                 ))

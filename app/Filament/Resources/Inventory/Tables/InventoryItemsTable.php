@@ -30,7 +30,7 @@ class InventoryItemsTable
                     ->weight('bold')
                     ->color(fn ($record) => $record->current_stock_qty <= $record->reorder_level ? 'danger' : 'success'),
                 TextColumn::make('current_avg_cost_paise')
-                    ->label('Moving Avg Cost')
+                    ->label('Avg Purchase Cost')
                     ->state(fn ($record) => '₹' . number_format($record->current_avg_cost_paise / 100, 2) . '/' . $record->base_unit)
                     ->sortable(),
                 TextColumn::make('reorder_level')

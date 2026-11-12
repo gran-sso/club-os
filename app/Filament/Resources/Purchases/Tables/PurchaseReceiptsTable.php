@@ -67,10 +67,10 @@ class PurchaseReceiptsTable
             ])
             ->recordActions([
                 Action::make('viewReceipt')
-                    ->label('Consignment Details')
+                    ->label('View Purchase Bill')
                     ->icon(Heroicon::OutlinedEye)
                     ->color('primary')
-                    ->modalHeading(fn ($record) => "Stock Inward Consignment — {$record->receipt_number}")
+                    ->modalHeading(fn ($record) => "Stock Purchase Receipt — {$record->receipt_number}")
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->modalContent(function ($record) {

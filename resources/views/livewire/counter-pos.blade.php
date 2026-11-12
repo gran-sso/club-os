@@ -1395,7 +1395,7 @@
                                 </div>
                             @endif
                             <div class="flex justify-between text-xs text-slate-600">
-                                <span>GST & Taxes (Statutory Breakdown)</span>
+                                <span>GST &amp; Taxes</span>
                                 <span class="font-mono text-slate-900 font-semibold">₹{{ number_format($cartTax, 2) }}</span>
                             </div>
                             <div class="pt-2.5 border-t border-slate-200 flex justify-between items-center">
@@ -1412,7 +1412,7 @@
                         <div>
                             <div
                                 class="text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2.5 flex items-center justify-between">
-                                <span>Select Tender Method (Strict No-Credit)</span>
+                                <span>Select Payment Method (No Credit)</span>
                                 <span class="text-[11px] text-amber-700 font-bold">Press F8, F9, or F10</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1608,7 +1608,7 @@
                         <!-- Tender Details & Amount -->
                         <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-300">
                             <div class="flex justify-between items-center text-slate-600 mb-1">
-                                <span>Settlement Tender</span>
+                                <span>Payment Method</span>
                                 <span class="font-bold text-amber-800 font-mono text-sm">{{ $tenderLabel }}</span>
                             </div>
                             @if ($cartDiscount > 0)

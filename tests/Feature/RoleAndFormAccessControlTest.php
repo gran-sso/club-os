@@ -262,11 +262,11 @@ class RoleAndFormAccessControlTest extends TestCase
         $this->asStaff($freshReception)->get('/admin/court-schedule')->assertSuccessful();
         $this->assertSame(url('/admin/court-schedule'), app(UserLandingService::class)->resolveHomeUrlForUser($freshReception));
 
-        // Global search hides Accommodation Deck from Reception
+        // Global search hides Guest Rooms (101–105) from Reception
         $this->asStaff($freshReception);
         $results = app(ClubGlobalSearchProvider::class)->getResults('accommodation');
         $screenCategory = $results->getCategories()['Navigation & Club Screens'] ?? collect();
-        $this->assertFalse($screenCategory->contains(fn ($r) => str_contains($r->title, 'Accommodation Deck')));
+        $this->assertFalse($screenCategory->contains(fn ($r) => str_contains($r->title, 'Guest Rooms (101–105)')));
 
         // Admin clicks Restore Role Defaults -> Reception immediately regains Room Rack & KYC
         $this->asStaff($this->admin);
@@ -322,7 +322,7 @@ class RoleAndFormAccessControlTest extends TestCase
         // Cashier can open /pos cleanly, top bar hides Accommodation/Court/Club Admin links, and /admin returns 403
         $posResponse = $this->asStaff($freshCashier)->get('/pos');
         $posResponse->assertSuccessful();
-        $posResponse->assertDontSee('Accommodation Deck');
+        $posResponse->assertDontSee('Guest Rooms (101–105)');
         $posResponse->assertDontSee('Court Schedule');
         $posResponse->assertDontSee('Club Admin');
 

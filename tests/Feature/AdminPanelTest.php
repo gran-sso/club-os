@@ -27,7 +27,7 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Collections Today');
         $response->assertSee('Front-Desk &amp; Facilities Pulse', false);
         $response->assertSee('Contractor &amp; Counter Shifts', false);
-        $response->assertSee('System Integrity &amp; Tally Bridge', false);
+        $response->assertSee('Accounts Health &amp; Tally Sync', false);
         $response->assertSee('Recent Club Billing &amp; Operational Activity', false);
     }
 
@@ -74,7 +74,7 @@ class AdminPanelTest extends TestCase
         foreach ([$cashier, $reception] as $staff) {
             $response = $this->actingAs($staff)->get('/admin/room-rack');
             $response->assertStatus(200);
-            $response->assertSee('Accommodation Deck');
+            $response->assertSee('Guest Rooms (101–105)');
 
             $responseCourt = $this->actingAs($staff)->get('/admin/court-schedule');
             $responseCourt->assertStatus(200);
@@ -114,7 +114,7 @@ class AdminPanelTest extends TestCase
 
         $response = $this->actingAs($cashier)->get('/pos');
         $response->assertStatus(200);
-        $response->assertSee('Accommodation Deck');
+        $response->assertSee('Guest Rooms (101–105)');
         $response->assertSee('Court Schedule');
         $response->assertDontSee('Club Admin');
     }

@@ -476,9 +476,9 @@ class HelpPage extends Page
                                 'effect' => 'GST is calculated only on the net taxable price charged; inventory still deducts full milliliters for poured free units.',
                             ],
                             [
-                                'name' => 'Eligible Tariffs',
-                                'type' => 'Multi-Select Tariffs',
-                                'meaning' => 'Specific priced bar or counter selling tariffs included in the offer. Zero-rate items and visiting guest pass tariffs (GUEST-*) are excluded.',
+                                'name' => 'Eligible Bar / Club Menu Items',
+                                'type' => 'Multi-Select Menu Items',
+                                'meaning' => 'Specific priced bar or counter menu items included in the offer. Zero-rate items and visiting guest pass items (GUEST-*) are excluded.',
                                 'effect' => 'Keep distinct serving sizes (such as 30ml small pegs vs 60ml large pegs) in separate offers so free units match the exact pour size bought.',
                             ],
                             [
@@ -561,7 +561,7 @@ class HelpPage extends Page
                     ],
                     [
                         'number' => 3,
-                        'title' => 'Enter Amount & Select Tender Mode',
+                        'title' => 'Enter Amount & Select Payment Method',
                         'instruction' => 'Choose a preset button or type the exact recharge amount within allowed limits, then select Cash or Digital UPI / Card POS (with bank/UPI reference if digital).',
                         'result' => 'System validates the amount and previews the updated balance.',
                         'tip' => 'Verify physical banknotes or confirmed UPI credit alert before submitting.',
@@ -597,9 +597,9 @@ class HelpPage extends Page
                     ],
                     [
                         'number' => 2,
-                        'title' => 'Add Applicable Guest Pass Tariff',
+                        'title' => 'Add Applicable Guest Pass Item',
                         'instruction' => 'Add the applicable Day Pass item (Bar & Card Room Day Pass, Badminton Guest Pass, or Gym Guest Pass) via F3.',
-                        'result' => 'Statutory entry tariff and GST add to the order; promotional discounts are blocked on guest passes.',
+                        'result' => 'The entry fee and GST add to the order; promotional discounts are blocked on guest passes.',
                         'tip' => 'Guest passes cannot be discounted or reduced to ₹0.00.',
                     ],
                     [
@@ -622,13 +622,13 @@ class HelpPage extends Page
                                 'effect' => 'Printed on the Guest Entry Permit and verified by gate/lounge security.',
                             ],
                             [
-                                'name' => 'Statutory Identity Proof (KYC) & Identity Document Number',
-                                'type' => 'Required KYC (Aadhaar / Passport / DL / Voter ID / PAN)',
-                                'meaning' => 'Government-issued photo ID type and exact document number inspected at reception.',
-                                'effect' => 'Required under club safety policy before granting entry to the Bar or Card Room.',
+                                'name' => 'Government ID Proof & ID Number',
+                                'type' => 'Required ID (Aadhaar / Passport / DL / Voter ID / PAN)',
+                                'meaning' => 'Government-issued photo ID type and exact document number checked at reception.',
+                                'effect' => 'Required under club rules before granting entry to the Bar or Card Room.',
                             ],
                             [
-                                'name' => 'Sponsor Classification (Primary vs Affiliated Reciprocal Member)',
+                                'name' => 'Sponsor Type (Primary vs Affiliated Reciprocal Member)',
                                 'type' => 'Required Select',
                                 'meaning' => 'Indicates whether the escorting host is a Malabar Club primary member or a verified visitor from a reciprocal affiliated club.',
                                 'effect' => 'Filters the Sponsoring Member dropdown to eligible active sponsors only.',
@@ -726,16 +726,16 @@ class HelpPage extends Page
                 'tab' => 'reception',
                 'tab_label' => 'Front Desk, Sports & Members',
                 'icon' => '🏨',
-                'title' => 'Accommodation Deck (Rooms 101–105), Housekeeping & Maintenance',
-                'summary' => 'Operating the live Accommodation Deck: advance room bookings, balance collection before key handover, Check-Out Due alerts, housekeeping status, and Under Maintenance locks.',
+                'title' => 'Guest Rooms (101–105), Room Cleaning & Maintenance',
+                'summary' => 'Operating the live Guest Rooms (101–105) board: advance room bookings, balance collection before key handover, Check-Out Due alerts, cleaning status, and Under Maintenance locks.',
                 'target_role' => 'Front Desk Reception & Duty Managers',
                 'estimated_time' => '4 mins read',
-                'tags' => ['accommodation deck', 'room rack', 'rooms', '101', '102', '103', '104', '105', 'check-in', 'checkout', 'housekeeping', 'maintenance', 'dirty', 'clean'],
+                'tags' => ['guest rooms', 'accommodation deck', 'room rack', 'rooms', '101', '102', '103', '104', '105', 'check-in', 'checkout', 'housekeeping', 'maintenance', 'dirty', 'clean'],
                 'steps' => [
                     [
                         'number' => 1,
                         'title' => 'Read Live Room Status & Departure Badges',
-                        'instruction' => 'Open Operations & Front Desk -> Accommodation Deck. Each room (101–105) shows live state: Vacant Ready (Green), Occupied (Teal), Reserved (Blue), Needs Cleaning / DIRTY (Amber), or Maintenance (Rose). Watch for "Check-Out Due Today" and "Overdue Check-Out" alerts on occupied rooms.',
+                        'instruction' => 'Open Operations & Front Desk -> Guest Rooms (101–105). Each room (101–105) shows live state: Vacant Ready (Green), Occupied (Teal), Reserved (Blue), Needs Cleaning / DIRTY (Amber), or Maintenance (Rose). Watch for "Check-Out Due Today" and "Overdue Check-Out" alerts on occupied rooms.',
                         'result' => 'Staff immediately identify occupied stays, back-to-back arrivals, dirty turnovers, and maintenance holds.',
                         'tip' => 'Use the Date Navigator at top to inspect future availability or planned maintenance return dates.',
                     ],
@@ -770,7 +770,7 @@ class HelpPage extends Page
                 ],
                 'field_sections' => [
                     [
-                        'section_title' => 'Room Booking & Stay Form Fields (Operations & Front Desk -> Room Bookings / Accommodation Deck)',
+                        'section_title' => 'Room Booking & Stay Form Fields (Operations & Front Desk -> Room Bookings / Guest Rooms (101–105))',
                         'section_note' => 'Guest identity, sponsoring member, stay dates, upfront payment, and housekeeping turnover status are tracked separately.',
                         'fields' => [
                             [
@@ -798,9 +798,9 @@ class HelpPage extends Page
                                 'effect' => 'Zero-credit rule: full stay balance must show Paid before the deck allows Check-In and key handover.',
                             ],
                             [
-                                'name' => 'Reservation Status & Room Housekeeping Status',
+                                'name' => 'Reservation Status & Room Cleaning Status',
                                 'type' => 'Clean / DIRTY / Maintenance',
-                                'meaning' => 'Reservation tracks Reserved -> Checked In -> Checked Out; Housekeeping tracks Clean & Ready vs Needs Cleaning (DIRTY) vs Under Maintenance.',
+                                'meaning' => 'Reservation tracks Reserved -> Checked In -> Checked Out; Cleaning status tracks Clean & Ready vs Needs Cleaning (DIRTY) vs Under Maintenance.',
                                 'effect' => 'Check-Out automatically flips room readiness to DIRTY until staff mark it Clean & Ready.',
                             ],
                             [
@@ -915,15 +915,15 @@ class HelpPage extends Page
                     ],
                     [
                         'number' => 2,
-                        'title' => 'Select Facility, Plan Duration & Tariff',
-                        'instruction' => 'Choose Facility (Badminton Court or Fitness Gym), Plan Type (Monthly or Annual), and Sports Tariff (e.g. BADMINTON-MONTHLY). Start date auto-calculates exact calendar end date.',
+                        'title' => 'Select Facility, Plan Duration & Package',
+                        'instruction' => 'Choose Facility (Badminton Court or Fitness Gym), Plan Type (Monthly or Annual), and Sports Plan Fee / Package (e.g. BADMINTON-MONTHLY). Start date auto-calculates exact calendar end date.',
                         'result' => 'Form calculates taxable base, GST (18%), and payable total automatically (or handles custom tax-inclusive totals).',
-                        'tip' => 'You can also sell BADMINTON-MONTHLY or GYM-MONTHLY tariffs at Counter POS to activate the subscription automatically on checkout.',
+                        'tip' => 'You can also sell BADMINTON-MONTHLY or GYM-MONTHLY items at Counter POS to activate the subscription automatically on checkout.',
                     ],
                     [
                         'number' => 3,
                         'title' => 'Collect Mandatory Payment Upfront & Save',
-                        'instruction' => 'Choose Payment Tender (Cash, Digital UPI/Card, Bank Transfer, Cheque, or Member Prepaid Wallet), optionally link an open Cashier Shift (when collecting cash into a drawer), enter any bank/UPI reference, and submit.',
+                        'instruction' => 'Choose Payment Method (Cash, Digital UPI/Card, Bank Transfer, Cheque, or Member Prepaid Wallet), optionally link an open Cashier Shift (when collecting cash into a drawer), enter any bank/UPI reference, and submit.',
                         'result' => 'Atomically creates the FacilitySubscription, paid Bill (department: sports), PaymentReceipt, Wallet debit (if prepaid), and balanced GL journal (DR Cash/Bank/Wallet → CR 4040 Sports Revenue + 2030 GST).',
                         'tip' => 'Subscriptions never post to credit—zero-rupee bypasses on paid tariffs are blocked automatically.',
                     ],
@@ -946,19 +946,19 @@ class HelpPage extends Page
                                 'effect' => 'Filters matching Sports Tariffs and calculates exact calendar end dates automatically.',
                             ],
                             [
-                                'name' => 'Sports Plan Tariff (e.g. BADMINTON-MONTHLY)',
-                                'type' => 'Linked Tariff',
-                                'meaning' => 'Master commercial tariff governing the plan rate and GST slab.',
+                                'name' => 'Sports Plan Fee / Package (e.g. BADMINTON-MONTHLY)',
+                                'type' => 'Linked Plan Package',
+                                'meaning' => 'Master commercial price item governing the plan rate and GST slab.',
                                 'effect' => 'Populates Total Plan Fee (Incl. GST) so GST 50:50 CGST/SGST posts accurately to 4040 Sports Revenue and 2030 GST Output Liability.',
                             ],
                             [
-                                'name' => 'Start Date (`starts_at`) & Exclusive Expiry Date (`ends_at`)',
+                                'name' => 'Start Date (`starts_at`) & Expiry Date (Valid Until) (`ends_at`)',
                                 'type' => 'Plan Validity Dates',
-                                'meaning' => 'First active day of the subscription and the exclusive expiration boundary date.',
+                                'meaning' => 'First active day of the subscription and the date after which the plan expires.',
                                 'effect' => 'Plan privileges work up to the day before Expiry Date; overlapping plans are prevented on active slots.',
                             ],
                             [
-                                'name' => 'Total Fee Incl. GST (₹) & Upfront Payment Tender',
+                                'name' => 'Total Fee Incl. GST (₹) & Upfront Payment Method',
                                 'type' => 'Mandatory Payment (Cash / UPI / Bank / Cheque / Wallet)',
                                 'meaning' => 'Full GST-inclusive plan charge collected upfront before activating the subscription (plus optional open Cashier Shift link for drawer cash).',
                                 'effect' => 'Generates an immutable Bill, PaymentReceipt, and GL journal (DR Cash/Bank/Wallet Liability -> CR 4040 Sports Revenue + 2030 GST).',
@@ -1110,8 +1110,8 @@ class HelpPage extends Page
                 'steps' => [
                     [
                         'number' => 1,
-                        'title' => 'Download CSV Template & Prepare Existing Member Rows',
-                        'instruction' => 'Open Membership & Guest Desk -> Members -> "Bulk Import CSV" and click "Download Sample CSV Template". Populate existing member records using one row per member (matching your configured Membership Category codes such as ORD or LIFE).',
+                        'title' => 'Download Sample CSV & Prepare Existing Member Rows',
+                        'instruction' => 'Open Membership & Guest Desk -> Members -> "Import Members (CSV)" and click "Download Sample CSV". Populate existing member records using one row per member (matching your configured Membership Category codes such as ORD or LIFE).',
                         'result' => 'Structured UTF-8 CSV file ready for validation preview without duplicating or corrupting existing active members.',
                         'tip' => 'Keep phone numbers and RFID Smartcard Numbers unique across rows; leave valid_until blank for Permanent/Life members if using a default validity fallback.',
                     ],
@@ -1124,8 +1124,8 @@ class HelpPage extends Page
                     ],
                     [
                         'number' => 3,
-                        'title' => 'Run Dry-Run Preview & Inspect Validation Table',
-                        'instruction' => 'Upload your CSV file and click Preview Import. The dry-run checks every row for duplicate membership numbers, invalid category codes, duplicate RFID tags, negative wallet balances, or missing dates before modifying the database.',
+                        'title' => 'Run Preview Before Importing & Inspect Validation Table',
+                        'instruction' => 'Upload your CSV file and click "Check & Preview File". The preview checks every row for duplicate membership numbers, invalid category codes, duplicate smartcard tags, negative wallet balances, or missing dates before modifying the database.',
                         'result' => 'Shows an exact breakdown of Clean Ready Rows vs Errored Rows. You can download a Pre-Import Errors CSV to fix issues offline if needed.',
                         'tip' => 'Preview performs zero database writes—you can safely test and re-upload files as many times as needed.',
                     ],
@@ -1155,13 +1155,13 @@ class HelpPage extends Page
                                 'effect' => 'Saves manual typing across hundreds of annual members while still respecting explicit dates provided in the CSV.',
                             ],
                             [
-                                'name' => 'Opening Balance Posting Date',
+                                'name' => 'Date for Opening Wallet Balances',
                                 'type' => 'Required Date (When Wallet Balances > ₹0)',
                                 'meaning' => 'Accounting journal date used to post legacy Prepaid Smartcard Opening Balances imported from the CSV.',
                                 'effect' => 'Must fall inside an Open Fiscal Period. Posts DR Opening Balance Offset / CR Prepaid Wallet Advances (2010) for balances >= ₹0 (negative opening credit balances are rejected).',
                             ],
                             [
-                                'name' => 'Queue Opening Balance Journals in Tally Outbox',
+                                'name' => 'Also Send Opening Wallet Balances to Tally',
                                 'type' => 'Checkbox (Default: OFF)',
                                 'meaning' => 'Controls whether opening wallet migration journals generated during import are queued for Tally export.',
                                 'effect' => 'Keep OFF if your legacy balances are already captured in Tally’s Opening Trial Balance; check ON only if starting a fresh Tally company from scratch.',
@@ -1411,7 +1411,7 @@ class HelpPage extends Page
                                 'effect' => 'Displayed in all Cash Deposit, Operating Expense, and Contractor Payout bank selectors.',
                             ],
                             [
-                                'name' => 'Account Number & Classification (Current / Savings / Fixed Deposit)',
+                                'name' => 'Account Number & Account Type (Current / Savings / Fixed Deposit)',
                                 'type' => 'Account Details',
                                 'meaning' => 'Bank account number and whether it operates as a working Current Account, Savings Account, or Fixed Deposit / Corpus Escrow.',
                                 'effect' => 'Printed on Passbook statements and helps distinguish operating liquidity from reserve deposits.',
@@ -1423,7 +1423,7 @@ class HelpPage extends Page
                                 'effect' => 'Used for bank reconciliation audits, vendor payouts, and UPI settlement tracking.',
                             ],
                             [
-                                'name' => 'Linked General Ledger Asset Head (`gl_account_id`)',
+                                'name' => 'Linked Ledger Account (Tally / Books) (`gl_account_id`)',
                                 'type' => 'Chart of Accounts Link (1020 Bank Series)',
                                 'meaning' => 'Accounting asset ledger head debited whenever counter cash is deposited or banked receipts settle here.',
                                 'effect' => 'Routes Contra Deposits, Expense Payments, and Tally Vouchers directly to the right GL/Tally bank ledger.',
@@ -1453,7 +1453,7 @@ class HelpPage extends Page
                                 'effect' => 'Increases Bank Balance and reduces Cash in Hand (1010) via a balanced Contra Journal (DR Bank / CR 1010).',
                             ],
                             [
-                                'name' => 'Deposit / Challan Date & Bank Pay-in Slip # / CDM Txn ID',
+                                'name' => 'Bank Deposit Date & Deposit Slip / Receipt Number',
                                 'type' => 'Audit & Period Check Fields',
                                 'meaning' => 'Official date stamped on the bank pay-in slip plus the counterfoil/CDM transaction reference number.',
                                 'effect' => 'Validated against Fiscal Period Locks (backdating into closed periods is blocked) and printed on Bank Passbooks.',
@@ -1516,9 +1516,9 @@ class HelpPage extends Page
                         'section_note' => 'Captures electricity bills, maintenance invoices, petty expenses, and overheads against 5xxx Expense accounts and Cost Centres.',
                         'fields' => [
                             [
-                                'name' => 'Expense Account Head (`5xxx`) & Inline "+" Head Creator',
+                                'name' => 'Expense Category (`5xxx`) & Inline "+" Head Creator',
                                 'type' => 'Required GL Expense Account',
-                                'meaning' => 'Selects which operating expense head (utilities, repairs, staffing, stationary, etc.) absorbs the cost. Click "+" inside the field to create a new 5xxx Account (Code, Name, Category) without leaving the voucher.',
+                                'meaning' => 'Selects which operating expense category (utilities, repairs, staffing, stationary, etc.) absorbs the cost. Click "+" inside the field to create a new 5xxx Account (Code, Name, Category) without leaving the voucher.',
                                 'effect' => 'Debits the chosen 5xxx ledger on the General Ledger, Income & Expenditure report, and Tally Payment/Journal export.',
                             ],
                             [
@@ -1534,15 +1534,15 @@ class HelpPage extends Page
                                 'effect' => 'Must belong to an Open Fiscal Period; postings dated inside Locked or Closed periods are rejected.',
                             ],
                             [
-                                'name' => 'Payee Name & Voucher Amount (₹)',
+                                'name' => 'Payee Name & Amount Paid (₹)',
                                 'type' => 'Required Payee & Rupee Total',
                                 'meaning' => 'Name of the vendor, utility board (e.g., KSEB), or contractor paid, and gross voucher total in Rupees.',
                                 'effect' => 'Recorded on the printable Expense Voucher PDF and General Ledger journal entry.',
                             ],
                             [
-                                'name' => 'Payment Method (`bank_transfer` / `cheque` / `cash`) & Bank Account',
+                                'name' => 'Payment Method (`bank_transfer` / `cheque` / `cash`) & Paid From Bank Account',
                                 'type' => 'Funding Source',
-                                'meaning' => 'Selects Cash in Hand (1010) for petty cash payouts or Bank Transfer/Cheque paired with the specific Disbursing Club Bank Account.',
+                                'meaning' => 'Selects Cash in Hand (1010) for petty cash payouts or Bank Transfer/Cheque paired with the specific Paid From Bank Account.',
                                 'effect' => 'Credits Cash in Hand (1010) for cash payouts or reduces the selected Bank Account balance + posts Bank Clearing credit.',
                             ],
                             [
@@ -1592,7 +1592,7 @@ class HelpPage extends Page
                     [
                         'number' => 4,
                         'title' => 'Execute & Record Bank Payout (NEFT / RTGS / Cheque)',
-                        'instruction' => 'Click "Record Payout" on the approved batch. Select the Disbursing Club Bank Account, choose instrument (NEFT, RTGS, IMPS, or Cheque), enter the Bank UTR / Cheque Number and Payout Amount, and submit.',
+                        'instruction' => 'Click "Record Payout" on the approved batch. Select Paid From Bank Account, choose transfer method (NEFT, RTGS, IMPS, or Cheque), enter the Bank UTR / Cheque Number and Payout Amount, and submit.',
                         'result' => 'Status updates to Paid (or Partially Paid), posts Debit 2020 Food Contractor Payable / Credit 1020 Bank Clearing, and updates the bank ledger balance.',
                         'tip' => 'Always record the exact bank UTR/cheque number for monthly bank reconciliation.',
                     ],
@@ -1623,9 +1623,9 @@ class HelpPage extends Page
                                 'effect' => 'Marks included food bill lines with a unique batch ID so the same bill can never be settled twice.',
                             ],
                             [
-                                'name' => 'Net Food Sales, Adjustments, Net Payable & Residual Payable',
+                                'name' => 'Net Food Sales, Adjustments, Net Payable & Still Unpaid',
                                 'type' => 'Calculated Batch Columns',
-                                'meaning' => 'Net Food Sales totals eligible kitchen sales (excl. GST); Adjustments captures post-settlement refund deductions from prior locked batches; Residual shows unpaid balance left.',
+                                'meaning' => 'Net Food Sales totals eligible kitchen sales (excl. GST); Adjustments captures post-settlement refund deductions from prior locked batches; Still Unpaid (Residual) shows unpaid balance left.',
                                 'effect' => 'Guarantees refunds issued later do not break closed historical batches and automatically net off the next payout.',
                             ],
                             [
@@ -1635,7 +1635,7 @@ class HelpPage extends Page
                                 'effect' => 'Posts Journal 1 (DR 5020 Food Contractor Expense / CR 2020 Food Contractor Payable) and prevents further draft edits.',
                             ],
                             [
-                                'name' => 'Disbursing Club Bank Account, Payment Instrument & Bank UTR / Cheque #',
+                                'name' => 'Paid From Bank Account, Transfer Method & Bank UTR / Cheque #',
                                 'type' => 'Record Payout Inputs (NEFT / RTGS / Cheque / IMPS)',
                                 'meaning' => 'Which club bank account pays out the contractor settlement, transfer mode, and bank UTR or cheque reference.',
                                 'effect' => 'Records bank disbursement, updates Bank Passbook, and posts Journal 2 (DR 2020 Contractor Payable / CR 1020 Bank Clearing).',
@@ -1665,7 +1665,7 @@ class HelpPage extends Page
                                 'effect' => 'Displayed on settlement payout audit slips to verify NEFT/RTGS destinations.',
                             ],
                             [
-                                'name' => 'Club Concession / Commission Rate (%) & Active Toggle',
+                                'name' => 'Club Commission Share (%) & Active Toggle',
                                 'type' => 'Default: 0.00% • Active Toggle',
                                 'meaning' => 'Optional club commission share percentage (standard pass-through contract is 0.00%, paying 100% of net food sales).',
                                 'effect' => 'Applies configured percentage during daily batch net-payable calculations when Active is ON.',
@@ -1729,7 +1729,7 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Open Supplier Receipts Form',
-                        'instruction' => 'Navigate to Procurement & Food Contractor -> Supplier Receipts and click "Record Stock Inward".',
+                        'instruction' => 'Navigate to Procurement & Food Contractor -> Supplier Receipts and click "Add Stock Purchase".',
                         'result' => 'Opens the supplier consignment intake form.',
                         'tip' => 'Keep the KSBC FL-4 or distributor tax invoice and transport permit beside you.',
                     ],
@@ -1791,19 +1791,19 @@ class HelpPage extends Page
                                 'effect' => 'Links the purchase line directly to that SKU’s base unit (ml / bottles / cans / kg).',
                             ],
                             [
-                                'name' => 'Bottle / Case Count & Pack Size Qty (Auto-Calculator Helpers)',
-                                'type' => 'Optional Helper Inputs',
-                                'meaning' => 'Convenient counter helpers (e.g., 12 bottles × 750 ml) that compute total milliliters for you without needing a manual calculator.',
-                                'effect' => 'Populates Total Base Quantity cleanly; always include free/scheme bottles in Total Base Qty received.',
+                                'name' => 'Number of Bottles / Cases & Size per Bottle (ml / unit)',
+                                'type' => 'Optional Auto-Calculator Inputs',
+                                'meaning' => 'Convenient counter inputs (e.g., 12 bottles × 750 ml) that compute total milliliters for you without needing a manual calculator.',
+                                'effect' => 'Populates Total Quantity Received cleanly; always include free/scheme bottles in Total Quantity Received.',
                             ],
                             [
-                                'name' => 'Total Base Quantity (`quantity` incl. scheme/free bottles)',
-                                'type' => 'Required Inward Stock Qty',
-                                'meaning' => 'Exact total milliliters or base units physically placed into cellar/store stock from this invoice line (paid + free scheme units combined).',
+                                'name' => 'Total Quantity Received (ml / Units incl. scheme/free bottles)',
+                                'type' => 'Required Purchased Stock Qty',
+                                'meaning' => 'Exact total milliliters or units physically placed into cellar/store stock from this invoice line (paid + free scheme units combined).',
                                 'effect' => 'Added directly to On-Hand Stock so POS pours never go artificially negative.',
                             ],
                             [
-                                'name' => 'Line Gross Cost (`line_gross_paise`) vs Unit Cost (`unit_cost_paise`)',
+                                'name' => 'Amount Before Discount (₹) vs Cost per Unit (₹)',
                                 'type' => 'Gross Invoice Value (Before Discount)',
                                 'meaning' => 'Total line bill amount before applying any cash or wholesale trade discount, or cost per base unit.',
                                 'effect' => 'Establishes gross batch value before discounts and GST split.',
@@ -1883,13 +1883,13 @@ class HelpPage extends Page
                         'section_note' => 'Defines physical stock units held in stores/cellar and deducted automatically on bar sales and promo pours.',
                         'fields' => [
                             [
-                                'name' => 'SKU / Inventory Item Code & Bottle Barcode (EAN)',
+                                'name' => 'Item Code (SKU) & Bottle Barcode (EAN)',
                                 'type' => 'Stock Code & Scanner Barcode',
-                                'meaning' => 'Unique SKU identifier (e.g., LIQ-SIG-750ML) and bottle EAN barcode scanned at purchase inward or POS.',
+                                'meaning' => 'Unique SKU identifier (e.g., LIQ-SIG-750ML) and bottle EAN barcode scanned at purchase entry or POS.',
                                 'effect' => 'Allows storekeepers and cashiers to match exact bottle SKUs without mispicking.',
                             ],
                             [
-                                'name' => 'Item Name / Brand, Department Attribution & Item Category',
+                                'name' => 'Item Name / Brand, Club Department & Item Category',
                                 'type' => 'Classification Selects',
                                 'meaning' => 'Brand/bottle name plus department (`bar` / `food` / `consumables`) and category (`liquor` / `beer_wine` / `beverages` / `tobacco` / `food_raw` / `consumables`).',
                                 'effect' => 'Controls stock filters and ensures Bar Stock & Consumption reports isolate spirits vs soft drinks cleanly.',
@@ -1901,13 +1901,13 @@ class HelpPage extends Page
                                 'effect' => 'Every purchase receipt and POS sale converts into this base unit when updating on-hand balances.',
                             ],
                             [
-                                'name' => 'Low Stock Reorder Alert Level',
+                                'name' => 'Low Stock Alert Level',
                                 'type' => 'Numeric Threshold (Default: 1500 ml = 2 Bottles)',
                                 'meaning' => 'Minimum comfortable stock buffer expressed in Base Units.',
                                 'effect' => 'Inventory table and Bar Stock Report highlight the item in red whenever on-hand stock falls at or below this level.',
                             ],
                             [
-                                'name' => 'Current On-Hand Stock & Moving Avg Unit Cost (₹)',
+                                'name' => 'Stock Available Now & Average Purchase Cost (₹)',
                                 'type' => 'Stock Valuation Readouts',
                                 'meaning' => 'Physical base units currently in bar/cellar plus rolling weighted-average purchase cost per unit.',
                                 'effect' => 'Used on every POS sale to compute exact perpetual Cost of Goods Sold (DR 5010 COGS / CR 1030 Bar Stores).',
@@ -1921,11 +1921,11 @@ class HelpPage extends Page
                         ],
                     ],
                     [
-                        'section_title' => 'POS Tariffs & Selling Prices (Tariffs Form)',
+                        'section_title' => 'Menu & Price List Fields (Menu & Price List Form)',
                         'section_note' => 'Controls menu pricing, customer GST slabs, and effective dates charged on Counter POS and Front Desk.',
                         'fields' => [
                             [
-                                'name' => 'Tariff Code (`code`), Barcode (`barcode`) & Display Name (`name`)',
+                                'name' => 'Item Code (`code`), Barcode (`barcode`) & Menu / Item Name (`name`)',
                                 'type' => 'POS Menu Lookup Fields',
                                 'meaning' => 'Unique billing SKU, optional scanner EAN, and item name printed on POS search and thermal receipts.',
                                 'effect' => 'Matched immediately when scanning barcodes or pressing F3 in Counter POS.',
@@ -2039,7 +2039,7 @@ class HelpPage extends Page
                         'section_note' => 'Granular form, view, and approval control across all 53 club permissions.',
                         'fields' => [
                             [
-                                'name' => 'Role Identifier Slug (`name`)',
+                                'name' => 'Role Code (`name`)',
                                 'type' => 'Unique Role Code (Locked on System Roles)',
                                 'meaning' => 'Machine identifier for the role (editable only on newly created Custom Roles; locked on built-in roles like `manager` or `cashier`).',
                                 'effect' => 'Determines landing-page routing defaults and system permission baseline.',
@@ -2070,7 +2070,7 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Configure Club Policies Across the 5 System Settings Tabs',
-                        'instruction' => 'Open Club Master Setup -> System Settings and review each of the 5 tabs: Club Identity & Statutory, Billing & Cashier Policies, Facilities & Timings, Tally Prime Integration, and Receipt Printing. Refer to the Field Reference below to see what every toggle and limit controls before saving.',
+                        'instruction' => 'Open Club Master Setup -> System Settings and review each of the 5 tabs: Club Info & GST, Cashier & Smartcard Limits, Facilities & Timings, Tally Connection, and Receipt Printing. Refer to the Field Reference below to see what every toggle and limit controls before saving.',
                         'result' => 'Saved settings immediately govern receipt headers, counter top-up limits, POS zero-stock rules, room/court schedules, and Tally/printer behaviour club-wide.',
                         'tip' => 'Only users granted the settings.manage permission can edit System Settings. Keep GSTIN, PAN, and Tally Target Company Name aligned with your statutory books.',
                     ],
@@ -2091,7 +2091,7 @@ class HelpPage extends Page
                 ],
                 'field_sections' => [
                     [
-                        'section_title' => 'Tab 1: Club Identity & Statutory Details',
+                        'section_title' => 'Tab 1: Club Info & GST',
                         'section_note' => 'Controls the official clubhouse header, contact details, tax registrations, and statutory declaration printed on every bill, recharge slip, and member statement.',
                         'fields' => [
                             [
@@ -2125,7 +2125,7 @@ class HelpPage extends Page
                                 'effect' => 'Printed in the contact header of A4 tax invoices and member statements.',
                             ],
                             [
-                                'name' => 'Statutory GSTIN (Goods & Services Tax #)',
+                                'name' => 'Club GST Number (GSTIN)',
                                 'type' => '15-Character Tax ID (Optional)',
                                 'meaning' => 'The club’s 15-character Goods and Services Tax Identification Number (Kerala GSTINs begin with state code 32).',
                                 'effect' => 'Printed prominently on GST tax invoices and receipts when set. Verify every character carefully before filing returns.',
@@ -2137,7 +2137,7 @@ class HelpPage extends Page
                                 'effect' => 'Displayed on formal statements and statutory invoices for vendor/audit cross-reference.',
                             ],
                             [
-                                'name' => 'Bill & Receipt Footer Statutory Notation',
+                                'name' => 'Receipt Footer Message',
                                 'type' => 'Optional Footer Text',
                                 'meaning' => 'Custom closing note printed at the very bottom of counter receipts and tax invoices (for example: "Subject to local jurisdiction • Thank you for visiting").',
                                 'effect' => 'Automatically appended to every new thermal bill, recharge receipt, and tax invoice.',
@@ -2173,10 +2173,10 @@ class HelpPage extends Page
                                 'effect' => 'Used as the club reference fee when replacing a member card while keeping their existing wallet balance intact.',
                             ],
                             [
-                                'name' => 'Allow Split Tender Checkout',
+                                'name' => 'Allow Split Payment (Two Methods on One Bill)',
                                 'type' => 'Checkbox (On / Off)',
                                 'meaning' => 'Lets the cashier settle one bill using two payment methods together — for example, draining the remaining Prepaid Smartcard balance and paying the difference by Cash or UPI.',
-                                'effect' => 'When ON, POS shows Split Tender fields at checkout. When OFF, the entire bill must be paid by a single tender mode; credit/unpaid checkout remains strictly forbidden either way.',
+                                'effect' => 'When ON, POS shows Split Payment fields at checkout. When OFF, the entire bill must be paid by a single payment method; credit/unpaid checkout remains strictly forbidden either way.',
                             ],
                             [
                                 'name' => 'Allow Selling Zero / Negative Stock Items on POS',
@@ -2323,7 +2323,7 @@ class HelpPage extends Page
                                 'effect' => 'Any transaction dated inside a Locked or Closed period is rejected on save across POS, Purchases, Expenses, Deposits, and Journals.',
                             ],
                             [
-                                'name' => 'Download Masters XML (Ledgers)',
+                                'name' => 'Download Ledger Setup File (Masters XML)',
                                 'type' => 'One-Time Setup Download',
                                 'meaning' => 'Exports the club’s complete Chart of Accounts, GST duties, Department Cost Centres, and Bank/Supplier ledgers in Tally XML format.',
                                 'effect' => 'Import Masters XML once into Tally Gateway -> Import Data -> Masters (or let Tally Pull-Bridge sync it) before importing daily vouchers so no "Ledger does not exist" errors occur.',
@@ -2335,9 +2335,9 @@ class HelpPage extends Page
                                 'effect' => 'Downloads an XML file ready for Tally Gateway -> Import Data -> Vouchers without affecting live POS operations.',
                             ],
                             [
-                                'name' => 'Download Pending Vouchers XML & Mark Exported as Synced',
+                                'name' => 'Download Pending Entries (Vouchers XML) & Mark Already Sent',
                                 'type' => 'Manual Batch Workflow',
-                                'meaning' => 'Downloads only un-synced Outbox vouchers, then marks them Delivered/Ack once you verify they imported cleanly in Tally.',
+                                'meaning' => 'Downloads only un-synced Tally entries, then marks them Sent to Tally once you verify they imported cleanly in Tally.',
                                 'effect' => 'Prevents duplicate voucher imports on future exports while giving cloud-hosted clubs zero-LAN-setup Tally accounting.',
                             ],
                             [

@@ -26,10 +26,10 @@ class SystemSettingsTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/settings');
         $response->assertStatus(200);
         $response->assertSee('System &amp; Clubhouse Settings', false);
-        $response->assertSee('Club Identity &amp; GSTIN', false);
-        $response->assertSee('Billing &amp; Prepaid Wallet', false);
+        $response->assertSee('Club Info &amp; GST', false);
+        $response->assertSee('Cashier &amp; Smartcard Limits', false);
         $response->assertSee('Facilities &amp; Timings', false);
-        $response->assertSee('Tally Prime LAN', false);
+        $response->assertSee('Tally Connection', false);
         $response->assertSee('Receipt Printing', false);
     }
 

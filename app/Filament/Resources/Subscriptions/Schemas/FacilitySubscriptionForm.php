@@ -78,7 +78,7 @@ class FacilitySubscriptionForm
                                 }),
 
                             Select::make('tariff_id')
-                                ->label('Applicable Tariff Rate Master')
+                                ->label('Sports Plan Fee / Package')
                                 ->required()
                                 ->options(fn () => Tariff::where('department_code', 'sports')
                                     ->orWhere('code', 'LIKE', '%PLAN%')
@@ -107,7 +107,7 @@ class FacilitySubscriptionForm
                     ->schema([
                         Grid::make(2)->schema([
                             DatePicker::make('starts_at')
-                                ->label('Plan Effective Start Date')
+                                ->label('Start Date')
                                 ->required()
                                 ->default(now()->toDateString())
                                 ->live()
@@ -124,7 +124,7 @@ class FacilitySubscriptionForm
                                 ->helperText('Date the member begins accessing the facility.'),
 
                             DatePicker::make('ends_at')
-                                ->label('Plan Expiration Date (Exclusive Boundary)')
+                                ->label('Expiry Date (Valid Until)')
                                 ->required()
                                 ->default(now()->addMonth()->toDateString())
                                 ->helperText('Access expires at end of day (23:59:59) preceding this date.'),
@@ -154,13 +154,13 @@ class FacilitySubscriptionForm
                         ]),
                     ]),
 
-                Section::make('Payment Collection & Ledger Settlement (Zero-Credit Policy)')
+                Section::make('Payment Collection & Settlement (Pay Before Service)')
                     ->description('Upfront confirmed payment is mandatory. Collections automatically create a Paid Bill (Sports), Payment Receipt, GL Journal (A/C 4040 & 2030), and update Collections & Revenue charts.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(3)->schema([
                             Select::make('tender_type')
-                                ->label('Payment Mode / Tender')
+                                ->label('Payment Method')
                                 ->required()
                                 ->options([
                                     TenderType::CASH->value => 'Cash (Till / Secretariat Office)',

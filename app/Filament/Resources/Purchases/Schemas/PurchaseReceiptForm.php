@@ -21,8 +21,8 @@ class PurchaseReceiptForm
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Supplier & Consignment Information')
-                    ->description('Details of the wholesale supplier, official tax invoice, and delivery date.')
+                Section::make('Supplier & Bill Details')
+                    ->description('Details of the wholesale supplier, tax invoice, and delivery date.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(3)->schema([
@@ -67,7 +67,7 @@ class PurchaseReceiptForm
                                 ->helperText('e.g. Kerala State Beverages Corporation (KSBC) or authorized distributor.'),
 
                             TextInput::make('invoice_number')
-                                ->label('Supplier Invoice / Delivery Challan #')
+                                ->label('Supplier Invoice / Bill #')
                                 ->required()
                                 ->maxLength(100)
                                 ->placeholder('e.g. KSBC-INV-2026-10492')
@@ -81,13 +81,13 @@ class PurchaseReceiptForm
                         ]),
 
                         Textarea::make('notes')
-                            ->label('Consignment & Delivery Notes')
+                            ->label('Delivery / Purchase Notes')
                             ->rows(2)
                             ->placeholder('Batch numbers, transport permit details, or packaging inspection notes.')
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Inward Stock Consignment Lines')
+                Section::make('Items Received on This Bill')
                     ->description('Add all items received in this consignment. Quantities must be in base units (e.g. ml for bulk liquor bottles).')
                     ->columnSpanFull()
                     ->schema([
@@ -108,7 +108,7 @@ class PurchaseReceiptForm
                                         ->columnSpan(2),
 
                                     TextInput::make('bottle_count')
-                                        ->label('Bottles / Packs (Helper)')
+                                        ->label('Number of Bottles / Cases')
                                         ->numeric()
                                         ->minValue(1)
                                         ->dehydrated(false)
@@ -152,7 +152,7 @@ class PurchaseReceiptForm
 
                                 Grid::make(4)->schema([
                                     TextInput::make('quantity')
-                                        ->label('Total Received Qty (Base Unit)')
+                                        ->label('Total Quantity Received (ml / Units)')
                                         ->required()
                                         ->numeric()
                                         ->minValue(0.001)
@@ -168,7 +168,7 @@ class PurchaseReceiptForm
                                         ->helperText('All received qty including scheme bottles (e.g. 12 × 750ml = 9000 ml)'),
 
                                     TextInput::make('line_gross_paise')
-                                        ->label('Invoice Gross Cost (₹ Total)')
+                                        ->label('Amount Before Discount (₹)')
                                         ->numeric()
                                         ->minValue(0)
                                         ->prefix('₹')
@@ -186,7 +186,7 @@ class PurchaseReceiptForm
                                         ->helperText('Total invoice cost before cash discount (avoids ₹/ml rounding loss)'),
 
                                     TextInput::make('unit_cost_paise')
-                                        ->label('Gross Unit Cost (₹/unit)')
+                                        ->label('Cost per Unit (₹)')
                                         ->required()
                                         ->numeric()
                                         ->minValue(0)

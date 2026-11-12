@@ -99,12 +99,12 @@ class PromotionForm
                             }),
                     ]),
 
-                Section::make('Eligible Serving Tariffs')
-                    ->description('Select specific serving tariffs (e.g. 30ml Peg). Keep 30ml and 60ml pegs in separate offers so different peg sizes do not mix accidentally.')
+                Section::make('Eligible Menu Items')
+                    ->description('Select specific menu items (e.g. 30ml Peg). Keep 30ml and 60ml pegs in separate offers so different peg sizes do not mix accidentally.')
                     ->columnSpanFull()
                     ->schema([
                         Select::make('tariffs')
-                            ->label('Eligible Bar / Club Tariffs')
+                            ->label('Eligible Bar / Club Menu Items')
                             ->relationship(
                                 name: 'tariffs',
                                 titleAttribute: 'name',

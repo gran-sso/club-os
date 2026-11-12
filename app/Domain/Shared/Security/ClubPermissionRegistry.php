@@ -89,17 +89,17 @@ final class ClubPermissionRegistry
             ],
             'frontdesk' => [
                 'title' => 'Front Desk, Rooms & Courts',
-                'description' => 'Accommodation Deck, room check-in/out & bookings, Badminton Court schedule, and court slot bookings.',
+                'description' => 'Guest Rooms (101–105), room check-in/out & bookings, Badminton Court schedule, and court slot bookings.',
                 'icon' => 'heroicon-o-home-modern',
             ],
             'membership' => [
                 'title' => 'Membership, Guests & Notices',
-                'description' => 'Member profiles, confidential KYC documents, categories, sponsored guest passes, gym/badminton plans, and portal notices.',
+                'description' => 'Member profiles, confidential ID proof documents, categories, sponsored guest passes, gym/badminton plans, and portal notices.',
                 'icon' => 'heroicon-o-users',
             ],
             'inventory' => [
                 'title' => 'Pricing, Promotions & Bar Stock',
-                'description' => 'Tariff sheets, promotional campaigns, bar inventory catalogue, and manual stock adjustments.',
+                'description' => 'Menu & Price List, promotional offers, bar inventory catalogue, and manual stock adjustments.',
                 'icon' => 'heroicon-o-cube',
             ],
             'procurement' => [
@@ -182,8 +182,8 @@ final class ClubPermissionRegistry
             // --- Front Desk, Rooms & Courts ---
             'rooms.view_rack' => [
                 'group' => 'frontdesk',
-                'label' => 'View Accommodation Deck & Bookings',
-                'description' => 'Open the Accommodation Deck live room board and inspect room reservation records.',
+                'label' => 'View Guest Rooms (101–105) & Bookings',
+                'description' => 'Open the Guest Rooms (101–105) live room board and inspect room booking records.',
                 'default_roles' => ['manager', 'reception', 'cashier'],
             ],
             'rooms.manage_reservations' => [
@@ -220,7 +220,7 @@ final class ClubPermissionRegistry
             ],
             'members.kyc_view' => [
                 'group' => 'membership',
-                'label' => 'Inspect Confidential Member KYC Documents',
+                'label' => 'View Confidential Member ID Proof Documents',
                 'description' => 'View/download private Aadhaar, PAN, passport, photo, and application documents (/documents/members/...).',
                 'default_roles' => ['manager', 'reception', 'accountant'],
                 'sensitive' => true,
@@ -271,13 +271,13 @@ final class ClubPermissionRegistry
             // --- Pricing, Promotions & Bar Stock ---
             'tariffs.view' => [
                 'group' => 'inventory',
-                'label' => 'View Tariffs & Rate Cards (Read-Only)',
-                'description' => 'View configured room, court, bar, F&B, and guest-pass tariffs.',
+                'label' => 'View Menu & Price List (Read-Only)',
+                'description' => 'View configured room, court, bar, food, and guest-pass prices.',
                 'default_roles' => ['manager', 'auditor'],
             ],
             'tariffs.manage' => [
                 'group' => 'inventory',
-                'label' => 'Create & Edit Tariffs',
+                'label' => 'Create & Edit Menu Items & Prices',
                 'description' => 'Create and update pricing rules, GST rates, barcodes, and accounting ledger mappings.',
                 'default_roles' => ['manager'],
             ],
@@ -449,8 +449,8 @@ final class ClubPermissionRegistry
             ],
             'integrations.manage' => [
                 'group' => 'system',
-                'label' => 'Manage Integrations & Outbox Retries',
-                'description' => 'Retry failed Tally outbox messages and trigger integration recovery tasks.',
+                'label' => 'Manage Tally Sync & Gate Devices',
+                'description' => 'Retry failed Tally sync entries and run device sync tasks.',
                 'default_roles' => ['manager', 'accountant'],
                 'sensitive' => true,
             ],

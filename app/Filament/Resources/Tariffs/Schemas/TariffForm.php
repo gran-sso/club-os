@@ -17,13 +17,13 @@ class TariffForm
         return $schema
             ->columns(1)
             ->components([
-                Section::make('General Tariff Information')
+                Section::make('Item / Service Details')
                     ->description('Define the service, beverage, room, or club facility charge.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('code')
-                                ->label('Tariff Code / SKU')
+                                ->label('Item Code')
                                 ->required()
                                 ->maxLength(32)
                                 ->unique(ignoreRecord: true)
@@ -38,7 +38,7 @@ class TariffForm
                         ]),
 
                         TextInput::make('name')
-                            ->label('Tariff / Item Description')
+                            ->label('Menu / Item Name')
                             ->required()
                             ->maxLength(150)
                             ->placeholder('e.g. Signature Rare Aged Whisky (30ml Peg) or Deluxe Room Daily Tariff'),
@@ -76,7 +76,7 @@ class TariffForm
                                 ->helperText('Stored securely in exact integer paise. Enter selling price in Rupees.'),
 
                             Select::make('tax_percent')
-                                ->label('Statutory GST Rate (%)')
+                                ->label('GST Tax Rate (%)')
                                 ->required()
                                 ->options([
                                     '0.00' => '0% (Nil / Exempted / Member Subscriptions)',
@@ -90,7 +90,7 @@ class TariffForm
                         ]),
                     ]),
 
-                Section::make('Tariff Validity & Status')
+                Section::make('Effective Dates & Active Status')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(2)->schema([

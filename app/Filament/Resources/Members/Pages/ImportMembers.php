@@ -20,7 +20,7 @@ class ImportMembers extends Page
 
     protected static string $resource = MemberResource::class;
 
-    protected static ?string $title = 'Bulk Member Import & Historical Migration';
+    protected static ?string $title = 'Import Members from CSV (Excel)';
 
     protected string $view = 'filament.resources.members.pages.import-members';
 
@@ -66,7 +66,7 @@ class ImportMembers extends Page
     {
         return [
             Action::make('downloadTemplate')
-                ->label('Download CSV Template')
+                ->label('Download Sample CSV')
                 ->icon(Heroicon::OutlinedDocumentArrowDown)
                 ->color('info')
                 ->action(fn (): StreamedResponse => $this->downloadTemplate()),

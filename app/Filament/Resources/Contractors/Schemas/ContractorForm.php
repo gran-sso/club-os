@@ -40,7 +40,7 @@ class ContractorForm
 
                         Grid::make(2)->schema([
                             Select::make('department_code')
-                                ->label('Assigned Club Operating Department')
+                                ->label('Club Section Managed')
                                 ->required()
                                 ->options([
                                     'food' => 'Food & Restaurant Catering',
@@ -109,7 +109,7 @@ class ContractorForm
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('commission_rate_percent')
-                                ->label('Club Concession / Commission Rate (%)')
+                                ->label('Club Commission Share (%)')
                                 ->required()
                                 ->numeric()
                                 ->minValue(0)

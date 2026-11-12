@@ -7,7 +7,7 @@
                     🛡️
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight">System Integrity &amp; Tally Bridge</h3>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Accounts Health &amp; Tally Sync</h3>
                     <p class="text-[11px] text-slate-500">GL balancing, fiscal locks, and sync outbox</p>
                 </div>
             </div>
@@ -19,11 +19,11 @@
             </div>
         </div>
 
-        <!-- Section 1: Tally Prime Outbox Status -->
+        <!-- Section 1: Tally Accounting Sync Status -->
         <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/80 space-y-2.5">
             <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2">
-                    <span class="font-bold text-slate-900 dark:text-white">Tally Prime Outbox</span>
+                    <span class="font-bold text-slate-900 dark:text-white">Tally Accounting Sync</span>
                     <span class="text-[10px] font-mono px-2 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                         {{ strtoupper($tallyStatus['mode'] ?? 'SIMULATOR') }}
                     </span>
@@ -40,7 +40,7 @@
                 </div>
                 <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <span class="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">{{ $outboxPending }}</span>
-                    <span class="text-[10px] block text-slate-500">Pending Queue</span>
+                    <span class="text-[10px] block text-slate-500">Waiting to Send</span>
                 </div>
                 <div class="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
                     <span class="text-xs font-extrabold text-rose-600 dark:text-rose-400 font-mono">{{ $outboxFailed }}</span>
@@ -84,7 +84,7 @@
                 <!-- Unposted Payment Captures (Scenario F07) -->
                 <div class="p-2.5 rounded-xl border {{ $unpostedCapturesCount === 0 ? 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400' }} flex items-center justify-between">
                     <div>
-                        <span class="text-[10px] font-bold uppercase block text-slate-500">Unposted Captures</span>
+                        <span class="text-[10px] font-bold uppercase block text-slate-500">Unrecorded Online Payments</span>
                         <span class="text-xs font-extrabold font-mono {{ $unpostedCapturesCount === 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600' }}">
                             {{ $unpostedCapturesCount }} Pending
                         </span>
