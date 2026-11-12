@@ -27,6 +27,8 @@ Route::middleware(['auth:web'])->group(function () {
     Route::get('/pos', CounterPos::class)->name('pos');
     Route::get('/documents/members/{member}/{filename}', [\App\Http\Controllers\DocumentController::class, 'showMemberDocument'])
         ->name('members.documents.show');
+    Route::get('/documents/dependents/{dependent}/photo', [\App\Http\Controllers\DocumentController::class, 'showDependentPhoto'])
+        ->name('dependents.photo.show');
 });
 
 // Member Portal Routes
@@ -42,6 +44,10 @@ Route::prefix('member')->name('member.')->group(function () {
             return redirect()->route('member.dashboard');
         });
         Route::get('/dashboard', MemberDashboard::class)->name('dashboard');
+        Route::get('/photo', [\App\Http\Controllers\DocumentController::class, 'showPortalMemberPhoto'])
+            ->name('photo');
+        Route::get('/dependents/{dependent}/photo', [\App\Http\Controllers\DocumentController::class, 'showPortalDependentPhoto'])
+            ->name('dependents.photo');
     });
 });
 

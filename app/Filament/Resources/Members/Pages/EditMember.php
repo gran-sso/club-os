@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Members\Pages;
 
+use App\Domain\Membership\Services\MemberService;
 use App\Filament\Resources\Members\MemberResource;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
@@ -43,6 +44,7 @@ class EditMember extends EditRecord
             $data['id_proof_number'] = $record->person->id_proof_number;
             $data['id_proof_path'] = $record->person->id_proof_path;
             $data['application_form_path'] = $record->person->application_form_path;
+            $data['photo_path'] = $record->person->photo_path;
             $data['notes'] = $record->person->notes;
         }
 
@@ -59,6 +61,9 @@ class EditMember extends EditRecord
     {
         /** @var \App\Domain\Membership\Models\Member $record */
         if ($record->person) {
+            $oldPhotoPath = $record->person->photo_path;
+            $newPhotoPath = $data['photo_path'] ?? null;
+
             $record->person->update([
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'] ?? null,
@@ -68,8 +73,13 @@ class EditMember extends EditRecord
                 'id_proof_number' => $data['id_proof_number'] ?? null,
                 'id_proof_path' => $data['id_proof_path'] ?? null,
                 'application_form_path' => $data['application_form_path'] ?? null,
+                'photo_path' => $newPhotoPath,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            if ($oldPhotoPath && $oldPhotoPath !== $newPhotoPath) {
+                app(MemberService::class)->cleanupUnusedPhoto($oldPhotoPath);
+            }
         }
 
         $record->update([

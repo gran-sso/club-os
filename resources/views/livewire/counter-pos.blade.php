@@ -849,10 +849,25 @@
                     <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs animate-fade-in">
                         <div class="flex items-start justify-between">
                             <div class="flex items-center space-x-3">
-                                <div
-                                    class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-slate-950 text-xl shadow-md shadow-amber-500/20">
-                                    {{ substr($selectedMember->person->first_name ?? 'M', 0, 1) }}{{ substr($selectedMember->person->last_name ?? '', 0, 1) }}
-                                </div>
+                                @php
+                                    $posInitials = strtoupper(substr($selectedMember->person->first_name ?? 'M', 0, 1) . substr($selectedMember->person->last_name ?? '', 0, 1));
+                                @endphp
+                                @if ($selectedMember->photo_url)
+                                    <a href="{{ $selectedMember->photo_url }}" target="_blank" title="View full member photo" class="shrink-0">
+                                        <img src="{{ $selectedMember->photo_url }}" alt="{{ $selectedMember->name }}"
+                                            class="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-md"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div style="display: none;"
+                                            class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 items-center justify-center font-bold text-slate-950 text-xl shadow-md shadow-amber-500/20">
+                                            {{ $posInitials }}
+                                        </div>
+                                    </a>
+                                @else
+                                    <div
+                                        class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center font-bold text-slate-950 text-xl shadow-md shadow-amber-500/20 shrink-0">
+                                        {{ $posInitials }}
+                                    </div>
+                                @endif
                                 <div>
                                     <h3 class="font-bold text-lg text-slate-900 tracking-tight">
                                         {{ $selectedMember->person->first_name }} {{ $selectedMember->person->last_name }}
@@ -900,11 +915,27 @@
                                 <div class="mt-2 space-y-1.5">
                                     @foreach ($selectedMember->dependents as $dep)
                                         <div
-                                            class="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
-                                            <span class="text-slate-700">{{ $dep->person->first_name }} {{ $dep->person->last_name }}
-                                                ({{ $dep->relationship }})</span>
+                                            class="flex items-center justify-between gap-2 text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                @if ($dep->photo_url)
+                                                    <a href="{{ $dep->photo_url }}" target="_blank" title="View dependent photo" class="shrink-0">
+                                                        <img src="{{ $dep->photo_url }}" alt="{{ $dep->person?->full_name ?? 'Dependent' }}"
+                                                            class="w-6 h-6 rounded-md object-cover border border-slate-200 shrink-0"
+                                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                        <span style="display: none;" class="w-6 h-6 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px] items-center justify-center shrink-0">
+                                                            {{ strtoupper(substr($dep->person->first_name ?? 'D', 0, 1)) }}
+                                                        </span>
+                                                    </a>
+                                                @else
+                                                    <span class="w-6 h-6 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                                        {{ strtoupper(substr($dep->person->first_name ?? 'D', 0, 1)) }}
+                                                    </span>
+                                                @endif
+                                                <span class="text-slate-700 truncate">{{ $dep->person->first_name }} {{ $dep->person->last_name }}
+                                                    ({{ $dep->relationship }})</span>
+                                            </div>
                                             <span
-                                                class="text-[10px] px-2 py-0.5 rounded {{ $dep->can_spend_wallet ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-500' }}">
+                                                class="text-[10px] px-2 py-0.5 rounded shrink-0 {{ $dep->can_spend_wallet ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-500' }}">
                                                 {{ $dep->can_spend_wallet ? 'Can Spend Wallet' : 'No Wallet Rights' }}
                                             </span>
                                         </div>

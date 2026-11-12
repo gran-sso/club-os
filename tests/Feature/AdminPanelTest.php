@@ -26,7 +26,9 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Billed Sales');
         $response->assertSee('Collections Today');
         $response->assertSee('Front-Desk &amp; Facilities Pulse', false);
-        $response->assertSee('Contractor &amp; Counter Shifts', false);
+        $response->assertSee('Billing Counters &amp; Live Shifts', false);
+        $response->assertSee('Food Contractor &amp; Settlements', false);
+        $response->assertDontSee('Active POS Stations');
         $response->assertSee('Accounts Health &amp; Tally Sync', false);
         $response->assertSee('Recent Club Billing &amp; Operational Activity', false);
     }

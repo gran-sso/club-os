@@ -13,7 +13,12 @@
                 <tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="px-4 py-3 font-semibold text-slate-900">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold flex items-center justify-center text-[10px]">
+                            @if ($dep->photo_url)
+                                <img src="{{ $dep->photo_url }}" alt="{{ $dep->person?->full_name }}"
+                                    class="w-7 h-7 rounded-lg object-cover border border-slate-200 shrink-0"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            @endif
+                            <div class="{{ $dep->photo_url ? 'hidden' : 'flex' }} w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold items-center justify-center text-[10px] shrink-0">
                                 {{ substr($dep->person?->first_name ?? 'D', 0, 1) }}
                             </div>
                             <span class="text-sm font-bold text-slate-900">{{ $dep->person?->full_name ?? '—' }}</span>

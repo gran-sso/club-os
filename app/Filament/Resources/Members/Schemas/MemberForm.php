@@ -20,9 +20,24 @@ class MemberForm
             ->columns(1)
             ->components([
                 Section::make('Personal Details & ID Proof')
-                    ->description('Member name, contact numbers, and government ID details.')
+                    ->description('Member name, contact numbers, optional photo, and government ID details.')
                     ->columnSpanFull()
                     ->schema([
+                        FileUpload::make('photo_path')
+                            ->label('Member Photo (Optional)')
+                            ->disk('local')
+                            ->directory('documents/members/photos')
+                            ->image()
+                            ->avatar()
+                            ->imageEditor()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->maxSize(2048)
+                            ->nullable()
+                            ->downloadable()
+                            ->openable()
+                            ->helperText('Optional passport/portrait photo for Counter POS and front-desk cardholder verification (JPG, PNG, WebP up to 2MB).')
+                            ->columnSpanFull(),
+
                         Grid::make(2)->schema([
                             TextInput::make('first_name')
                                 ->label('First Name')

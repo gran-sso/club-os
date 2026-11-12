@@ -39,9 +39,11 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
 
 class ViewMember extends ViewRecord
 {
+    use WithFileUploads;
     protected static string $resource = MemberResource::class;
 
     protected string $view = 'filament.resources.members.pages.view-member';
@@ -67,6 +69,12 @@ class ViewMember extends ViewRecord
     public string $depPhone = '';
     public string $depRelationship = 'Spouse';
     public bool $depCanSpendWallet = false;
+    public $depPhoto = null;
+
+    // Dependent Photo Update Modal State
+    public bool $showDependentPhotoModal = false;
+    public ?int $editingDependentId = null;
+    public $editingDependentPhoto = null;
 
     // Status Change Modal State
     public bool $showStatusModal = false;
@@ -310,12 +318,16 @@ class ViewMember extends ViewRecord
         $this->depPhone = '';
         $this->depRelationship = 'Spouse';
         $this->depCanSpendWallet = false;
+        $this->depPhoto = null;
+        $this->resetValidation('depPhoto');
         $this->showDependentModal = true;
     }
 
     public function closeDependentModal(): void
     {
         $this->showDependentModal = false;
+        $this->depPhoto = null;
+        $this->resetValidation('depPhoto');
     }
 
     public function processDependentRegister(MemberService $memberService): void
@@ -333,6 +345,14 @@ class ViewMember extends ViewRecord
             return;
         }
 
+        $photoPath = null;
+        if ($this->depPhoto) {
+            $this->validate([
+                'depPhoto' => 'image|mimes:jpeg,jpg,png,webp|max:2048',
+            ]);
+            $photoPath = $this->depPhoto->store('documents/dependents/photos', 'local');
+        }
+
         try {
             $dep = $memberService->registerDependent(
                 $record,
@@ -340,12 +360,13 @@ class ViewMember extends ViewRecord
                     'first_name' => trim($this->depFirstName),
                     'last_name' => trim($this->depLastName) ?: null,
                     'phone' => trim($this->depPhone) ?: null,
+                    'photo_path' => $photoPath,
                 ],
                 $this->depRelationship,
                 (bool) $this->depCanSpendWallet
             );
 
-            $this->showDependentModal = false;
+            $this->closeDependentModal();
             $this->record = $record->fresh(['dependents.person']);
 
             Notification::make()
@@ -354,12 +375,87 @@ class ViewMember extends ViewRecord
                 ->success()
                 ->send();
         } catch (\Exception $e) {
+            if ($photoPath) {
+                $memberService->cleanupUnusedPhoto($photoPath);
+            }
+
             Notification::make()
                 ->title('Registration Failed')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
         }
+    }
+
+    public function openDependentPhotoModal(int $dependentId): void
+    {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
+        Dependent::where('member_id', $this->getRecord()->id)->findOrFail($dependentId);
+        $this->editingDependentId = $dependentId;
+        $this->editingDependentPhoto = null;
+        $this->resetValidation('editingDependentPhoto');
+        $this->showDependentPhotoModal = true;
+    }
+
+    public function closeDependentPhotoModal(): void
+    {
+        $this->showDependentPhotoModal = false;
+        $this->editingDependentId = null;
+        $this->editingDependentPhoto = null;
+        $this->resetValidation('editingDependentPhoto');
+    }
+
+    public function processDependentPhotoUpdate(MemberService $memberService): void
+    {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
+
+        $this->validate([
+            'editingDependentPhoto' => 'required|image|mimes:jpeg,jpg,png,webp|max:2048',
+        ]);
+
+        /** @var Member $record */
+        $record = $this->getRecord();
+        $dep = Dependent::with('person')
+            ->where('member_id', $record->id)
+            ->findOrFail($this->editingDependentId);
+
+        $newPath = $this->editingDependentPhoto->store('documents/dependents/photos', 'local');
+        if ($dep->person) {
+            $memberService->updatePersonPhoto($dep->person, $newPath);
+        }
+
+        $this->closeDependentPhotoModal();
+        $this->record = $record->fresh(['dependents.person']);
+
+        Notification::make()
+            ->title('Dependent Photo Updated')
+            ->body("Portrait photo saved for {$dep->person?->full_name}.")
+            ->success()
+            ->send();
+    }
+
+    public function removeDependentPhoto(int $dependentId, MemberService $memberService): void
+    {
+        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
+
+        /** @var Member $record */
+        $record = $this->getRecord();
+        $dep = Dependent::with('person')
+            ->where('member_id', $record->id)
+            ->findOrFail($dependentId);
+
+        if ($dep->person && $dep->person->photo_path) {
+            $memberService->updatePersonPhoto($dep->person, null);
+        }
+
+        $this->closeDependentPhotoModal();
+        $this->record = $record->fresh(['dependents.person']);
+
+        Notification::make()
+            ->title('Dependent Photo Removed')
+            ->body("Removed portrait photo for {$dep->person?->full_name}.")
+            ->info()
+            ->send();
     }
 
     public function toggleDependentWalletDebit(int $dependentId): void

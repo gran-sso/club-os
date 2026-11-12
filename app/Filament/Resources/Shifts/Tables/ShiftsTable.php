@@ -83,11 +83,23 @@ class ShiftsTable
                             ->label('Closing & Handover Notes')
                             ->placeholder('Cash drop reference or reasons for discrepancy if any.'),
                     ])
-                    ->action(function ($record, array $data) {
+                    ->action(function ($record, array $data, \Filament\Actions\Action $action) {
                         abort_unless((bool) auth()->user()?->hasClubPermission('shifts.manage'), 403);
                         $service = app(\App\Domain\Billing\Services\ShiftService::class);
                         $countedPaise = (int) round(((float) $data['counted_cash']) * 100);
-                        $service->closeShift($record, $countedPaise, $data['close_notes'] ?? null);
+
+                        try {
+                            $service->closeShift($record, $countedPaise, $data['close_notes'] ?? null);
+                        } catch (\App\Domain\Shared\Exceptions\ShiftNotOpenException | \InvalidArgumentException $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Cannot Close Shift')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            $action->halt();
+                        }
 
                         \Filament\Notifications\Notification::make()
                             ->title("Shift #{$record->shift_number} Closed")

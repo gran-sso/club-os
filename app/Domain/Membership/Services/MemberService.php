@@ -18,6 +18,7 @@ use App\Domain\Shared\Enums\MemberStatus;
 use App\Domain\Shared\Services\BusinessDateService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -95,6 +96,7 @@ class MemberService
                 'last_name' => $personData['last_name'] ?? null,
                 'phone' => $personData['phone'] ?? null,
                 'email' => $personData['email'] ?? null,
+                'photo_path' => $personData['photo_path'] ?? null,
                 'notes' => $personData['notes'] ?? null,
             ]);
 
@@ -105,6 +107,39 @@ class MemberService
                 'can_spend_wallet' => $canSpendWallet,
             ]);
         });
+    }
+
+    /**
+     * Update a person's optional portrait photo path and delete any unreferenced previous file.
+     */
+    public function updatePersonPhoto(Person $person, ?string $newPhotoPath): void
+    {
+        $oldPath = $person->photo_path;
+        $person->update([
+            'photo_path' => $newPhotoPath ?: null,
+        ]);
+
+        if ($oldPath && $oldPath !== $newPhotoPath) {
+            $this->cleanupUnusedPhoto($oldPath);
+        }
+    }
+
+    /**
+     * Delete a stored photo from private local storage if no Person record references it.
+     */
+    public function cleanupUnusedPhoto(?string $path): void
+    {
+        if (! $path) {
+            return;
+        }
+
+        if (Person::where('photo_path', $path)->exists()) {
+            return;
+        }
+
+        if (Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->delete($path);
+        }
     }
 
     /**

@@ -29,6 +29,7 @@ class CreateMember extends CreateRecord
             'id_proof_number' => $data['id_proof_number'] ?? null,
             'id_proof_path' => $data['id_proof_path'] ?? null,
             'application_form_path' => $data['application_form_path'] ?? null,
+            'photo_path' => $data['photo_path'] ?? null,
             'notes' => $data['notes'] ?? null,
         ];
 

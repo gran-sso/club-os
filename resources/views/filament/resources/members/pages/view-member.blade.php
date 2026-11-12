@@ -31,9 +31,20 @@
                             ? strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1))
                             : strtoupper(substr($nameParts[0] ?? 'M', 0, 2));
                     @endphp
-                    <div class="w-12 h-12 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs print:bg-slate-100 print:text-slate-950 print:border print:border-slate-900">
-                        {{ $initials }}
-                    </div>
+                    @if ($member->photo_url)
+                        <a href="{{ $member->photo_url }}" target="_blank" title="Open full portrait photo" class="shrink-0 group relative">
+                            <img src="{{ $member->photo_url }}" alt="{{ $member->name }}"
+                                class="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-2xs group-hover:ring-2 group-hover:ring-amber-400 transition"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display: none;" class="w-14 h-14 rounded-xl bg-slate-900 dark:bg-slate-100 items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs print:bg-slate-100 print:text-slate-950 print:border print:border-slate-900">
+                                {{ $initials }}
+                            </div>
+                        </a>
+                    @else
+                        <div class="w-14 h-14 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center font-bold text-white dark:text-slate-900 text-base shrink-0 select-none shadow-2xs print:bg-slate-100 print:text-slate-950 print:border print:border-slate-900">
+                            {{ $initials }}
+                        </div>
+                    @endif
 
                     <div class="space-y-1">
                         <div class="flex flex-wrap items-center gap-1.5">
@@ -1726,23 +1737,42 @@
                     <!-- Dependents Cards Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         @forelse ($dependents as $dep)
+                            @php
+                                $depInitials = strtoupper(substr($dep->person?->first_name ?? 'D', 0, 1) . substr($dep->person?->last_name ?? '', 0, 1));
+                            @endphp
                             <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-3">
                                 <div class="flex items-start justify-between gap-2">
-                                    <div>
-                                        <h4 class="font-bold text-slate-900 dark:text-white text-sm">
-                                            {{ $dep->person?->full_name ?? 'Dependent' }}
-                                        </h4>
-                                        <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                            {{ $dep->relationship }}
-                                        </span>
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        @if ($dep->photo_url)
+                                            <a href="{{ $dep->photo_url }}" target="_blank" title="Open dependent photo" class="shrink-0">
+                                                <img src="{{ $dep->photo_url }}" alt="{{ $dep->person?->full_name ?? 'Dependent' }}"
+                                                    class="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div style="display: none;" class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold items-center justify-center text-xs shrink-0">
+                                                    {{ $depInitials }}
+                                                </div>
+                                            </a>
+                                        @else
+                                            <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                                                {{ $depInitials }}
+                                            </div>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">
+                                                {{ $dep->person?->full_name ?? 'Dependent' }}
+                                            </h4>
+                                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                                {{ $dep->relationship }}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     @if ($dep->can_spend_wallet)
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 shrink-0">
                                             Wallet Authorized
                                         </span>
                                     @else
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 shrink-0">
                                             Restricted
                                         </span>
                                     @endif
@@ -1752,12 +1782,18 @@
                                     <div>Phone: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ $dep->person?->phone ?? 'Not recorded' }}</strong></div>
                                 </div>
 
-                                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                    <button wire:click="toggleDependentWalletDebit({{ $dep->id }})" type="button"
-                                        class="h-8 px-3 py-1 rounded-lg text-xs font-semibold transition w-full {{ $dep->can_spend_wallet ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700' }} cursor-pointer">
-                                        {{ $dep->can_spend_wallet ? 'Revoke Wallet Permission' : 'Authorize Wallet Debits' }}
-                                    </button>
-                                </div>
+                                @if (auth()->user()?->hasClubPermission('members.manage'))
+                                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                                        <button wire:click="openDependentPhotoModal({{ $dep->id }})" type="button"
+                                            class="h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shrink-0 cursor-pointer">
+                                            {{ $dep->photo_url ? 'Change Photo' : 'Add Photo' }}
+                                        </button>
+                                        <button wire:click="toggleDependentWalletDebit({{ $dep->id }})" type="button"
+                                            class="h-8 px-3 py-1 rounded-lg text-xs font-semibold transition flex-1 {{ $dep->can_spend_wallet ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700' }} cursor-pointer">
+                                            {{ $dep->can_spend_wallet ? 'Revoke Wallet Permission' : 'Authorize Wallet Debits' }}
+                                        </button>
+                                    </div>
+                                @endif
                             </div>
                         @empty
                             <div class="sm:col-span-2 lg:col-span-3 p-8 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-xs">
@@ -2008,6 +2044,23 @@
                                 class="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 font-mono">
                         </div>
 
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-600 dark:text-slate-300 mb-1">
+                                Portrait Photo (Optional)
+                            </label>
+                            <div class="flex items-center gap-3">
+                                @if ($depPhoto && method_exists($depPhoto, 'temporaryUrl'))
+                                    <img src="{{ $depPhoto->temporaryUrl() }}" alt="Preview" class="w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shrink-0">
+                                @endif
+                                <input type="file" wire:model="depPhoto" accept="image/jpeg,image/png,image/webp"
+                                    class="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 cursor-pointer">
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-1">JPG, PNG, or WebP up to 2MB for counter verification.</p>
+                            @error('depPhoto')
+                                <p class="text-[11px] text-rose-600 font-semibold mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" wire:model="depCanSpendWallet" class="w-4 h-4 rounded text-slate-900 focus:ring-slate-900">
@@ -2023,7 +2076,7 @@
                                 class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                                 Cancel
                             </button>
-                            <button type="submit"
+                            <button type="submit" wire:loading.attr="disabled"
                                 class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
                                 Save Dependent
                             </button>
@@ -2031,6 +2084,75 @@
                     </form>
                 </div>
             </div>
+        @endif
+
+        <!-- MODAL: Upload / Update Dependent Photo -->
+        @if ($showDependentPhotoModal && $editingDependentId)
+            @php
+                $editingDep = $dependents->firstWhere('id', $editingDependentId);
+            @endphp
+            @if ($editingDep)
+                <div class="fixed inset-0 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity">
+                    <div class="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-4 sm:p-5 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Dependent Portrait Photo</h3>
+                                <p class="text-[11px] text-slate-500">{{ $editingDep->person?->full_name }} ({{ $editingDep->relationship }})</p>
+                            </div>
+                            <button wire:click="closeDependentPhotoModal" type="button" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit="processDependentPhotoUpdate" class="space-y-3">
+                            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                @if ($editingDependentPhoto && method_exists($editingDependentPhoto, 'temporaryUrl'))
+                                    <img src="{{ $editingDependentPhoto->temporaryUrl() }}" alt="New photo preview" class="w-14 h-14 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shrink-0">
+                                @elseif ($editingDep->photo_url)
+                                    <img src="{{ $editingDep->photo_url }}" alt="{{ $editingDep->person?->full_name }}" class="w-14 h-14 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shrink-0">
+                                @else
+                                    <div class="w-14 h-14 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold flex items-center justify-center text-sm shrink-0">
+                                        {{ strtoupper(substr($editingDep->person?->first_name ?? 'D', 0, 1)) }}
+                                    </div>
+                                @endif
+                                <div class="min-w-0 flex-1">
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Select Photo File</label>
+                                    <input type="file" wire:model="editingDependentPhoto" accept="image/jpeg,image/png,image/webp" required
+                                        class="block w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-800 hover:file:bg-slate-300 dark:file:bg-slate-700 dark:file:text-slate-100 cursor-pointer">
+                                    <p class="text-[10px] text-slate-500 mt-1">JPG, PNG, or WebP up to 2MB (optional).</p>
+                                </div>
+                            </div>
+
+                            @error('editingDependentPhoto')
+                                <p class="text-[11px] text-rose-600 font-semibold">{{ $message }}</p>
+                            @enderror
+
+                            <div class="pt-2 flex items-center justify-between gap-2">
+                                <div>
+                                    @if ($editingDep->photo_url)
+                                        <button wire:click="removeDependentPhoto({{ $editingDep->id }})" type="button"
+                                            class="h-8.5 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold text-xs transition cursor-pointer">
+                                            Remove Photo
+                                        </button>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button wire:click="closeDependentPhotoModal" type="button"
+                                        class="h-8.5 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" wire:loading.attr="disabled"
+                                        class="h-8.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold text-xs transition shadow-2xs cursor-pointer">
+                                        Save Photo
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
         @endif
 
         <!-- MODAL: Change Lifecycle Status -->

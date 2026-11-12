@@ -7,8 +7,8 @@
                     🍽️
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Contractor &amp; Counter Shifts</h3>
-                    <p class="text-[11px] text-slate-500">Catering payables and open cash registers</p>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Food Contractor &amp; Settlements</h3>
+                    <p class="text-[11px] text-slate-500">Daily catering payables and settlement status</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -51,50 +51,6 @@
             <p class="text-[11px] text-slate-500 leading-tight">
                 Cash, digital, and member wallet food orders automatically pool for next morning contractor settlement. Unused wallet balances are excluded.
             </p>
-        </div>
-
-        <!-- Section 2: Active Counter Shifts -->
-        <div class="space-y-2.5">
-            <div class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-1.5">
-                    <span>⚡</span>
-                    <span class="font-bold uppercase tracking-wider text-slate-500 text-[10px]">Active POS Stations</span>
-                </div>
-                <a href="{{ url('/admin/shifts') }}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline">
-                    All Shifts &rarr;
-                </a>
-            </div>
-
-            @if ($staleShiftsCount > 0)
-                <div class="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between">
-                    <span>⚠️ <strong>{{ $staleShiftsCount }}</strong> unclosed shift(s) from previous date requires cash balancing!</span>
-                    <a href="{{ url('/admin/shifts') }}" class="underline font-bold text-[11px]">Audit</a>
-                </div>
-            @endif
-
-            @if ($openShifts->isEmpty())
-                <div class="p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-500 text-center">
-                    No counter shifts are currently open. Open a station to begin cashier billing.
-                </div>
-            @else
-                <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                    @foreach ($openShifts as $shift)
-                        <div class="py-2 flex items-center justify-between text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <div>
-                                    <span class="font-bold text-slate-900 dark:text-white">{{ $shift->counter?->name ?? 'POS Station' }}</span>
-                                    <span class="text-[11px] text-slate-500 block">Cashier: {{ $shift->cashier?->name ?? 'Staff' }}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="font-mono text-xs font-semibold text-slate-900 dark:text-white">Float: ₹{{ number_format($shift->opening_float_paise / 100, 2) }}</span>
-                                <span class="text-[10px] text-slate-400 block font-mono">{{ $shift->created_at?->format('h:i A') }}</span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
         </div>
     </div>
 </x-filament-widgets::widget>

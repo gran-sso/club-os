@@ -87,6 +87,162 @@ class AdminPhase5FinancialOperationsTest extends TestCase
         $this->assertNotNull($shift->closed_at);
     }
 
+    public function test_admin_cannot_create_duplicate_open_shift_for_same_counter_and_sees_validation_error(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $counter = Counter::where('code', 'COUNTER-1')->firstOrFail();
+        $firstCashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+        $secondCashier = User::where('email', 'accountant@malabarclub.local')->firstOrFail();
+
+        $shiftService = app(\App\Domain\Billing\Services\ShiftService::class);
+        $existingShift = $shiftService->openShift(
+            counterId: $counter->id,
+            userId: $firstCashier->id,
+            openingFloatPaise: 100000
+        );
+
+        $beforeCount = Shift::count();
+
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Shifts\Pages\CreateShift::class)
+            ->fillForm([
+                'counter_id' => $counter->id,
+                'user_id' => $secondCashier->id,
+                'business_date' => now()->toDateString(),
+                'opening_float_paise' => 1500.00,
+                'status' => 'open',
+                'notes' => 'Duplicate shift test',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['counter_id'])
+            ->assertSee($existingShift->shift_number);
+
+        $this->assertSame($beforeCount, Shift::count(), 'Duplicate open shift must not be created');
+        $this->assertSame(1, Shift::where('counter_id', $counter->id)->where('status', 'open')->count());
+
+        // Editing the open shift (notes only) must still work cleanly without triggering create-only uniqueness rules.
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Shifts\Pages\EditShift::class, ['record' => $existingShift->getRouteKey()])
+            ->fillForm([
+                'notes' => 'Updated handover note while shift open',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Updated handover note while shift open', $existingShift->fresh()->notes);
+
+        // Once the open shift is closed, opening a new shift on the same counter succeeds.
+        $shiftService->closeShift($existingShift, 100000, 'Reconciled');
+
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Shifts\Pages\CreateShift::class)
+            ->fillForm([
+                'counter_id' => $counter->id,
+                'user_id' => $secondCashier->id,
+                'business_date' => now()->toDateString(),
+                'opening_float_paise' => 1500.00,
+                'status' => 'open',
+                'notes' => 'Next shift after closing',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame($beforeCount + 1, Shift::count());
+    }
+
+    public function test_admin_cannot_create_second_open_shift_for_same_staff_user(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $counter1 = Counter::where('code', 'COUNTER-1')->firstOrFail();
+        $counter2 = Counter::where('code', 'COUNTER-2')->firstOrFail();
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+
+        $existingShift = app(\App\Domain\Billing\Services\ShiftService::class)->openShift(
+            counterId: $counter1->id,
+            userId: $cashier->id,
+            openingFloatPaise: 100000
+        );
+
+        $beforeCount = Shift::count();
+
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Shifts\Pages\CreateShift::class)
+            ->fillForm([
+                'counter_id' => $counter2->id,
+                'user_id' => $cashier->id,
+                'business_date' => now()->toDateString(),
+                'opening_float_paise' => 1000.00,
+                'status' => 'open',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['user_id'])
+            ->assertSee($existingShift->shift_number);
+
+        $this->assertSame($beforeCount, Shift::count());
+    }
+
+    public function test_create_shift_catches_service_level_duplicate_exception_without_server_error(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $counter = Counter::where('code', 'COUNTER-1')->firstOrFail();
+        $cashier = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+
+        $this->mock(\App\Domain\Billing\Services\ShiftService::class, function ($mock): void {
+            $mock->shouldReceive('openShift')
+                ->once()
+                ->andThrow(new \InvalidArgumentException('Counter Main Reception Counter already has an open shift (#SFT-202611-00002).'));
+        });
+
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Shifts\Pages\CreateShift::class)
+            ->fillForm([
+                'counter_id' => $counter->id,
+                'user_id' => $cashier->id,
+                'business_date' => now()->toDateString(),
+                'opening_float_paise' => 1000.00,
+                'status' => 'open',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertNotified('Cannot Open Shift');
+
+        $this->assertSame(0, Shift::where('counter_id', $counter->id)->count());
+    }
+
+    public function test_shift_service_rejects_duplicate_open_shifts_and_negative_float(): void
+    {
+        $counter1 = Counter::where('code', 'COUNTER-1')->firstOrFail();
+        $counter2 = Counter::where('code', 'COUNTER-2')->firstOrFail();
+        $cashier1 = User::where('email', 'cashier1@malabarclub.local')->firstOrFail();
+        $cashier2 = User::where('email', 'cashier2@malabarclub.local')->firstOrFail();
+
+        $shiftService = app(\App\Domain\Billing\Services\ShiftService::class);
+        $shift = $shiftService->openShift($counter1->id, $cashier1->id, 100000);
+
+        try {
+            $shiftService->openShift($counter1->id, $cashier2->id, 50000);
+            $this->fail('Expected InvalidArgumentException when opening second shift on busy counter.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString($shift->shift_number, $e->getMessage());
+        }
+
+        try {
+            $shiftService->openShift($counter2->id, $cashier1->id, 50000);
+            $this->fail('Expected InvalidArgumentException when opening second shift for busy cashier.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString($shift->shift_number, $e->getMessage());
+        }
+
+        try {
+            $shiftService->openShift($counter2->id, $cashier2->id, -100);
+            $this->fail('Expected InvalidArgumentException for negative opening cash float.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('negative', strtolower($e->getMessage()));
+        }
+
+        $this->assertSame(1, Shift::where('status', 'open')->count());
+    }
+
     public function test_admin_can_access_financial_period_create_page(): void
     {
         $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();

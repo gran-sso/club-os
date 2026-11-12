@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Domain\Billing\Models\BillLine;
-use App\Domain\Billing\Models\Shift;
 use App\Domain\Contractor\Models\ContractorSettlementBatch;
 use Filament\Widgets\Widget;
 
@@ -11,7 +10,7 @@ class ContractorAndShiftStatusWidget extends Widget
 {
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 5;
 
     protected int | string | array $columnSpan = 1;
 
@@ -23,12 +22,12 @@ class ContractorAndShiftStatusWidget extends Widget
     {
         $user = auth()->user();
 
-        return (bool) ($user && $user->hasAnyClubPermission(['contractor.view', 'contractor.settle', 'shifts.manage']));
+        return (bool) ($user && $user->hasAnyClubPermission(['contractor.view', 'contractor.settle']));
     }
 
     public function getViewData(): array
     {
-        // 1. Food Contractor Accumulated Sales Today
+        // Food Contractor Accumulated Sales Today
         $todayFoodPaise = (int) BillLine::where('department_code', 'food')
             ->whereHas('bill', function ($q) {
                 $q->whereDate('created_at', today())->where('status', 'paid');
@@ -39,21 +38,10 @@ class ContractorAndShiftStatusWidget extends Widget
             ->orderByDesc('business_date')
             ->first();
 
-        // 2. Active Counter Shifts
-        $openShifts = Shift::with(['counter', 'cashier'])
-            ->where('status', 'open')
-            ->get();
-
-        $staleShiftsCount = Shift::where('status', 'open')
-            ->whereDate('business_date', '<', today())
-            ->count();
-
         return [
             'todayFoodPaise' => $todayFoodPaise,
             'todayFoodRupees' => number_format($todayFoodPaise / 100, 2),
             'latestBatch' => $latestBatch,
-            'openShifts' => $openShifts,
-            'staleShiftsCount' => $staleShiftsCount,
         ];
     }
 }

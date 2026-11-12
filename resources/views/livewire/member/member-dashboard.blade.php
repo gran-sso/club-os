@@ -169,9 +169,18 @@
     <div class="hidden md:flex bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex-wrap items-center justify-between gap-4 {{ ($activeTab === 'wallet' || $showBillModal) ? 'print:hidden' : '' }}">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 shadow-md shadow-amber-500/20 shrink-0">
-                <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-bold text-amber-400 text-lg">
-                    {{ substr($member->name, 0, 1) }}
-                </div>
+                @if ($member->portal_photo_url)
+                    <img src="{{ $member->portal_photo_url }}" alt="{{ $member->name }}"
+                        class="w-full h-full object-cover rounded-[14px]"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div style="display: none;" class="w-full h-full bg-slate-950 rounded-[14px] items-center justify-center font-bold text-amber-400 text-lg">
+                        {{ substr($member->name, 0, 1) }}
+                    </div>
+                @else
+                    <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-bold text-amber-400 text-lg">
+                        {{ substr($member->name, 0, 1) }}
+                    </div>
+                @endif
             </div>
             <div>
                 <div class="flex items-center gap-2">
@@ -295,9 +304,18 @@
                 <div class="flex items-center justify-between gap-2 px-0.5">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 shrink-0">
-                            <span class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-amber-400 text-xs">
-                                {{ substr($member->name, 0, 1) }}
-                            </span>
+                            @if ($member->portal_photo_url)
+                                <img src="{{ $member->portal_photo_url }}" alt="{{ $member->name }}"
+                                    class="w-full h-full object-cover rounded-[10px]"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <span style="display: none;" class="w-full h-full bg-slate-950 rounded-[10px] items-center justify-center font-bold text-amber-400 text-xs">
+                                    {{ substr($member->name, 0, 1) }}
+                                </span>
+                            @else
+                                <span class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-amber-400 text-xs">
+                                    {{ substr($member->name, 0, 1) }}
+                                </span>
+                            @endif
                         </span>
                         <div class="min-w-0">
                             <p class="text-xs font-extrabold text-white tracking-tight truncate">
@@ -763,9 +781,18 @@
                                         <h4 class="text-sm font-extrabold text-white tracking-tight mt-0.5">{{ $dep->person?->full_name }}</h4>
                                         <span class="text-[11px] text-slate-500 font-mono">{{ $dep->person?->phone ?? 'No Phone' }}</span>
                                     </div>
-                                    <div class="w-8 h-8 rounded-xl bg-slate-900 text-slate-300 flex items-center justify-center font-bold text-xs">
-                                        {{ substr($dep->person?->first_name ?? 'D', 0, 1) }}
-                                    </div>
+                                    @if ($dep->portal_photo_url)
+                                        <img src="{{ $dep->portal_photo_url }}" alt="{{ $dep->person?->full_name }}"
+                                            class="w-10 h-10 rounded-xl object-cover border border-slate-800 shrink-0"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div style="display: none;" class="w-10 h-10 rounded-xl bg-slate-900 text-slate-300 items-center justify-center font-bold text-xs shrink-0">
+                                            {{ substr($dep->person?->first_name ?? 'D', 0, 1) }}
+                                        </div>
+                                    @else
+                                        <div class="w-10 h-10 rounded-xl bg-slate-900 text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                            {{ substr($dep->person?->first_name ?? 'D', 0, 1) }}
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="pt-2 border-t border-slate-800/80">

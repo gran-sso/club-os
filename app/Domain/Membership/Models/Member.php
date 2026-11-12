@@ -213,6 +213,30 @@ class Member extends Model implements AuthenticatableContract
         return $this->person?->photo_path;
     }
 
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (empty($this->photo_path)) {
+            return null;
+        }
+
+        return route('members.documents.show', [
+            'member' => $this->id,
+            'filename' => 'photo',
+            'v' => substr(md5((string) $this->photo_path), 0, 8),
+        ]);
+    }
+
+    public function getPortalPhotoUrlAttribute(): ?string
+    {
+        if (empty($this->photo_path)) {
+            return null;
+        }
+
+        return route('member.photo', [
+            'v' => substr(md5((string) $this->photo_path), 0, 8),
+        ]);
+    }
+
     public function getIdProofPathAttribute(): ?string
     {
         return $this->person?->id_proof_path;

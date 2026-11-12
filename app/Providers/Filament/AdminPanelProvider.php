@@ -94,6 +94,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 \App\Filament\Widgets\ExecutiveStatsOverviewWidget::class,
                 \App\Filament\Widgets\FrontDeskPulseWidget::class,
+                \App\Filament\Widgets\CounterStationsPulseWidget::class,
                 \App\Filament\Widgets\DepartmentRevenueChart::class,
                 \App\Filament\Widgets\ContractorAndShiftStatusWidget::class,
                 \App\Filament\Widgets\SystemIntegrityWidget::class,

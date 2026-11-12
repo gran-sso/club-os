@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Shifts\Schemas;
 
 use App\Domain\Billing\Models\Counter;
+use App\Domain\Billing\Models\Shift;
+use App\Domain\Shared\Enums\ShiftStatus;
 use App\Models\User;
+use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -28,9 +31,23 @@ class ShiftForm
                                 ->label('Billing Counter Station')
                                 ->required()
                                 ->options(fn () => Counter::pluck('name', 'id'))
-                                ->default(fn () => Counter::first()?->id)
+                                ->default(fn () => Counter::whereKey(request()->integer('counter_id'))->value('id') ?? Counter::first()?->id)
                                 ->searchable()
-                                ->helperText('Physical POS station terminal.'),
+                                ->rules([
+                                    fn (string $operation): Closure => self::preventDuplicateOpenShiftRule(
+                                        operation: $operation,
+                                        lookup: fn (int $counterId): ?Shift => Shift::with('counter')
+                                            ->where('counter_id', $counterId)
+                                            ->where('status', ShiftStatus::OPEN)
+                                            ->first(),
+                                        message: function (Shift $existingShift, int $counterId): string {
+                                            $counterName = $existingShift->counter?->name ?? "Counter #{$counterId}";
+
+                                            return "Counter {$counterName} already has an open shift (#{$existingShift->shift_number}). Close the active shift before opening a new one.";
+                                        },
+                                    ),
+                                ])
+                                ->helperText('Physical POS station terminal. Only one active open shift is allowed per counter at a time.'),
 
                             Select::make('user_id')
                                 ->label('Station Cashier / Staff')
@@ -38,7 +55,22 @@ class ShiftForm
                                 ->options(fn () => User::pluck('name', 'id'))
                                 ->default(fn () => auth()->id())
                                 ->searchable()
-                                ->helperText('Staff user responsible for drawer cash balancing.'),
+                                ->rules([
+                                    fn (string $operation): Closure => self::preventDuplicateOpenShiftRule(
+                                        operation: $operation,
+                                        lookup: fn (int $userId): ?Shift => Shift::with(['user', 'counter'])
+                                            ->where('user_id', $userId)
+                                            ->where('status', ShiftStatus::OPEN)
+                                            ->first(),
+                                        message: function (Shift $existingShift): string {
+                                            $staffName = $existingShift->user?->name ?? 'Selected staff member';
+                                            $counterName = $existingShift->counter?->name ? " on {$existingShift->counter->name}" : '';
+
+                                            return "{$staffName} already has an active open shift (#{$existingShift->shift_number}{$counterName}). Close that shift before opening another one.";
+                                        },
+                                    ),
+                                ])
+                                ->helperText('Staff user responsible for drawer cash balancing. Each staff member can hold only one open shift at a time.'),
 
                             DatePicker::make('business_date')
                                 ->label('Fiscal Business Date')
@@ -71,7 +103,15 @@ class ShiftForm
                                     'open' => 'Open (Active Billing)',
                                     'closed' => 'Closed (Reconciled)',
                                 ])
-                                ->default('open'),
+                                ->default('open')
+                                ->rules([
+                                    fn (string $operation): Closure => function (string $attribute, mixed $value, Closure $fail) use ($operation): void {
+                                        if ($operation === 'create' && $value !== 'open') {
+                                            $fail('New shifts can only be created in Open (Active Billing) status.');
+                                        }
+                                    },
+                                ])
+                                ->helperText('New shifts open in Active Billing status and are locked via Close Shift reconciliation.'),
                         ]),
 
                         Textarea::make('notes')
@@ -81,5 +121,25 @@ class ShiftForm
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    /**
+     * Build a create-only validation rule that blocks opening a duplicate active shift.
+     *
+     * @param  Closure(int): ?Shift  $lookup
+     * @param  Closure(Shift, int): string  $message
+     */
+    private static function preventDuplicateOpenShiftRule(string $operation, Closure $lookup, Closure $message): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($operation, $lookup, $message): void {
+            if ($operation !== 'create' || blank($value)) {
+                return;
+            }
+
+            $existingShift = $lookup((int) $value);
+            if ($existingShift) {
+                $fail($message($existingShift, (int) $value));
+            }
+        };
     }
 }

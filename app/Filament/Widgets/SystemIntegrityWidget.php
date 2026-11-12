@@ -14,7 +14,7 @@ class SystemIntegrityWidget extends Widget
 {
     protected static bool $isLazy = false;
 
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 6;
 
     protected int | string | array $columnSpan = 1;
 

@@ -4,8 +4,10 @@ namespace App\Filament\Resources\Shifts\Pages;
 
 use App\Domain\Billing\Services\ShiftService;
 use App\Filament\Resources\Shifts\ShiftResource;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class CreateShift extends CreateRecord
 {
@@ -13,12 +15,23 @@ class CreateShift extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        return app(ShiftService::class)->openShift(
-            counterId: (int) $data['counter_id'],
-            userId: (int) $data['user_id'],
-            openingFloatPaise: (int) $data['opening_float_paise'],
-            notes: $data['notes'] ?? null,
-            businessDate: $data['business_date'] ?? null
-        );
+        try {
+            return app(ShiftService::class)->openShift(
+                counterId: (int) $data['counter_id'],
+                userId: (int) $data['user_id'],
+                openingFloatPaise: (int) $data['opening_float_paise'],
+                notes: $data['notes'] ?? null,
+                businessDate: $data['business_date'] ?? null
+            );
+        } catch (InvalidArgumentException $e) {
+            Notification::make()
+                ->title('Cannot Open Shift')
+                ->body($e->getMessage())
+                ->danger()
+                ->persistent()
+                ->send();
+
+            $this->halt(shouldRollbackDatabaseTransaction: true);
+        }
     }
 }

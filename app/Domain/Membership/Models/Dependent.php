@@ -38,4 +38,33 @@ class Dependent extends Model
     {
         return $this->person ? $this->person->full_name : 'Dependent #' . $this->id;
     }
+
+    public function getPhotoPathAttribute(): ?string
+    {
+        return $this->person?->photo_path;
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (empty($this->photo_path)) {
+            return null;
+        }
+
+        return route('dependents.photo.show', [
+            'dependent' => $this->id,
+            'v' => substr(md5((string) $this->photo_path), 0, 8),
+        ]);
+    }
+
+    public function getPortalPhotoUrlAttribute(): ?string
+    {
+        if (empty($this->photo_path)) {
+            return null;
+        }
+
+        return route('member.dependents.photo', [
+            'dependent' => $this->id,
+            'v' => substr(md5((string) $this->photo_path), 0, 8),
+        ]);
+    }
 }

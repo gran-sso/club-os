@@ -30,7 +30,28 @@ class MembersTable
                     ->weight('bold'),
                 \Filament\Tables\Columns\TextColumn::make('person.first_name')
                     ->label('Member Name')
-                    ->state(fn ($record) => ($record->person?->first_name ?? '') . ' ' . ($record->person?->last_name ?? ''))
+                    ->state(fn ($record) => trim(($record->person?->first_name ?? '') . ' ' . ($record->person?->last_name ?? '')))
+                    ->formatStateUsing(function (string $state, Member $record): string {
+                        $escapedName = e($state);
+                        $initials = e(strtoupper(substr($record->person?->first_name ?? 'M', 0, 1) . substr($record->person?->last_name ?? '', 0, 1)));
+                        $photoUrl = $record->photo_url;
+
+                        if ($photoUrl) {
+                            $escapedUrl = e($photoUrl);
+
+                            return '<div class="flex items-center gap-2.5">'
+                                . '<img src="' . $escapedUrl . '" alt="' . $escapedName . '" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-flex\';">'
+                                . '<span style="display:none" class="w-8 h-8 rounded-full bg-slate-900 dark:bg-slate-700 text-white text-xs font-bold items-center justify-center shrink-0">' . $initials . '</span>'
+                                . '<span class="font-medium">' . $escapedName . '</span>'
+                                . '</div>';
+                        }
+
+                        return '<div class="flex items-center gap-2.5">'
+                            . '<span class="inline-flex w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold items-center justify-center shrink-0">' . $initials . '</span>'
+                            . '<span class="font-medium">' . $escapedName . '</span>'
+                            . '</div>';
+                    })
+                    ->html()
                     ->searchable(['first_name', 'last_name']),
                 \Filament\Tables\Columns\TextColumn::make('person.phone')
                     ->label('Phone')
@@ -163,7 +184,19 @@ class MembersTable
                             }),
                         \Filament\Schemas\Components\Section::make('Register New Family Dependent')
                             ->columnSpanFull()
+                            ->visible(fn () => (bool) auth()->user()?->hasClubPermission('members.manage'))
                             ->schema([
+                                \Filament\Forms\Components\FileUpload::make('dep_photo_path')
+                                    ->label('Dependent Photo (Optional)')
+                                    ->disk('local')
+                                    ->directory('documents/dependents/photos')
+                                    ->image()
+                                    ->avatar()
+                                    ->imageEditor()
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->maxSize(2048)
+                                    ->nullable()
+                                    ->helperText('Optional portrait photo for front-desk & counter verification (JPG, PNG, WebP up to 2MB).'),
                                 \Filament\Schemas\Components\Grid::make(2)->schema([
                                     \Filament\Forms\Components\TextInput::make('dep_first_name')
                                         ->label('Dependent First Name')
@@ -194,6 +227,8 @@ class MembersTable
                             ]),
                     ])
                     ->action(function ($record, array $data) {
+                        abort_unless((bool) auth()->user()?->hasClubPermission('members.manage'), 403);
+
                         $service = app(\App\Domain\Membership\Services\MemberService::class);
                         $dep = $service->registerDependent(
                             $record,
@@ -201,6 +236,7 @@ class MembersTable
                                 'first_name' => $data['dep_first_name'],
                                 'last_name' => $data['dep_last_name'] ?? null,
                                 'phone' => $data['dep_phone'] ?? null,
+                                'photo_path' => $data['dep_photo_path'] ?? null,
                             ],
                             $data['dep_relationship'],
                             (bool) ($data['dep_can_spend_wallet'] ?? false)
