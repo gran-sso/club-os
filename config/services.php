@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'tally' => [
+        'driver' => env('TALLY_DRIVER', 'simulator'),
+        'host' => env('TALLY_HOST', '127.0.0.1'),
+        'port' => (int) env('TALLY_PORT', 9000),
+        'url' => env('TALLY_URL', 'http://127.0.0.1:9000'),
+        'company' => env('TALLY_COMPANY_NAME', 'Malabar Club'),
+        'include_cost_centres' => (bool) env('TALLY_INCLUDE_COST_CENTRES', false),
+        'auto_sync' => (bool) env('TALLY_AUTO_SYNC', false),
+    ],
+
 ];

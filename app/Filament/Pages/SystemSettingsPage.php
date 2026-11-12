@@ -61,6 +61,8 @@ class SystemSettingsPage extends Page
     public string $tallyHost = '127.0.0.1';
     public int $tallyPort = 9000;
     public string $tallyCompany = 'Malabar Club';
+    public bool $tallyIncludeCostCentres = false;
+    public bool $tallyAutoSync = false;
     public ?string $tallyTestResult = null;
     public ?string $tallyTestError = null;
 
@@ -75,6 +77,22 @@ class SystemSettingsPage extends Page
         $user = auth()->user();
 
         return (bool) ($user && $user->hasClubPermission('settings.manage'));
+    }
+
+    private function sanitizeTallyHost(string $rawHost): string
+    {
+        $cleanHost = trim((string) preg_replace('#^https?://#i', '', trim($rawHost)), '/');
+        if (str_contains($cleanHost, '/')) {
+            $cleanHost = explode('/', $cleanHost, 2)[0];
+        }
+        if (! str_starts_with($cleanHost, '[') && substr_count($cleanHost, ':') === 1) {
+            [$hostPart] = explode(':', $cleanHost, 2);
+            if ($hostPart !== '') {
+                $cleanHost = $hostPart;
+            }
+        }
+
+        return $cleanHost !== '' ? $cleanHost : '127.0.0.1';
     }
 
     public function mount(): void
@@ -111,7 +129,10 @@ class SystemSettingsPage extends Page
         $this->tallyDriver = (string) SystemSetting::get('tally_driver', config('services.tally.driver', 'simulator'));
         $this->tallyHost = (string) SystemSetting::get('tally_host', config('services.tally.host', '127.0.0.1'));
         $this->tallyPort = (int) SystemSetting::get('tally_port', config('services.tally.port', 9000));
-        $this->tallyCompany = (string) SystemSetting::get('tally_company', config('services.tally.company', 'Malabar Club'));
+        $this->tallyCompany = (string) (SystemSetting::get('tally_company')
+            ?: SystemSetting::get('tally_company_name', config('services.tally.company', 'Malabar Club')));
+        $this->tallyIncludeCostCentres = SystemSetting::getBool('tally_include_cost_centres', (bool) config('services.tally.include_cost_centres', false));
+        $this->tallyAutoSync = SystemSetting::getBool('tally_auto_sync', (bool) config('services.tally.auto_sync', false));
 
         // Tab 5
         $this->receiptPaperWidth = (string) SystemSetting::get('receipt_paper_width', '80mm');
@@ -142,6 +163,8 @@ class SystemSettingsPage extends Page
                 'tallyHost' => 'required|string',
                 'tallyPort' => 'required|numeric|min:1|max:65535',
                 'tallyCompany' => 'required|string',
+                'tallyIncludeCostCentres' => 'boolean',
+                'tallyAutoSync' => 'boolean',
             ]);
         } catch (ValidationException $e) {
             $firstErrorField = array_key_first($e->errors());
@@ -199,11 +222,22 @@ class SystemSettingsPage extends Page
         SystemSetting::set('guest_badminton_entry_fee', $this->guestBadmintonEntryFee, 'facilities');
         SystemSetting::set('guest_gym_entry_fee', $this->guestGymEntryFee, 'facilities');
 
+        $cleanHost = $this->sanitizeTallyHost($this->tallyHost);
+        $this->tallyHost = $cleanHost;
+
+        $cleanCompany = trim($this->tallyCompany) !== '' ? trim($this->tallyCompany) : 'Malabar Club';
+        $this->tallyCompany = $cleanCompany;
+        $port = (int) $this->tallyPort;
+
         // Save Tab 4
         SystemSetting::set('tally_driver', $this->tallyDriver, 'tally');
-        SystemSetting::set('tally_host', $this->tallyHost, 'tally');
-        SystemSetting::set('tally_port', $this->tallyPort, 'tally');
-        SystemSetting::set('tally_company', $this->tallyCompany, 'tally');
+        SystemSetting::set('tally_host', $cleanHost, 'tally');
+        SystemSetting::set('tally_port', $port, 'tally');
+        SystemSetting::set('tally_url', "http://{$cleanHost}:{$port}", 'tally');
+        SystemSetting::set('tally_company', $cleanCompany, 'tally');
+        SystemSetting::set('tally_company_name', $cleanCompany, 'tally');
+        SystemSetting::set('tally_include_cost_centres', $this->tallyIncludeCostCentres, 'tally');
+        SystemSetting::set('tally_auto_sync', $this->tallyAutoSync, 'tally');
 
         // Save Tab 5
         SystemSetting::set('receipt_paper_width', $this->receiptPaperWidth, 'hardware');
@@ -224,9 +258,10 @@ class SystemSettingsPage extends Page
         $this->tallyTestError = null;
 
         $probe = TallyPrimeHttpConnector::testConnection(
-            host: $this->tallyHost,
-            port: $this->tallyPort,
-            timeout: 3
+            host: $this->sanitizeTallyHost($this->tallyHost),
+            port: (int) $this->tallyPort,
+            timeout: 3,
+            companyName: trim($this->tallyCompany) !== '' ? trim($this->tallyCompany) : null
         );
 
         if ($probe['success']) {

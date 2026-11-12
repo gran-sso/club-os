@@ -50,14 +50,113 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="flex flex-wrap gap-2">
                     <button wire:click="dispatchOutbox" type="button"
-                        class="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs shadow-amber-500/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2">
+                        class="flex-1 py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs shadow-amber-500/20 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2">
                         <svg width="16" height="16" class="w-4 h-4 text-slate-950 shrink-0" style="width: 16px; height: 16px; min-width: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                         <span>Dispatch Pending Outbox Messages to Tally</span>
                     </button>
+
+                    @if (($outboxStats['failed'] ?? 0) > 0)
+                        <button wire:click="requeueFailedOutbox" type="button"
+                            class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800 font-bold text-xs rounded-xl transition cursor-pointer">
+                            Retry Failed ({{ $outboxStats['failed'] }})
+                        </button>
+                    @endif
+                </div>
+
+                @if (!empty($recentTallyErrors))
+                    <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs space-y-1.5">
+                        <div class="font-bold text-rose-900">Recent Rejected Vouchers</div>
+                        @foreach ($recentTallyErrors as $err)
+                            <div class="text-[11px] text-rose-800 font-mono">
+                                <strong>{{ $err['journal_number'] }}</strong> ({{ $err['updated_at'] }}): {{ $err['error'] }}
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Manual XML Download & Hostinger Pull-Bridge Section -->
+                <div class="p-4 bg-emerald-50/40 rounded-2xl border border-emerald-200/80 space-y-3.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/70 pb-2.5">
+                        <div>
+                            <div class="font-bold text-xs text-slate-900">Offline / Cloud-Safe Tally XML Export (Hostinger Ready)</div>
+                            <p class="text-[11px] text-slate-600">Download XML files directly and import via TallyPrime &rarr; Import &rarr; Masters / Vouchers without opening office firewall ports.</p>
+                        </div>
+                        <button wire:click="downloadMastersXml" type="button"
+                            class="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-[11px] rounded-lg shadow-2xs transition cursor-pointer shrink-0">
+                            Download Masters XML (Ledgers)
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">From Date</label>
+                            <input type="date" wire:model="exportFromDate"
+                                class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">To Date</label>
+                            <input type="date" wire:model="exportToDate"
+                                class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div class="flex gap-2">
+                            <button wire:click="downloadDateRangeVouchersXml" type="button"
+                                class="w-full px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+                                Download Range XML
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="checkbox" wire:model="markExportedSynced" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                            <span>Mark exported pending vouchers as Synced / Ack</span>
+                        </label>
+                        <button wire:click="downloadPendingVouchersXml" type="button"
+                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer">
+                            Download Pending Vouchers XML ({{ $outboxStats['pending'] ?? 0 }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Authenticated Office PC Pull-Bridge (Hostinger -> LAN Tally) -->
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-xs text-slate-900">Office PC Authenticated Pull-Sync API</div>
+                            <p class="text-[11px] text-slate-600">Allows the Windows PC running TallyPrime to securely pull pending XML over HTTPS and push to local <code class="font-mono">http://127.0.0.1:{{ $tallyPort }}</code>.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button wire:click="generateBridgeToken" type="button"
+                                class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-[11px] rounded-lg transition cursor-pointer">
+                                {{ $hasBridgeToken ? 'Rotate Bridge Token' : 'Generate Bridge Token' }}
+                            </button>
+                            @if ($hasBridgeToken)
+                                <button wire:click="revokeBridgeToken" type="button"
+                                    class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800 font-bold text-[11px] rounded-lg transition cursor-pointer">
+                                    Revoke
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if ($generatedBridgeToken)
+                        <div class="p-3 bg-slate-900 text-emerald-300 rounded-xl text-[11px] font-mono space-y-2 overflow-x-auto">
+                            <div class="text-amber-300 font-sans font-bold text-xs">One-Time Bridge Token (store in your Windows sync task env):</div>
+                            <div class="select-all break-all">{{ $generatedBridgeToken }}</div>
+                            <div class="text-slate-300 pt-1 border-t border-slate-700 text-[10px]">
+                                Pull endpoint: <span class="text-white">GET {{ url('/api/integrations/tally/pending') }}</span> &bull;
+                                Ack endpoint: <span class="text-white">POST {{ url('/api/integrations/tally/ack') }}</span> (Header: <span class="text-white">Authorization: Bearer &lt;token&gt;</span>)
+                            </div>
+                        </div>
+                    @elseif ($hasBridgeToken)
+                        <div class="text-[11px] text-emerald-800 font-medium">
+                            Bridge token is active (SHA-256 hashed on server). Rotate token only if you need to re-provision the Tally PC script.
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Tally Configuration Card -->
@@ -79,7 +178,7 @@
                             </label>
                             <input type="text" wire:model="tallyHost" placeholder="e.g. 192.168.1.50 or 127.0.0.1"
                                 class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                            <p class="text-[10px] text-slate-500 mt-1">IP address of the PC running Tally on the club network.</p>
+                            <p class="text-[10px] text-slate-500 mt-1">IP address of the PC running Tally on the club network (or tunnel).</p>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -109,6 +208,23 @@
                                 <option value="live">Live Tally Prime HTTP (Connect to LAN)</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <label class="inline-flex items-start gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="checkbox" wire:model="tallyIncludeCostCentres" class="mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                            <span>
+                                <strong class="block text-slate-900">Include Cost Centres in XML</strong>
+                                <span class="text-[10px] text-slate-500">Attaches department cost centres on Revenue/Expense ledgers (requires Tally F11 Cost Centres enabled).</span>
+                            </span>
+                        </label>
+                        <label class="inline-flex items-start gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="checkbox" wire:model="tallyAutoSync" class="mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                            <span>
+                                <strong class="block text-slate-900">Auto-Push Every 15 Minutes (Scheduler)</strong>
+                                <span class="text-[10px] text-slate-500">Enable only when server can reach Tally directly over LAN/VPN. Leave off for Hostinger + XML/Pull mode.</span>
+                            </span>
+                        </label>
                     </div>
 
                     <div class="flex items-center gap-2.5 pt-1">

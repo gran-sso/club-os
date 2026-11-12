@@ -430,6 +430,28 @@
                             <span class="text-[10px] text-slate-400 mt-1 block">Default Tally HTTP port is 9000.</span>
                         </div>
                     </div>
+
+                    <div class="pt-3 border-t border-slate-100 space-y-3">
+                        <label for="setting-tally-cost-centres" class="flex items-start gap-3 cursor-pointer select-none">
+                            <input type="checkbox" id="setting-tally-cost-centres" wire:model="tallyIncludeCostCentres" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900">Include Department Cost Centres in Tally XML</span>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                                    Enable only if Cost Centres are turned on inside TallyPrime (F11 &rarr; Show more features &rarr; Enable Cost Centres). Applied to Revenue and Expense ledger lines.
+                                </p>
+                            </div>
+                        </label>
+
+                        <label for="setting-tally-auto-sync" class="flex items-start gap-3 cursor-pointer select-none">
+                            <input type="checkbox" id="setting-tally-auto-sync" wire:model="tallyAutoSync" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900">Enable Automatic 15-Minute Outbox Sync</span>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                                    Automatically runs <code class="font-mono text-slate-700">php artisan tally:sync</code> when Tally Mode is set to Live LAN / VPN. Leave disabled on cloud hosting unless Tally can be reached over a secure VPN tunnel (use XML Download or Pull-Bridge instead).
+                                </p>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
         @endif

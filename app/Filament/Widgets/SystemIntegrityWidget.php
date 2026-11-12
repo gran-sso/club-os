@@ -7,7 +7,7 @@ use App\Domain\Billing\Models\CapturedPayment;
 use App\Domain\Finance\Models\FinancialPeriod;
 use App\Domain\Finance\Models\JournalLine;
 use App\Domain\Integrations\Contracts\AccountingConnectorInterface;
-use App\Domain\Integrations\Models\OutboxMessage;
+use App\Domain\Integrations\TallySyncService;
 use Filament\Widgets\Widget;
 
 class SystemIntegrityWidget extends Widget
@@ -35,11 +35,13 @@ class SystemIntegrityWidget extends Widget
         $tallyConnector = app(AccountingConnectorInterface::class);
         $tallyStatus = $tallyConnector->getStatus();
 
-        $outboxPending = OutboxMessage::where('status', 'pending')->count();
-        $outboxAcknowledged = OutboxMessage::where('status', 'acknowledged')
+        $outboxStats = app(TallySyncService::class)->getOutboxStats();
+        $outboxPending = $outboxStats['pending'];
+        $outboxAcknowledged = \App\Domain\Integrations\Models\OutboxMessage::whereIn('event_type', TallySyncService::SYNC_EVENT_TYPES)
+            ->where('status', 'acknowledged')
             ->whereDate('updated_at', today())
             ->count();
-        $outboxFailed = OutboxMessage::where('status', 'failed')->count();
+        $outboxFailed = $outboxStats['failed'];
 
         // 2. Double-Entry General Ledger Balance Check
         $totalDebits = (int) JournalLine::sum('debit_paise');

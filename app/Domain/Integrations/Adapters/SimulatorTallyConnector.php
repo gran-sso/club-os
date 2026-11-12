@@ -5,6 +5,7 @@ namespace App\Domain\Integrations\Adapters;
 use App\Domain\Finance\Models\JournalHeader;
 use App\Domain\Integrations\Contracts\AccountingConnectorInterface;
 use App\Domain\Integrations\Models\OutboxMessage;
+use App\Domain\Integrations\TallySyncService;
 use App\Domain\Integrations\TallyXmlSerializer;
 use RuntimeException;
 
@@ -79,13 +80,23 @@ class SimulatorTallyConnector implements AccountingConnectorInterface
                 $newDeliveries++;
             }
 
-            OutboxMessage::updateOrCreate(
-                [
+            $existingMsg = OutboxMessage::where('aggregate_type', 'JournalHeader')
+                ->where('aggregate_id', $header->id)
+                ->whereIn('event_type', TallySyncService::SYNC_EVENT_TYPES)
+                ->first();
+
+            if ($existingMsg) {
+                $existingMsg->update([
+                    'status' => 'acknowledged',
+                    'delivered_at' => $existingMsg->delivered_at ?? now(),
+                    'acknowledged_at' => now(),
+                    'last_error' => null,
+                ]);
+            } else {
+                OutboxMessage::create([
                     'aggregate_type' => 'JournalHeader',
                     'aggregate_id' => $header->id,
-                    'event_type' => 'tally.voucher.sync',
-                ],
-                [
+                    'event_type' => TallySyncService::PRIMARY_EVENT_TYPE,
                     'payload' => [
                         'journal_number' => $header->journal_number,
                         'total_debits_paise' => $header->totalDebits(),
@@ -95,8 +106,8 @@ class SimulatorTallyConnector implements AccountingConnectorInterface
                     'idempotency_key' => 'tally_sim_' . $header->journal_number,
                     'delivered_at' => now(),
                     'acknowledged_at' => now(),
-                ]
-            );
+                ]);
+            }
         }
 
         return [
@@ -122,7 +133,9 @@ class SimulatorTallyConnector implements AccountingConnectorInterface
             'configured' => true,
             'is_production_ready' => false,
             'connection' => 'simulated_local_fixture',
-            'pending_outbox_count' => OutboxMessage::where('status', 'pending')->count(),
+            'pending_outbox_count' => OutboxMessage::whereIn('event_type', TallySyncService::SYNC_EVENT_TYPES)
+                ->whereIn('status', ['pending', 'retryable'])
+                ->count(),
         ];
     }
 }
