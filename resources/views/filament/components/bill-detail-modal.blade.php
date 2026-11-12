@@ -35,8 +35,8 @@
             </div>
             <div>
                 <span class="text-slate-500 font-bold uppercase tracking-wider block text-[10px]">Customer / Account</span>
-                <span class="font-semibold text-slate-900 block mt-0.5 truncate">
-                    {{ $bill->member?->name ?? $bill->guest?->name ?? 'Walk-In / Counter' }}
+                <span class="font-semibold text-slate-900 block mt-0.5 truncate" title="{{ $bill->customer_display_name }}">
+                    {{ $bill->customer_display_name }}
                 </span>
             </div>
         </div>
@@ -58,8 +58,8 @@
                 @foreach ($bill->lines as $line)
                     <tr class="hover:bg-slate-50/60 transition-colors">
                         <td class="p-3 font-semibold text-slate-900">
-                            <div>{{ $line->item_name ?? $line->tariff?->name ?? 'Service Line' }}</div>
-                            @if ($line->serving_name)
+                            <div>{{ $line->item_name ?: 'Service Line' }}</div>
+                            @if (! empty($line->serving_name))
                                 <span class="text-[10px] text-slate-500 font-normal block">Dispense Serving: {{ $line->serving_name }}</span>
                             @endif
                             @if (($line->discount_amount_paise ?? 0) > 0 || (float) ($line->free_quantity ?? 0) > 0)

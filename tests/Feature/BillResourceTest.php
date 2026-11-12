@@ -8,11 +8,13 @@ use App\Domain\Billing\Models\Counter;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Billing\Services\BillingService;
 use App\Domain\Billing\Services\ShiftService;
+use App\Domain\Membership\Models\Dependent;
 use App\Domain\Membership\Models\Member;
 use App\Domain\Prepaid\Services\WalletService;
 use App\Domain\Shared\Enums\BillStatus;
 use App\Filament\Resources\Bills\Pages\CreateBill;
 use App\Filament\Resources\Bills\Pages\EditBill;
+use App\Filament\Resources\Bills\Pages\ListBills;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -250,5 +252,107 @@ class BillResourceTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Official Tax Invoice: ' . $bill->bill_number);
         $response->assertSee('immutable under statutory accounting policies');
+    }
+
+    public function test_edit_bill_view_tax_invoice_modal_renders_member_and_guest_bills_without_exception(): void
+    {
+        $billingService = app(BillingService::class);
+
+        $memberBill = $billingService->createDraftBill(
+            shift: $this->shift,
+            customer: $this->member,
+            departmentCode: 'bar',
+            items: [
+                [
+                    'item_name' => 'Single Malt Whisky 60ml',
+                    'quantity' => 2,
+                    'unit_price_paise' => 45000,
+                    'tax_percent' => 18,
+                ],
+            ],
+            idempotencyKey: 'ADM-VIEW-MEM-' . Str::uuid()
+        );
+
+        // Settle the draft right from EditBill and immediately open View Tax Invoice
+        Livewire::actingAs($this->admin)
+            ->test(EditBill::class, ['record' => $memberBill->id])
+            ->callAction('settleBill', [
+                'tender_type' => 'prepaid',
+            ])
+            ->mountAction('viewReceipt')
+            ->assertActionMounted('viewReceipt')
+            ->assertMountedActionModalSee([
+                $memberBill->bill_number,
+                'Single Malt Whisky 60ml',
+                $this->member->name . ' (' . $this->member->membership_number . ')',
+                'paid',
+            ])
+            ->assertMountedActionModalDontSee('Walk-In / Counter');
+
+        $guestBill = $billingService->createDraftBill(
+            shift: $this->shift,
+            customer: $this->guest,
+            departmentCode: 'food',
+            items: [
+                [
+                    'item_name' => 'Club Sandwich',
+                    'quantity' => 1,
+                    'unit_price_paise' => 22000,
+                    'tax_percent' => 5,
+                ],
+            ],
+            idempotencyKey: 'ADM-VIEW-GST-' . Str::uuid()
+        );
+        $billingService->checkout($guestBill, [
+            ['tender_type' => 'cash', 'amount_paise' => $guestBill->net_amount_paise],
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(EditBill::class, ['record' => $guestBill->id])
+            ->mountAction('viewReceipt')
+            ->assertActionMounted('viewReceipt')
+            ->assertMountedActionModalSee([
+                $guestBill->bill_number,
+                'Club Sandwich',
+                $this->guest->name,
+            ])
+            ->assertMountedActionModalDontSee('Walk-In / Counter');
+
+        // Also verify table Print Preview on ListBills displays actual customer display name
+        Livewire::actingAs($this->admin)
+            ->test(ListBills::class)
+            ->mountTableAction('viewBill', $memberBill->fresh())
+            ->assertMountedActionModalSee([
+                $memberBill->bill_number,
+                $this->member->name . ' (' . $this->member->membership_number . ')',
+            ]);
+
+        // Also verify Dependent customer resolves name cleanly on EditBill View Tax Invoice
+        $dependent = Dependent::with('person')->firstOrFail();
+        $dependentBill = $billingService->createDraftBill(
+            shift: $this->shift,
+            customer: $dependent,
+            departmentCode: 'sports',
+            items: [
+                [
+                    'item_name' => 'Shuttle Court Guest Fee',
+                    'quantity' => 1,
+                    'unit_price_paise' => 10000,
+                    'tax_percent' => 18,
+                ],
+            ],
+            idempotencyKey: 'ADM-VIEW-DEP-' . Str::uuid()
+        );
+
+        Livewire::actingAs($this->admin)
+            ->test(EditBill::class, ['record' => $dependentBill->id])
+            ->mountAction('viewReceipt')
+            ->assertActionMounted('viewReceipt')
+            ->assertMountedActionModalSee([
+                $dependentBill->bill_number,
+                'Shuttle Court Guest Fee',
+                $dependent->name,
+            ])
+            ->assertMountedActionModalDontSee('Walk-In / Counter');
     }
 }

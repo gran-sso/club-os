@@ -116,6 +116,31 @@ class Bill extends Model
         return $this->status === BillStatus::PAID;
     }
 
+    /**
+     * Resolve a displayable customer name across polymorphic Member, Guest, Dependent, and AffiliatedMember targets.
+     */
+    public function getCustomerDisplayNameAttribute(): string
+    {
+        $customer = $this->customer;
+        if (! $customer) {
+            return 'Walk-In / Counter';
+        }
+
+        if (method_exists($customer, 'person') && ! $customer->relationLoaded('person')) {
+            $customer->loadMissing('person');
+        }
+
+        $name = $customer->name
+            ?? $customer->person?->full_name
+            ?? (class_basename($customer) . ' #' . $customer->getKey());
+
+        if ($customer instanceof \App\Domain\Membership\Models\Member && $customer->membership_number) {
+            return "{$name} ({$customer->membership_number})";
+        }
+
+        return $name;
+    }
+
     public function resolveBusinessDate(?string $overrideCutoff = null): string
     {
         return app(\App\Domain\Shared\Services\BusinessDateService::class)->getBusinessDate($this->created_at ?? now(), $overrideCutoff);

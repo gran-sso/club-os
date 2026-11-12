@@ -30,4 +30,12 @@ class Dependent extends Model
     {
         return $this->belongsTo(Person::class);
     }
+
+    /**
+     * Resolve display name for billing/access views consistently with Member and Guest.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->person ? $this->person->full_name : 'Dependent #' . $this->id;
+    }
 }

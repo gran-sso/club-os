@@ -87,7 +87,7 @@ class BillsTable
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->modalContent(function ($record) {
-                        return view('filament.components.bill-detail-modal', ['bill' => $record->load(['lines', 'receipts'])]);
+                        return view('filament.components.bill-detail-modal', ['bill' => $record->load(['lines', 'receipts', 'customer'])]);
                     }),
 
                 \Filament\Actions\Action::make('refund')

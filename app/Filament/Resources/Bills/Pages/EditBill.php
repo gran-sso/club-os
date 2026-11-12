@@ -40,12 +40,18 @@ class EditBill extends EditRecord
                 ->label('View Tax Invoice')
                 ->icon(\Filament\Support\Icons\Heroicon::OutlinedEye)
                 ->color('gray')
-                ->modalHeading("Tax Invoice: {$bill->bill_number}")
+                ->modalHeading(fn (): string => 'Tax Invoice: ' . ($this->getRecord()?->bill_number ?? $bill->bill_number))
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Close')
-                ->modalContent(fn () => view('filament.components.bill-detail-modal', [
-                    'bill' => $bill->load(['lines.tariff', 'receipts'])
-                ])),
+                ->modalContent(function () {
+                    $record = $this->getRecord();
+                    $freshBill = $record->fresh(['lines', 'receipts', 'customer'])
+                        ?? $record->load(['lines', 'receipts', 'customer']);
+
+                    return view('filament.components.bill-detail-modal', [
+                        'bill' => $freshBill,
+                    ]);
+                }),
         ];
 
         // Settle Draft Bill action

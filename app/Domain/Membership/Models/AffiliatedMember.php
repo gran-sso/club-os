@@ -33,6 +33,14 @@ class AffiliatedMember extends Model
         return $this->belongsTo(Person::class);
     }
 
+    /**
+     * Resolve display name for billing/access views consistently with Member and Guest.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->person ? $this->person->full_name : ($this->home_membership_number ?: 'Affiliated #' . $this->id);
+    }
+
     public function isValid(): bool
     {
         if (!$this->is_verified) {
