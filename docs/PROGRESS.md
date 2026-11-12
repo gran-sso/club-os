@@ -2324,6 +2324,23 @@ For environments where full browser automation is unavailable, operators should 
   - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **410 passed, 2,570 assertions, 0 failures** (`135887ms`).
   - Browser QA note: Live Google Chrome DevTools inspection against `http://127.0.0.1:8080` was blocked (`DevToolsActivePort` missing — Chrome remote debugging not enabled on host); Blade/Livewire/HTTP routing, RBAC `403`/`200`, and actions were verified through the Laravel MySQL feature test suite above.
 
+## Edit Bill "View Tax Invoice" Modal Fix (Completed 2026-11-12)
+
+- **Root Cause Fixed:**
+  - Clicking **View Tax Invoice** (`viewReceipt`) on [`app/Filament/Resources/Bills/Pages/EditBill.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Pages/EditBill.php) threw `Illuminate\Database\Eloquent\RelationNotFoundException` (`Call to undefined relationship [tariff] on model [App\Domain\Billing\Models\BillLine]`) because `modalContent` called `$bill->load(['lines.tariff', 'receipts'])` even though [`BillLine`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/BillLine.php) stores snapshotted item metadata (`item_type`, `item_id`, `item_name`) and has no `tariff()` relation.
+  - Additionally, [`resources/views/filament/components/bill-detail-modal.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/bill-detail-modal.blade.php) previously referenced nonexistent `$bill->member`/`$bill->guest` relations (always showing `Walk-In / Counter`) and `$line->tariff?->name`.
+- **Changes Implemented:**
+  - [`app/Filament/Resources/Bills/Pages/EditBill.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Pages/EditBill.php): Updated `viewReceipt` header action to resolve a fresh `Bill` with `['lines', 'receipts', 'customer']` (`fresh()` with `load()` fallback) and dynamic `modalHeading`, removing `lines.tariff`.
+  - [`app/Filament/Resources/Bills/Tables/BillsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Tables/BillsTable.php): Updated `viewBill` (`Print Preview`) action to eager-load `['lines', 'receipts', 'customer']`.
+  - [`app/Domain/Billing/Models/Bill.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/Bill.php), [`app/Domain/Membership/Models/Dependent.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Membership/Models/Dependent.php), & [`app/Domain/Membership/Models/AffiliatedMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Membership/Models/AffiliatedMember.php): Added `Bill::getCustomerDisplayNameAttribute()` (`$bill->customer_display_name`) handling `Member` (with `membership_number`), `Guest`, `Dependent`, `AffiliatedMember`, or fallback `'Walk-In / Counter'`, and added `getNameAttribute()` on `Dependent` and `AffiliatedMember`.
+  - [`resources/views/filament/components/bill-detail-modal.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/bill-detail-modal.blade.php): Switched customer display to `$bill->customer_display_name` and removed the dead `$line->tariff?->name` reference.
+- **Verification:**
+  - `php artisan view:clear` succeeded.
+  - Added regression test `test_edit_bill_view_tax_invoice_modal_renders_member_and_guest_bills_without_exception` in [`tests/Feature/BillResourceTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/BillResourceTest.php) covering draft settlement + immediate `viewReceipt` modal on `EditBill` for `Member`, `Guest`, and `Dependent` bills, plus `ListBills` `viewBill` table modal.
+  - `php artisan test tests/Feature/BillResourceTest.php tests/Feature/PrintFunctionalityTest.php`: **15 passed, 133 assertions, 0 failures** (`8434ms`).
+  - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **411 passed, 2,594 assertions, 0 failures** (`113445ms`).
+
+
 
 
 
