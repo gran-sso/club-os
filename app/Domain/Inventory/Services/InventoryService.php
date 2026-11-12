@@ -12,7 +12,9 @@ use App\Domain\Inventory\Models\ServingMapping;
 use App\Domain\Inventory\Models\Supplier;
 use App\Domain\Shared\Exceptions\InsufficientStockException;
 use App\Domain\Shared\Exceptions\UnauthorizedActionException;
+use App\Domain\Tariff\Models\Tariff;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -518,6 +520,223 @@ class InventoryService
             }
 
             return $movement;
+        });
+    }
+
+    /**
+     * Shared serving-size presets keyed by stock item base_unit so Menu & Price List
+     * and Inventory Items expose consistent deduction calculations.
+     *
+     * @return array<string, array{label: string, serving_name: string, serving_qty: float}>
+     */
+    public static function servingPresetsForUnit(?string $baseUnit): array
+    {
+        return match ($baseUnit) {
+            'ml' => [
+                '30ml' => ['label' => '30 ml (Small Peg) — deducts 30 ml', 'serving_name' => '30 ml (Small Peg)', 'serving_qty' => 30.0],
+                '60ml' => ['label' => '60 ml (Large Peg) — deducts 60 ml', 'serving_name' => '60 ml (Large Peg)', 'serving_qty' => 60.0],
+                '90ml' => ['label' => '90 ml (Triple Peg) — deducts 90 ml', 'serving_name' => '90 ml (Triple Peg)', 'serving_qty' => 90.0],
+                '180ml' => ['label' => '180 ml (Quarter) — deducts 180 ml', 'serving_name' => '180 ml (Quarter)', 'serving_qty' => 180.0],
+                '375ml' => ['label' => '375 ml (Half Bottle) — deducts 375 ml', 'serving_name' => '375 ml (Half Bottle)', 'serving_qty' => 375.0],
+                '750ml' => ['label' => '750 ml (Full Bottle) — deducts 750 ml', 'serving_name' => '750 ml (Full Bottle)', 'serving_qty' => 750.0],
+                '1000ml' => ['label' => '1000 ml (1 Litre Bottle) — deducts 1000 ml', 'serving_name' => '1000 ml (1 Litre Bottle)', 'serving_qty' => 1000.0],
+            ],
+            'bottle' => [
+                'full_bottle' => ['label' => 'Full Bottle — deducts 1 bottle', 'serving_name' => 'Full Bottle', 'serving_qty' => 1.0],
+                '30ml_750' => ['label' => '30 ml Peg (750ml bottle) — deducts 0.040 bottle', 'serving_name' => '30 ml (Small Peg)', 'serving_qty' => 0.04],
+                '60ml_750' => ['label' => '60 ml Peg (750ml bottle) — deducts 0.080 bottle', 'serving_name' => '60 ml (Large Peg)', 'serving_qty' => 0.08],
+                '90ml_750' => ['label' => '90 ml Pour (750ml bottle) — deducts 0.120 bottle', 'serving_name' => '90 ml (Triple Peg)', 'serving_qty' => 0.12],
+                '30ml_1000' => ['label' => '30 ml Peg (1L bottle) — deducts 0.030 bottle', 'serving_name' => '30 ml (Small Peg)', 'serving_qty' => 0.03],
+                '60ml_1000' => ['label' => '60 ml Peg (1L bottle) — deducts 0.060 bottle', 'serving_name' => '60 ml (Large Peg)', 'serving_qty' => 0.06],
+            ],
+            'can' => [
+                '1_can' => ['label' => '1 Can — deducts 1 can', 'serving_name' => '1 Can', 'serving_qty' => 1.0],
+            ],
+            'pcs' => [
+                '1_pc' => ['label' => '1 Piece / Packet — deducts 1 pcs', 'serving_name' => '1 Piece', 'serving_qty' => 1.0],
+            ],
+            'portion' => [
+                '1_portion' => ['label' => '1 Standard Portion — deducts 1 portion', 'serving_name' => '1 Portion', 'serving_qty' => 1.0],
+            ],
+            'kg' => [
+                '100g' => ['label' => '100 g Portion — deducts 0.100 kg', 'serving_name' => '100 g Portion', 'serving_qty' => 0.1],
+                '250g' => ['label' => '250 g Portion — deducts 0.250 kg', 'serving_name' => '250 g Portion', 'serving_qty' => 0.25],
+                '500g' => ['label' => '500 g Portion — deducts 0.500 kg', 'serving_name' => '500 g Portion', 'serving_qty' => 0.5],
+                '1kg' => ['label' => '1 kg — deducts 1.000 kg', 'serving_name' => '1 kg', 'serving_qty' => 1.0],
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function servingPresetOptionsForUnit(?string $baseUnit): array
+    {
+        $options = ['custom' => 'Custom Quantity (Enter manually below)'];
+        foreach (self::servingPresetsForUnit($baseUnit) as $key => $preset) {
+            $options[$key] = $preset['label'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array{serving_name: string, serving_qty: float}|null
+     */
+    public static function resolveServingPreset(?string $baseUnit, ?string $presetKey): ?array
+    {
+        if (! $presetKey || $presetKey === 'custom') {
+            return null;
+        }
+
+        $presets = self::servingPresetsForUnit($baseUnit);
+        if (! isset($presets[$presetKey])) {
+            return null;
+        }
+
+        return [
+            'serving_name' => $presets[$presetKey]['serving_name'],
+            'serving_qty' => $presets[$presetKey]['serving_qty'],
+        ];
+    }
+
+    /**
+     * Create, update, or remove the ServingMapping connecting a Menu & Price List Tariff
+     * to a physical InventoryItem for future Counter POS stock & COGS deduction.
+     *
+     * @throws InvalidArgumentException|UnauthorizedActionException
+     */
+    public function syncTariffServingMapping(
+        Tariff $tariff,
+        ?int $inventoryItemId,
+        ?string $servingName = null,
+        ?float $servingQty = null,
+        ?User $actor = null
+    ): ?ServingMapping {
+        if ($actor !== null && ! $actor->hasClubPermission('tariffs.manage')) {
+            throw new UnauthorizedActionException('You do not have permission to manage menu stock links.');
+        }
+
+        return DB::transaction(function () use ($tariff, $inventoryItemId, $servingName, $servingQty) {
+            $existing = ServingMapping::where('tariff_id', $tariff->id)->first();
+
+            if ($inventoryItemId === null) {
+                ServingMapping::where('tariff_id', $tariff->id)->delete();
+
+                return null;
+            }
+
+            /** @var InventoryItem|null $item */
+            $item = InventoryItem::find($inventoryItemId);
+            if (! $item) {
+                throw new InvalidArgumentException('Selected inventory item does not exist.');
+            }
+
+            $isChangingItem = ! $existing || (int) $existing->inventory_item_id !== (int) $item->id;
+            if ($isChangingItem && ! $item->is_active) {
+                throw new InvalidArgumentException("Inventory item \"{$item->name}\" is inactive and cannot be newly linked.");
+            }
+
+            $cleanName = trim((string) $servingName);
+            if ($cleanName === '') {
+                throw new InvalidArgumentException('Serving description is required when linking a menu item to inventory.');
+            }
+
+            $normalizedQty = round((float) $servingQty, 3);
+            if ($normalizedQty <= 0) {
+                throw new InvalidArgumentException('Stock quantity deducted per sale must be greater than zero (at least 0.001).');
+            }
+
+            if ($normalizedQty > 999999) {
+                throw new InvalidArgumentException('Stock quantity deducted per sale exceeds the supported maximum.');
+            }
+
+            if ($existing) {
+                $existing->update([
+                    'inventory_item_id' => $item->id,
+                    'serving_name' => mb_substr($cleanName, 0, 255),
+                    'serving_qty' => $normalizedQty,
+                ]);
+
+                ServingMapping::where('tariff_id', $tariff->id)
+                    ->where('id', '!=', $existing->id)
+                    ->delete();
+
+                return $existing->fresh(['inventoryItem', 'tariff']);
+            }
+
+            $mapping = ServingMapping::create([
+                'tariff_id' => $tariff->id,
+                'inventory_item_id' => $item->id,
+                'serving_name' => mb_substr($cleanName, 0, 255),
+                'serving_qty' => $normalizedQty,
+            ]);
+
+            return $mapping->fresh(['inventoryItem', 'tariff']);
+        });
+    }
+
+    /**
+     * Atomically create a Menu & Price List Tariff and optionally link it to an InventoryItem.
+     *
+     * @param  array<string, mixed>  $tariffData
+     * @param  array{inventory_item_id?: int|null, serving_name?: string|null, serving_qty?: float|int|string|null}|null  $mappingData
+     *
+     * @throws InvalidArgumentException|UnauthorizedActionException
+     */
+    public function createTariffWithServingMapping(
+        array $tariffData,
+        ?array $mappingData = null,
+        ?User $actor = null
+    ): Tariff {
+        if ($actor !== null && ! $actor->hasClubPermission('tariffs.manage')) {
+            throw new UnauthorizedActionException('You do not have permission to create Menu & Price List items.');
+        }
+
+        $cleanTariffData = Arr::only($tariffData, [
+            'code',
+            'barcode',
+            'department_code',
+            'name',
+            'rate_paise',
+            'tax_percent',
+            'effective_from',
+            'effective_to',
+            'is_active',
+        ]);
+
+        $cleanTariffData['code'] = trim((string) ($cleanTariffData['code'] ?? ''));
+        $cleanTariffData['name'] = trim((string) ($cleanTariffData['name'] ?? ''));
+        $cleanTariffData['barcode'] = isset($cleanTariffData['barcode']) && trim((string) $cleanTariffData['barcode']) !== ''
+            ? trim((string) $cleanTariffData['barcode'])
+            : null;
+
+        if ($cleanTariffData['code'] === '' || $cleanTariffData['name'] === '') {
+            throw new InvalidArgumentException('Menu item code and name are required.');
+        }
+
+        if (! isset($cleanTariffData['rate_paise']) || (int) $cleanTariffData['rate_paise'] < 0) {
+            throw new InvalidArgumentException('Selling price cannot be negative.');
+        }
+
+        return DB::transaction(function () use ($cleanTariffData, $mappingData) {
+            if (Tariff::where('code', $cleanTariffData['code'])->exists()) {
+                throw new InvalidArgumentException("Menu item code \"{$cleanTariffData['code']}\" already exists.");
+            }
+
+            $tariff = Tariff::create($cleanTariffData);
+
+            if ($mappingData !== null && ! empty($mappingData['inventory_item_id'])) {
+                $this->syncTariffServingMapping(
+                    tariff: $tariff,
+                    inventoryItemId: (int) $mappingData['inventory_item_id'],
+                    servingName: $mappingData['serving_name'] ?? null,
+                    servingQty: isset($mappingData['serving_qty']) ? (float) $mappingData['serving_qty'] : null,
+                );
+            }
+
+            return $tariff->fresh(['servingMapping.inventoryItem']);
         });
     }
 }

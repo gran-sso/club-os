@@ -190,6 +190,18 @@ class InventoryItemResource extends Resource
                             ->label('Active for Purchasing and Serving Issue')
                             ->default(true),
                     ]),
+
+                \Filament\Schemas\Components\Section::make('Linked Menu & Price List Items')
+                    ->description('All Counter POS selling prices currently connected to this stock item.')
+                    ->columnSpanFull()
+                    ->visibleOn('edit')
+                    ->schema([
+                        \Filament\Forms\Components\Placeholder::make('linked_menu_prices')
+                            ->hiddenLabel()
+                            ->content(fn (?InventoryItem $record) => $record
+                                ? view('filament.components.inventory-serving-prices-list', ['item' => $record])
+                                : ''),
+                    ]),
             ]);
     }
 
