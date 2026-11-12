@@ -40,6 +40,7 @@ class JournalHeaderForm
                                     'contractor_settlement' => 'Contractor Settlement',
                                     'inventory_receipt' => 'Stock Inward Purchase',
                                     'expense' => 'Operating Expense',
+                                    'opening_balance' => 'Opening Balance Migration',
                                 ])
                                 ->default('manual_journal'),
 

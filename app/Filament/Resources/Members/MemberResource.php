@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Members;
 use App\Domain\Membership\Models\Member;
 use App\Filament\Resources\Members\Pages\CreateMember;
 use App\Filament\Resources\Members\Pages\EditMember;
+use App\Filament\Resources\Members\Pages\ImportMembers;
 use App\Filament\Resources\Members\Pages\ListMembers;
 use App\Filament\Resources\Members\Pages\ViewMember;
 use App\Filament\Resources\Members\Schemas\MemberForm;
@@ -111,6 +112,7 @@ class MemberResource extends Resource
         return [
             'index' => ListMembers::route('/'),
             'create' => CreateMember::route('/create'),
+            'import' => ImportMembers::route('/import'),
             'view' => ViewMember::route('/{record}'),
             'edit' => EditMember::route('/{record}/edit'),
         ];

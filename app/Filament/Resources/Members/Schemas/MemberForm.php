@@ -225,13 +225,39 @@ class MemberForm
                     ]),
 
                 Section::make('Statutory Membership Fees & Admission Collection')
-                    ->description('Optionally collect the one-time admission capital fee and first-year annual subscription dues upon registration.')
+                    ->description('For new admissions, collect fees and issue a receipt immediately. For existing pre-migration members, mark fees as already paid historically.')
                     ->columnSpanFull()
                     ->schema([
+                        \Filament\Forms\Components\Toggle::make('historical_fees_already_paid')
+                            ->label('Existing Club Member — Fees Already Paid Historically (Do Not Ask for Payment)')
+                            ->helperText('Enable when adding an existing member whose admission fee & current dues were already paid prior to software rollout. Records settled status with zero current-day receipt.')
+                            ->default(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state) {
+                                    $set('collect_initial_fee', false);
+                                }
+                            }),
+
+                        Grid::make(2)
+                            ->visible(fn ($get) => (bool) $get('historical_fees_already_paid'))
+                            ->schema([
+                                DatePicker::make('historical_fee_paid_at')
+                                    ->label('Historical Settlement Date (Optional)')
+                                    ->nullable()
+                                    ->helperText('Defaults to Date of Admission if left blank.'),
+
+                                TextInput::make('historical_receipt_ref')
+                                    ->label('Old Register / Receipt Ref # (Optional)')
+                                    ->maxLength(50)
+                                    ->placeholder('e.g. OLD-RCP-1042 or Register Vol 2'),
+                            ]),
+
                         \Filament\Forms\Components\Toggle::make('collect_initial_fee')
-                            ->label('Collect Membership Fees Now')
+                            ->label('Collect Membership Fees Now (New Admission)')
                             ->helperText('If enabled, admission fee and subscription dues are immediately recorded, an official receipt is generated, and annual validity is activated.')
                             ->default(false)
+                            ->visible(fn ($get) => ! (bool) $get('historical_fees_already_paid'))
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 if ($state) {
@@ -245,7 +271,7 @@ class MemberForm
                             }),
 
                         Grid::make(2)
-                            ->visible(fn ($get) => (bool) $get('collect_initial_fee'))
+                            ->visible(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
                             ->schema([
                                 TextInput::make('admission_fee_amount_rupees')
                                     ->label('One-Time Admission Fee (₹)')
@@ -253,7 +279,7 @@ class MemberForm
                                     ->minValue(0)
                                     ->default(0)
                                     ->prefix('₹')
-                                    ->required(fn ($get) => (bool) $get('collect_initial_fee'))
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
                                     ->helperText('Statutory entrance fee paid only once in member lifetime.'),
 
                                 TextInput::make('annual_fee_amount_rupees')
@@ -262,12 +288,12 @@ class MemberForm
                                     ->minValue(0)
                                     ->default(0)
                                     ->prefix('₹')
-                                    ->required(fn ($get) => (bool) $get('collect_initial_fee'))
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
                                     ->helperText('Recurring annual maintenance dues for Year 1 (₹0 if category is exempt).'),
                             ]),
 
                         Grid::make(2)
-                            ->visible(fn ($get) => (bool) $get('collect_initial_fee'))
+                            ->visible(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid'))
                             ->schema([
                                 Select::make('fee_tender_type')
                                     ->label('Payment Tender / Mode')
@@ -278,7 +304,7 @@ class MemberForm
                                         'cheque' => 'Bank Cheque / DD',
                                     ])
                                     ->default('cash')
-                                    ->required(fn ($get) => (bool) $get('collect_initial_fee')),
+                                    ->required(fn ($get) => (bool) $get('collect_initial_fee') && ! (bool) $get('historical_fees_already_paid')),
 
                                 TextInput::make('fee_reference')
                                     ->label('Banking / Instrument Ref #')

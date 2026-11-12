@@ -333,6 +333,23 @@ class MembersTable
                                 ->success()
                                 ->send();
                         }),
+
+                    BulkAction::make('exportSelected')
+                        ->label('Export Selected CSV')
+                        ->icon(Heroicon::OutlinedArrowDownTray)
+                        ->color('info')
+                        ->action(function (Collection $records) {
+                            $user = auth()->user();
+                            abort_unless((bool) ($user && $user->hasAnyClubPermission(['members.view', 'members.manage'])), 403);
+
+                            $records->loadMissing(['person', 'category', 'wallet', 'activeCard']);
+
+                            return app(\App\Domain\Membership\Services\MemberService::class)->streamMembersCsvExport(
+                                $records,
+                                (bool) $user->hasClubPermission('members.kyc_view'),
+                                'malabar_club_selected_members_' . now()->format('Ymd_His') . '.csv'
+                            );
+                        }),
                 ]),
             ]);
     }

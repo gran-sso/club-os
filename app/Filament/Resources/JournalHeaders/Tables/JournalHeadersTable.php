@@ -36,6 +36,7 @@ class JournalHeadersTable
                         'contractor_settlement' => 'primary',
                         'inventory_receipt' => 'info',
                         'expense' => 'danger',
+                        'opening_balance' => 'primary',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state))),
@@ -75,6 +76,7 @@ class JournalHeadersTable
                         'contractor_settlement' => 'Contractor Settlement',
                         'inventory_receipt' => 'Stock Inward Purchase',
                         'expense' => 'Operating Expense',
+                        'opening_balance' => 'Opening Balance Migration',
                         'manual_journal' => 'Manual Journal',
                     ]),
             ])

@@ -52,7 +52,7 @@ class CreateMember extends CreateRecord
             );
         }
 
-        if (!empty($data['collect_initial_fee'])) {
+        if (!empty($data['collect_initial_fee']) && empty($data['historical_fees_already_paid'])) {
             $admissionFeeRupees = (float) ($data['admission_fee_amount_rupees'] ?? 0);
             $annualFeeRupees = (float) ($data['annual_fee_amount_rupees'] ?? $data['initial_fee_amount_rupees'] ?? 0);
             $totalPaise = (int) round(($admissionFeeRupees + $annualFeeRupees) * 100);
@@ -107,6 +107,42 @@ class CreateMember extends CreateRecord
                 'created_by_user_id' => auth()->id(),
                 'category' => 'general',
                 'note' => "Initial membership fees collected upon admission: Admission Fee ₹" . number_format($admissionFeeRupees, 2) . " + First-Year Dues ₹" . number_format($annualFeeRupees, 2) . " (Total ₹{$totalFormatted}) via " . ucfirst($data['fee_tender_type'] ?? 'cash') . " (Receipt #{$receiptNumber}). Valid until " . Carbon::parse($validUntil)->format('d M Y') . ".",
+            ]);
+        } elseif (!empty($data['historical_fees_already_paid'])) {
+            $category = $member->category;
+            $admissionPaise = (int) ($category?->admission_fee_paise ?? 0);
+            $admissionStatus = $admissionPaise === 0 ? 'waived' : 'paid';
+            $paidAt = !empty($data['historical_fee_paid_at'])
+                ? Carbon::parse($data['historical_fee_paid_at'])
+                : ($member->joined_at ?? now());
+            $historicalRef = trim((string) ($data['historical_receipt_ref'] ?? '')) ?: null;
+
+            $isExpired = ($data['status'] ?? 'active') === 'expired'
+                || ($member->valid_until !== null && $member->valid_until->endOfDay()->lt(now()->startOfDay()));
+            $annualStatus = $isExpired ? 'pending' : 'paid';
+
+            $validUntil = $member->valid_until;
+            if ($validUntil === null && $category && (int) $category->annual_fee_paise > 0 && $annualStatus === 'paid') {
+                $validUntil = MemberService::defaultAnnualValidUntilDate();
+            }
+
+            $member->update([
+                'admission_fee_status' => $admissionStatus,
+                'admission_fee_paise' => $admissionPaise,
+                'admission_fee_paid_at' => $admissionStatus === 'paid' ? $paidAt : null,
+                'admission_fee_receipt_number' => $admissionStatus === 'paid' ? $historicalRef : null,
+                'fee_status' => $annualStatus,
+                'last_fee_paid_at' => $annualStatus === 'paid' ? $paidAt : null,
+                'last_fee_receipt_number' => $annualStatus === 'paid' ? $historicalRef : null,
+                'valid_until' => $validUntil,
+            ]);
+
+            $refLabel = $historicalRef ? " (Historical Ref: {$historicalRef})" : '';
+            MemberNote::create([
+                'member_id' => $member->id,
+                'created_by_user_id' => auth()->id(),
+                'category' => 'general',
+                'note' => "Existing club member onboarded with historical fees marked as already paid{$refLabel}. Admission Fee: " . ucfirst($admissionStatus) . "; Annual Dues: " . ucfirst($annualStatus) . '. Zero counter receipt generated.',
             ]);
         } else {
             $category = $member->category;

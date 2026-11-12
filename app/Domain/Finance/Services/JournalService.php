@@ -33,9 +33,10 @@ class JournalService
         string $description,
         array $lines,
         ?DateTimeInterface $businessDate = null,
-        ?int $userId = null
+        ?int $userId = null,
+        bool $queueOutbox = true
     ): JournalHeader {
-        return DB::transaction(function () use ($sourceType, $sourceId, $description, $lines, $businessDate, $userId) {
+        return DB::transaction(function () use ($sourceType, $sourceId, $description, $lines, $businessDate, $userId, $queueOutbox) {
             // Check if already posted for this source transaction
             $existing = JournalHeader::where('source_type', $sourceType)
                 ->where('source_id', $sourceId)
@@ -105,21 +106,23 @@ class JournalService
                 $header->lines()->create($resolved);
             }
 
-            // Queue outbox message for Tally sync
-            OutboxMessage::create([
-                'event_type' => 'finance.journal.posted',
-                'aggregate_type' => 'JournalHeader',
-                'aggregate_id' => $header->id,
-                'payload' => [
-                    'journal_number' => $header->journal_number,
-                    'business_date' => $header->business_date->toDateString(),
-                    'total_paise' => $totalDebits,
-                    'source_type' => $sourceType,
-                    'source_id' => $sourceId,
-                ],
-                'status' => 'pending',
-                'idempotency_key' => "outbox_jnl_{$header->id}",
-            ]);
+            // Queue outbox message for Tally sync when requested
+            if ($queueOutbox) {
+                OutboxMessage::create([
+                    'event_type' => 'finance.journal.posted',
+                    'aggregate_type' => 'JournalHeader',
+                    'aggregate_id' => $header->id,
+                    'payload' => [
+                        'journal_number' => $header->journal_number,
+                        'business_date' => $header->business_date->toDateString(),
+                        'total_paise' => $totalDebits,
+                        'source_type' => $sourceType,
+                        'source_id' => $sourceId,
+                    ],
+                    'status' => 'pending',
+                    'idempotency_key' => "outbox_jnl_{$header->id}",
+                ]);
+            }
 
             return $header;
         });
