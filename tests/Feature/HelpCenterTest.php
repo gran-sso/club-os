@@ -216,7 +216,7 @@ class HelpCenterTest extends TestCase
         $this->actingAs($this->admin);
 
         Livewire::test(HelpPage::class)
-            ->assertSee('23 operational guides')
+            ->assertSee('24 operational guides')
             ->assertSeeHtml('aria-label="Help Topics"')
             ->assertSeeHtml('<label for="help-topic-search"')
             ->assertSeeHtml('[F6] HOLD RUNNING BAR TAB')
@@ -269,5 +269,79 @@ class HelpCenterTest extends TestCase
             ->assertSee('No operational guides matched')
             ->call('clearSearch')
             ->assertSet('searchQuery', '');
+    }
+
+    public function test_executive_settings_guide_explains_all_five_tabs_fiscal_locks_and_tally_bridge(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->call('selectTopic', 'executive-settings')
+            ->assertSee('Form Fields')
+            ->assertSee('Settings Reference')
+            ->assertDontSee('(opening float, min/max recharge, lost card fee, Zero-Stock toggle)')
+            ->assertSee('Tab 1: Club Identity')
+            ->assertSee('Standard Drawer Float')
+            ->assertSee('Allow Split Tender Checkout')
+            ->assertSee('Allow Selling Zero / Negative Stock Items on POS')
+            ->assertSee('Advance Booking Window (Days)')
+            ->assertSee('Include Department Cost Centres in Tally XML')
+            ->assertSee('Print Remaining Prepaid Balance on Member Receipts')
+            ->assertSee('Fiscal Period Status (Open / Locked / Closed)')
+            ->assertSee('Download Masters XML (Ledgers)')
+            ->assertSee('Pull-Bridge Token (Generate / Rotate / Revoke)');
+    }
+
+    public function test_form_heavy_guides_render_field_by_field_explanations_and_bulk_import_sop(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->call('selectTopic', 'reception-bulk-import')
+            ->assertSee('Bulk Member CSV Import')
+            ->assertSee('Existing Member Fee Mode')
+            ->assertSee('Blank Valid Until Behaviour')
+            ->assertSee('Opening Balance Posting Date')
+            ->assertSee('Queue Opening Balance Journals in Tally Outbox')
+            ->call('selectTopic', 'reception-members-fees')
+            ->assertSee('Historical Fees Already Paid')
+            ->assertSee('One-Time Admission Fee')
+            ->call('selectTopic', 'finance-banking')
+            ->assertSee('Branch IFSC Code')
+            ->assertSee('Linked General Ledger Asset Head')
+            ->assertSee('Destination Bank Account')
+            ->call('selectTopic', 'finance-expenses')
+            ->assertSee('Cost-Center Department')
+            ->assertSee('Expense Account Head')
+            ->call('selectTopic', 'finance-contractor')
+            ->assertSee('Cutoff Business Date')
+            ->assertSee('Disbursing Club Bank Account')
+            ->call('selectTopic', 'inventory-purchases')
+            ->assertSee('Bottle / Case Count')
+            ->assertSee('Cash / Trade Discount')
+            ->call('selectTopic', 'inventory-dispensing')
+            ->assertSee('Low Stock Reorder Alert Level')
+            ->assertSee('Base Unit of Measurement')
+            ->call('selectTopic', 'cashier-promotions')
+            ->assertSee('Bonus Discount Percentage (%)')
+            ->assertSee('Eligible Tariffs')
+            ->call('selectTopic', 'executive-staff')
+            ->assertSee('Active Status Toggle')
+            ->assertSee('Grouped Permission Checkboxes');
+    }
+
+    public function test_help_page_search_indexes_field_level_reference_labels(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(HelpPage::class)
+            ->set('searchQuery', 'Branch IFSC Code')
+            ->assertSee('Club Bank Accounts, Cash Deposits')
+            ->set('searchQuery', 'Include Department Cost Centres in Tally XML')
+            ->assertSee('System Settings, Fiscal Periods')
+            ->assertCount('filteredArticles', 1)
+            ->set('searchQuery', 'Existing Member Fee Mode')
+            ->assertSee('Bulk Member CSV Import')
+            ->assertCount('filteredArticles', 1);
     }
 }

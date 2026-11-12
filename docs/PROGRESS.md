@@ -2362,10 +2362,21 @@ For environments where full browser automation is unavailable, operators should 
   - Targeted suite (`TallyRealWorldUpgradeTest`, `RealTallyAndPwaTest`, `TallyConfigurationTest`, `IntegrationAndReleaseTest`, `FinanceAndReportingTest`, `SystemSettingsTest`, `AdminDashboardWidgetsTest`): **50 passed, 334 assertions, 0 failures** (`17641ms`).
   - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **416 passed, 2,685 assertions, 0 failures** (`113964ms`).
 
+## Help Center Field-by-Field Reference & Bulk Import SOP Upgrade (Completed 2026-11-12)
 
-
-
-
-
+- **Upgrades Implemented:**
+  - **Field-by-Field Reference Renderer & Live Search Indexing:**
+    - Extended [`resources/views/filament/pages/help.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/help.blade.php) to render structured `$topic['field_sections']` blocks ("Form Fields & Settings Reference") with plain-English **What it means** and **Where used & impact** panels plus print-friendly `@media print` card styling (`print:break-inside-avoid`).
+    - Extended [`HelpPage::topicMatchesQuery()`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php#L156-L212) to index `section_title`, `section_note`, and each field's `name`, `type`, `meaning`, and `effect`, enabling staff to search directly by individual form field label.
+  - **System Settings, Fiscal Periods & Tally Integration Overhaul (`executive-settings`):**
+    - Replaced comma-separated field shorthand in [`HelpPage`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php) with complete field-by-field explanations covering all 5 tabs of [`system-settings.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/system-settings.blade.php) (`Club Identity & Statutory Details`, `Billing & Cashier Policies`, `Facilities, Schedules & Guest Pass Fees`, `Tally Prime Integration Settings`, `Receipt Printing & Hardware Preferences`), [`FinancialPeriodForm`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/FinancialPeriods/Schemas/FinancialPeriodForm.php), and [`integration-status.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/integration-status.blade.php) (`Download Masters XML`, `Date Range XML`, `Download Pending Vouchers XML`, `Pull-Bridge Token`).
+  - **All Form-Heavy Guides & Dedicated Bulk CSV Import Guide (24 Total Operational Guides):**
+    - Added new dedicated guide `reception-bulk-import` (*Bulk Member CSV Import & Opening Wallet Migration*) documenting [`ImportMembers`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/ImportMembers.php) settings (`already_paid` vs `pending`, `blankValidUntilMode`, `openingBalanceDate`, `queueTallyOutbox`) and CSV columns.
+    - Added structured `field_sections` grounded in the live Filament schemas across `cashier-shift`, `cashier-promotions`, `cashier-guest-pass`, `cashier-zero-stock`, `reception-deck`, `reception-courts`, `reception-subscriptions`, `reception-members-fees`, `reception-notices`, `finance-coa`, `finance-banking`, `finance-expenses`, `finance-contractor`, `inventory-purchases`, `inventory-dispensing`, and `executive-staff`.
+- **Verification:**
+  - `npm run build && php artisan view:clear`: Vite bundle built (`853ms`) and Blade views cleared.
+  - Expanded [`tests/Feature/HelpCenterTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/HelpCenterTest.php) (`24 operational guides`, `executive-settings` 5-tab/Tally/Period field coverage, form-heavy guide field references, and live search across field labels).
+  - `php artisan test tests/Feature/HelpCenterTest.php`: **19 passed, 132 assertions, 0 failures** (`9457ms`).
+  - Full suite `php artisan test` on MySQL (`malabar_club_testing`): **419 passed, 2,725 assertions, 0 failures** (`117342ms`).
 
 

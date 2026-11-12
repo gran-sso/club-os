@@ -245,6 +245,68 @@
                     </ol>
                 </div>
 
+                <!-- Form Field-by-Field Reference -->
+                @if(!empty($topic['field_sections']))
+                    <div class="mt-8 pt-6 border-t border-slate-200/80 space-y-5">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800">
+                                Form Fields &amp; Settings Reference
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-1">
+                                Plain-English explanation of what each form field or toggle means and where it takes effect.
+                            </p>
+                        </div>
+
+                        <div class="space-y-4">
+                            @foreach($topic['field_sections'] as $section)
+                                <div class="rounded-xl border border-slate-200 bg-white overflow-hidden print:break-inside-avoid">
+                                    <div class="bg-slate-50/90 px-4 py-3 border-b border-slate-200">
+                                        <h4 class="text-sm font-semibold text-slate-900">
+                                            {{ $section['section_title'] }}
+                                        </h4>
+                                        @if(!empty($section['section_note']))
+                                            <p class="text-xs text-slate-600 mt-0.5">
+                                                {{ $section['section_note'] }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <div class="divide-y divide-slate-100">
+                                        @foreach($section['fields'] ?? [] as $field)
+                                            <div class="px-4 py-3.5 space-y-2 print:break-inside-avoid">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <span class="text-sm font-semibold text-slate-900">
+                                                        {{ $field['name'] }}
+                                                    </span>
+                                                    @if(!empty($field['type']))
+                                                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
+                                                            {{ $field['type'] }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                                @if(!empty($field['meaning']))
+                                                    <p class="text-xs leading-relaxed text-slate-700">
+                                                        <span class="font-semibold text-slate-800">What it means:</span>
+                                                        {{ $field['meaning'] }}
+                                                    </p>
+                                                @endif
+
+                                                @if(!empty($field['effect']))
+                                                    <p class="text-xs leading-relaxed text-slate-600 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200/70">
+                                                        <span class="font-semibold text-slate-800">Where used &amp; impact:</span>
+                                                        {{ $field['effect'] }}
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Clean Formula / Accounting Mapping Box -->
                 @if(!empty($topic['formula']))
                     <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1 text-xs print:border-slate-300 print:bg-slate-50 print:break-inside-avoid">
