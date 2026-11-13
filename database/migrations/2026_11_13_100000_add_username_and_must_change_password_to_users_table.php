@@ -14,10 +14,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('username', 50)->nullable()->unique()->after('name');
-            $table->string('email')->nullable()->change();
-            $table->boolean('must_change_password')->default(false)->after('password');
-            $table->timestamp('password_changed_at')->nullable()->after('must_change_password');
+            if (! Schema::hasColumn('users', 'username')) {
+                $table->string('username', 50)->nullable()->unique()->after('name');
+            }
+            if (Schema::hasColumn('users', 'email')) {
+                $table->string('email')->nullable()->change();
+            }
+            if (! Schema::hasColumn('users', 'must_change_password')) {
+                $table->boolean('must_change_password')->default(false)->after('password');
+            }
+            if (! Schema::hasColumn('users', 'password_changed_at')) {
+                $table->timestamp('password_changed_at')->nullable()->after('must_change_password');
+            }
         });
 
         // Backfill clean usernames for existing users based on email or name
