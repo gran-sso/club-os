@@ -2498,6 +2498,33 @@ For environments where full browser automation is unavailable, operators should 
   - Built production assets with `npm run build && php artisan view:clear`: Vite built in `450ms` (`public/build/assets/app-C12M90ES.css`).
   - Full test suite execution on MySQL: **451 passed, 3,009 assertions, 0 failures**.
 
+## Configurable Physical Turnstile Gates vs. Staff-Operated Reception Desk Mode (Completed 2026-11-13)
+
+- **Scope & Design Decisions:**
+  - Added a configuration setting in `SystemSettingsPage` under **Hardware & Gate Control** (`enable_turnstile_gate`, boolean default `false`), alongside `entrance_access_mode` and `guest_pass_verification_mode` (`D77`).
+  - Matches the physical reality of Malabar Club, which operates with front-desk staff verifying members and guests at reception rather than motorized turnstile gates.
+  - When disabled (`enable_turnstile_gate = false`), the system operates in **Staff-Operated Reception Desk Mode**:
+    1. Prevents hardware disconnect warnings, optical barrier timeout alerts, and simulator errors.
+    2. `SimulatorAccessControlProvider::getStatus()` reports standby reception desk status (`enabled = false`, `mode = 'Staff-Operated Reception Desk (Turnstile Gates Standby)'`).
+    3. `IntegrationStatusPage` displays a clean `STANDBY (RECEPTION DESK ACTIVE)` badge and explanatory guidance on front-desk manual verification.
+    4. Member Profile view (`view-member.blade.php`) dynamically surfaces `Door & Entrance Logs` and `Reception & Facility Access Controller` instead of `Gate & Turnstile Logs`.
+    5. Member RFID smartcards remain 100% active and unimpacted for Counter POS tap-and-pay and member ID verification across all dining and sports facilities.
+  - When physical turnstiles or motorized barriers are installed in the future, administrators simply toggle `enable_turnstile_gate = true` to immediately activate automated gate syncing.
+- **Implementation:**
+  - **Settings Page & Schema ([`SystemSettingsPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/SystemSettingsPage.php), [`system-settings.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/system-settings.blade.php)):**
+    - Added properties `$enableTurnstileGate`, `$entranceAccessMode`, and `$guestPassVerificationMode` with persistence to `system_settings` under group `hardware`.
+    - Renamed tab to **Hardware & Gate Control** and added a dedicated *Clubhouse Entrance & Turnstile Gate Control* card with live toggle, status pills, and informative reception desk mode guidance.
+  - **Hardware Adapter ([`SimulatorAccessControlProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Integrations/Adapters/SimulatorAccessControlProvider.php)):** Updated `getStatus()` to inspect `SystemSetting::getBool('enable_turnstile_gate', false)` and return `enabled` status and descriptive operational mode without production failure.
+  - **Integration Status View ([`integration-status.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/integration-status.blade.php)):** Displays `STANDBY (RECEPTION DESK ACTIVE)` badge and reception mode card explaining that entrance verification is performed by front-desk staff.
+  - **Member Profile View ([`view-member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/resources/members/pages/view-member.blade.php)):** Dynamically adapts tab label (`Door & Entrance Logs`), table headers, and empty state messages based on `enable_turnstile_gate`.
+- **Verification:**
+  - Added test `test_can_toggle_turnstile_gate_and_reception_desk_mode` to [`tests/Feature/SystemSettingsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SystemSettingsTest.php).
+  - Executed tests on MySQL:
+    - [`SystemSettingsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SystemSettingsTest.php): **14 passed, 88 assertions, 0 failures**.
+    - [`IntegrationAndReleaseTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/IntegrationAndReleaseTest.php): **4 passed, 18 assertions, 0 failures**.
+    - [`MemberProfileViewTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberProfileViewTest.php): **27 passed, 123 assertions, 0 failures**.
+  - Built production assets (`npm run build && php artisan view:clear && php artisan config:clear`).
+
 
 
 

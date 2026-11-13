@@ -272,14 +272,32 @@
                             <span class="text-[11px] text-slate-500">RFID Smartcard &amp; Guest Pass Reader</span>
                         </div>
                     </div>
-                    <span class="px-3 py-1 text-xs font-mono font-bold rounded-full bg-blue-100 text-blue-900 border border-blue-300">
-                        {{ $accessStatus['label'] ?? 'SIMULATOR' }}
-                    </span>
+                    @if (! ($accessStatus['enabled'] ?? true))
+                        <span class="px-3 py-1 text-xs font-mono font-bold rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            STANDBY (RECEPTION DESK ACTIVE)
+                        </span>
+                    @else
+                        <span class="px-3 py-1 text-xs font-mono font-bold rounded-full bg-blue-100 text-blue-900 border border-blue-300">
+                            {{ $accessStatus['label'] ?? 'SIMULATOR' }}
+                        </span>
+                    @endif
                 </div>
 
-                <p class="text-xs text-slate-600 leading-relaxed">
-                    Gate reader simulator verifies active club membership, card standing, and paid guest pass authorization in real time. Fails closed automatically if deployed in a production environment.
-                </p>
+                @if (! ($accessStatus['enabled'] ?? true))
+                    <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
+                        <div class="font-bold flex items-center gap-1.5">
+                            <span>ℹ️</span>
+                            <span>Staff-Operated Reception Desk Mode (Turnstiles Disabled)</span>
+                        </div>
+                        <p class="text-[11px] text-amber-800 leading-relaxed">
+                            Physical motorized turnstiles are currently disabled in Club Settings. Malabar Club is operating in <strong>Staff-Operated Reception Desk Mode</strong>. Entrance verification is performed manually by front-desk staff. Member RFID cards remain active for Counter POS tap-and-pay and member identification.
+                        </p>
+                    </div>
+                @else
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Gate reader simulator verifies active club membership, card standing, and paid guest pass authorization in real time. Fails closed automatically if deployed in a production environment.
+                    </p>
+                @endif
 
                 <!-- Interactive Access Simulator Form -->
                 <div class="space-y-3.5 pt-1">

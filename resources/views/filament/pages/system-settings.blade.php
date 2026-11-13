@@ -97,7 +97,7 @@
                 wire:click="setTab('hardware')"
                 class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'hardware' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                 <span>🖨️</span>
-                <span>Receipt Printing</span>
+                <span>Hardware &amp; Gate Control</span>
             </button>
 
             <button type="button"
@@ -510,6 +510,73 @@
                                 <p class="text-[10px] text-slate-500">Explicitly prints 9% CGST + 9% SGST breakdown rows on customer tax invoices.</p>
                             </div>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Entrance & Turnstile Gate Access Control Card -->
+                <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                                <span>🚪</span>
+                                <span>Clubhouse Entrance &amp; Turnstile Gate Control</span>
+                            </h3>
+                            <p class="text-xs text-slate-500">Configure whether entry is governed by automated motorized turnstiles or staff-operated reception desk verification.</p>
+                        </div>
+                        <div>
+                            @if ($enableTurnstileGate)
+                                <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>Automated Turnstiles Active</span>
+                                </span>
+                            @else
+                                <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                    <span>Staff Reception Desk Mode (Turnstiles Standby)</span>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 space-y-4">
+                        <label class="flex items-start gap-3 cursor-pointer select-none p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100/60 transition-colors">
+                            <input type="checkbox" wire:model.live="enableTurnstileGate" class="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900 block">Enable Automated Physical Turnstiles &amp; Motorized Barriers</span>
+                                <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                    Turn this <strong class="text-slate-700">OFF</strong> if Malabar Club operates with reception staff checking members manually at the front desk. Disabling physical turnstiles prevents false hardware disconnect warnings while leaving member RFID cards 100% active for POS tap-and-pay and member identification.
+                                </p>
+                            </div>
+                        </label>
+
+                        @if (! $enableTurnstileGate)
+                            <!-- Informative Reception Mode Card -->
+                            <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs space-y-2">
+                                <div class="font-bold flex items-center gap-1.5 text-amber-950">
+                                    <span>ℹ️</span>
+                                    <span>Staff-Operated Reception Desk Mode (Current Club Setup)</span>
+                                </div>
+                                <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-900/90 pl-1">
+                                    <li><strong>Reception Verification:</strong> Front desk staff check member validity on the screen or counter reader.</li>
+                                    <li><strong>Counter POS Tap-and-Pay:</strong> Members continue to tap their cards at the Bar, Restaurant, and Front Desk without disruption.</li>
+                                    <li><strong>Clean Dashboard:</strong> Hardware disconnect warnings and optical barrier timeout alerts are silenced.</li>
+                                    <li><strong>Future Ready:</strong> When physical turnstiles are installed in the future, simply enable this toggle to activate automated gate syncing.</li>
+                                </ul>
+                            </div>
+                        @else
+                            <!-- Turnstile Specific Options (When Hardware Enabled) -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 animate-fade-in">
+                                <div>
+                                    <label for="setting-guest-pass-mode" class="block text-xs font-bold text-slate-700 mb-1">Guest Pass Entry Verification</label>
+                                    <select id="setting-guest-pass-mode" wire:model="guestPassVerificationMode"
+                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                        <option value="reception">Reception Desk Inspection (Human Verification)</option>
+                                        <option value="turnstile">Automated Barcode / QR Optical Barrier Scan</option>
+                                    </select>
+                                    <span class="text-[10px] text-slate-400 mt-1 block">Determines how day visitor slips are validated at the clubhouse door.</span>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

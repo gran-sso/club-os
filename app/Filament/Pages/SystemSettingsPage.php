@@ -73,6 +73,9 @@ class SystemSettingsPage extends Page
     public bool $autoPrintReceipt = false;
     public bool $printWalletBalanceOnReceipt = true;
     public bool $printGstBreakdownOnReceipt = true;
+    public bool $enableTurnstileGate = false;
+    public string $entranceAccessMode = 'reception';
+    public string $guestPassVerificationMode = 'reception';
 
     // Tab 6: Audit Trail & Security
     public int $auditLogRetentionDays = 30;
@@ -144,6 +147,9 @@ class SystemSettingsPage extends Page
         $this->autoPrintReceipt = SystemSetting::getBool('auto_print_receipt', false);
         $this->printWalletBalanceOnReceipt = SystemSetting::getBool('print_wallet_balance_on_receipt', true);
         $this->printGstBreakdownOnReceipt = SystemSetting::getBool('print_gst_breakdown_on_receipt', true);
+        $this->enableTurnstileGate = SystemSetting::getBool('enable_turnstile_gate', false);
+        $this->entranceAccessMode = (string) SystemSetting::get('entrance_access_mode', 'reception');
+        $this->guestPassVerificationMode = (string) SystemSetting::get('guest_pass_verification_mode', 'reception');
 
         // Tab 6
         $this->auditLogRetentionDays = (int) SystemSetting::get('audit_log_retention_days', 30);
@@ -254,6 +260,9 @@ class SystemSettingsPage extends Page
         SystemSetting::set('auto_print_receipt', $this->autoPrintReceipt ? '1' : '0', 'hardware');
         SystemSetting::set('print_wallet_balance_on_receipt', $this->printWalletBalanceOnReceipt ? '1' : '0', 'hardware');
         SystemSetting::set('print_gst_breakdown_on_receipt', $this->printGstBreakdownOnReceipt ? '1' : '0', 'hardware');
+        SystemSetting::set('enable_turnstile_gate', $this->enableTurnstileGate ? '1' : '0', 'hardware');
+        SystemSetting::set('entrance_access_mode', $this->enableTurnstileGate ? 'automated_turnstile' : 'reception', 'hardware');
+        SystemSetting::set('guest_pass_verification_mode', $this->guestPassVerificationMode, 'hardware');
 
         // Save Tab 6
         SystemSetting::set('audit_log_retention_days', (int) $this->auditLogRetentionDays, 'security');
@@ -344,6 +353,9 @@ class SystemSettingsPage extends Page
         $this->autoPrintReceipt = false;
         $this->printWalletBalanceOnReceipt = true;
         $this->printGstBreakdownOnReceipt = true;
+        $this->enableTurnstileGate = false;
+        $this->entranceAccessMode = 'reception';
+        $this->guestPassVerificationMode = 'reception';
 
         $this->auditLogRetentionDays = 30;
 

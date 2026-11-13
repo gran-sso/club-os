@@ -30,7 +30,7 @@ class SystemSettingsTest extends TestCase
         $response->assertSee('Cashier &amp; Smartcard Limits', false);
         $response->assertSee('Facilities &amp; Timings', false);
         $response->assertSee('Tally Connection', false);
-        $response->assertSee('Receipt Printing', false);
+        $response->assertSee('Hardware &amp; Gate Control', false);
     }
 
     public function test_manager_can_access_system_settings_page(): void
@@ -180,6 +180,52 @@ class SystemSettingsTest extends TestCase
         $this->assertEquals('1', SystemSetting::get('auto_print_receipt'));
         $this->assertEquals('0', SystemSetting::get('print_wallet_balance_on_receipt'));
         $this->assertEquals('1', SystemSetting::get('print_gst_breakdown_on_receipt'));
+    }
+
+    public function test_can_toggle_turnstile_gate_and_reception_desk_mode(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $accessProvider = app(\App\Domain\Integrations\Contracts\AccessControlProviderInterface::class);
+
+        // 1. Initial / Default: Turnstiles disabled -> Staff Reception Desk Standby Mode
+        $status = $accessProvider->getStatus();
+        $this->assertFalse($status['enabled'] ?? true);
+        $this->assertEquals('simulator', $status['driver']);
+        $this->assertStringContainsString('Reception Desk', $status['mode']);
+
+        // 2. Enable turnstile via Settings page
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->call('setTab', 'hardware')
+            ->set('enableTurnstileGate', true)
+            ->set('guestPassVerificationMode', 'turnstile')
+            ->call('saveSettings')
+            ->assertHasNoErrors();
+
+        $this->assertEquals('1', SystemSetting::get('enable_turnstile_gate'));
+        $this->assertEquals('automated_turnstile', SystemSetting::get('entrance_access_mode'));
+        $this->assertEquals('turnstile', SystemSetting::get('guest_pass_verification_mode'));
+        $this->assertTrue(SystemSetting::getBool('enable_turnstile_gate'));
+
+        // 3. Provider reflects enabled simulator status
+        $status = $accessProvider->getStatus();
+        $this->assertTrue($status['enabled']);
+        $this->assertEquals('simulator', $status['driver']);
+        $this->assertStringContainsString('Turnstile', $status['mode']);
+
+        // 4. Disable turnstile back to reception mode
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->call('setTab', 'hardware')
+            ->set('enableTurnstileGate', false)
+            ->call('saveSettings')
+            ->assertHasNoErrors();
+
+        $this->assertFalse(SystemSetting::getBool('enable_turnstile_gate'));
+        $status = $accessProvider->getStatus();
+        $this->assertFalse($status['enabled']);
+        $this->assertEquals('simulator', $status['driver']);
+        $this->assertStringContainsString('Reception Desk', $status['mode']);
     }
 
     public function test_can_reset_settings_to_system_defaults(): void

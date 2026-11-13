@@ -347,7 +347,7 @@
 
                             <!-- Group 3: Gate Security -->
                             <div class="pt-2 space-y-0.5">
-                                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">Turnstile &amp; Gate Security</span>
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block px-1.5 mb-1">{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Turnstile & Gate Security' : 'Card & Access Security' }}</span>
 
                                 @if ($member->activeCard)
                                     <button type="button" @click="open = false; $wire.blockActiveCard()"
@@ -358,8 +358,8 @@
                                             </svg>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <span class="text-xs font-semibold text-rose-700 dark:text-rose-400 block">Emergency Block Gate Access</span>
-                                            <span class="text-[10px] text-rose-500 block truncate">Immediately barricade RFID card from turnstiles</span>
+                                            <span class="text-xs font-semibold text-rose-700 dark:text-rose-400 block">{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Emergency Block Gate Access' : 'Emergency Block Card' }}</span>
+                                            <span class="text-[10px] text-rose-500 block truncate">{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Immediately barricade RFID card from turnstiles' : 'Immediately suspend card from POS & entrance' }}</span>
                                         </div>
                                     </button>
                                 @endif
@@ -467,7 +467,7 @@
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
-                    <span>Gate &amp; Turnstile Logs</span>
+                    <span>{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Gate & Turnstile Logs' : 'Door & Entrance Logs' }}</span>
                     <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                         {{ $accessEvents->count() }}
                     </span>
@@ -1598,7 +1598,7 @@
                                 <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
-                                <span>Turnstile &amp; Biometric Access Controller</span>
+                                <span>{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Turnstile & Biometric Access Controller' : 'Reception & Facility Access Controller' }}</span>
                             </h3>
                             @if ($member->activeCard)
                                 <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -1611,7 +1611,7 @@
                             @endif
                         </div>
                         <p class="text-xs text-slate-500">
-                            Real-time event logging from optical turnstiles, swimming pool barriers, and clubhouse gate controllers.
+                            {{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Real-time event logging from optical turnstiles, swimming pool barriers, and clubhouse gate controllers.' : 'Real-time check-in logs from reception desk, sports facilities, and clubhouse access points.' }}
                         </p>
                     </div>
 
@@ -1622,7 +1622,7 @@
                                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                                 </svg>
-                                <span>Emergency Block Access</span>
+                                <span>{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Emergency Block Access' : 'Emergency Block Card' }}</span>
                             </button>
                         @endif
 
@@ -1635,7 +1635,7 @@
                                 <svg class="w-3.5 h-3.5 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span>Restore Gate Access</span>
+                                <span>{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Restore Gate Access' : 'Restore Card Standing' }}</span>
                             </button>
                         @endif
                     </div>
@@ -1644,7 +1644,7 @@
                 <!-- Event Logs Table -->
                 <div class="border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs bg-white dark:bg-slate-900">
                     <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Chronological Gate Events (Last 50)</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Chronological Gate Events (Last 50)' : 'Entrance & Facility Check-in Events (Last 50)' }}</span>
                         <span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">{{ $accessEvents->count() }} Entries</span>
                     </div>
 
@@ -1653,7 +1653,7 @@
                             <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-[11px]">
                                 <tr>
                                     <th class="p-3.5">Timestamp</th>
-                                    <th class="p-3.5">Gate / Turnstile</th>
+                                    <th class="p-3.5">{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Gate / Turnstile' : 'Entrance / Facility' }}</th>
                                     <th class="p-3.5">Card / Token UID</th>
                                     <th class="p-3.5 text-center">Outcome</th>
                                     <th class="p-3.5">Reason / Remarks</th>
@@ -1667,7 +1667,7 @@
                                             {{ $event->recorded_at ? $event->recorded_at->format('d M Y, H:i:s') : '—' }}
                                         </td>
                                         <td class="p-3.5 font-bold text-slate-900 dark:text-white">
-                                            {{ $event->facility_code ?: 'Clubhouse Main Turnstile' }}
+                                            {{ $event->facility_code ?: (\App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Clubhouse Main Turnstile' : 'Reception Desk Check-in') }}
                                         </td>
                                         <td class="p-3.5 font-mono text-slate-600 dark:text-slate-400">
                                             {{ $event->card_number ?: 'N/A' }}
@@ -1693,7 +1693,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
-                                            No gate or turnstile entry events recorded for this member or associated cards yet.
+                                            {{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'No gate or turnstile entry events recorded for this member or associated cards yet.' : 'No entrance or facility check-in events recorded for this member or associated cards yet.' }}
                                         </td>
                                     </tr>
                                 @endforelse

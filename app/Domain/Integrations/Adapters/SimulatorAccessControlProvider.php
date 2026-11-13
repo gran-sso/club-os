@@ -113,11 +113,18 @@ class SimulatorAccessControlProvider implements AccessControlProviderInterface
 
     public function getStatus(): array
     {
+        $turnstilesEnabled = \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false);
+
         return [
             'driver' => 'simulator',
             'label' => self::STATUS_LABEL,
             'configured' => true,
             'is_production_ready' => false,
+            'enabled' => $turnstilesEnabled,
+            'turnstiles_enabled' => $turnstilesEnabled,
+            'mode' => $turnstilesEnabled
+                ? 'Automated Optical Barrier Turnstile'
+                : 'Staff-Operated Reception Desk (Turnstile Gates Standby)',
         ];
     }
 
