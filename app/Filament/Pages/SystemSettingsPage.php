@@ -3,7 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Integrations\Adapters\TallyPrimeHttpConnector;
+use App\Domain\Shared\Models\AuditLog;
 use App\Domain\Shared\Models\SystemSetting;
+use App\Domain\Shared\Services\AuditLogService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -26,7 +28,7 @@ class SystemSettingsPage extends Page
 
     protected string $view = 'filament.pages.system-settings';
 
-    public string $activeTab = 'identity'; // 'identity', 'billing', 'facilities', 'tally', 'hardware'
+    public string $activeTab = 'identity'; // 'identity', 'billing', 'facilities', 'tally', 'hardware', 'audit'
 
     // Tab 1: Club Identity & Invoicing
     public string $clubName = '';
@@ -71,6 +73,9 @@ class SystemSettingsPage extends Page
     public bool $autoPrintReceipt = false;
     public bool $printWalletBalanceOnReceipt = true;
     public bool $printGstBreakdownOnReceipt = true;
+
+    // Tab 6: Audit Trail & Security
+    public int $auditLogRetentionDays = 30;
 
     public static function canAccess(): bool
     {
@@ -139,11 +144,14 @@ class SystemSettingsPage extends Page
         $this->autoPrintReceipt = SystemSetting::getBool('auto_print_receipt', false);
         $this->printWalletBalanceOnReceipt = SystemSetting::getBool('print_wallet_balance_on_receipt', true);
         $this->printGstBreakdownOnReceipt = SystemSetting::getBool('print_gst_breakdown_on_receipt', true);
+
+        // Tab 6
+        $this->auditLogRetentionDays = (int) SystemSetting::get('audit_log_retention_days', 30);
     }
 
     public function setTab(string $tab): void
     {
-        if (in_array($tab, ['identity', 'billing', 'facilities', 'tally', 'hardware'])) {
+        if (in_array($tab, ['identity', 'billing', 'facilities', 'tally', 'hardware', 'audit'])) {
             $this->activeTab = $tab;
         }
     }
@@ -165,6 +173,7 @@ class SystemSettingsPage extends Page
                 'tallyCompany' => 'required|string',
                 'tallyIncludeCostCentres' => 'boolean',
                 'tallyAutoSync' => 'boolean',
+                'auditLogRetentionDays' => 'required|integer|min:7|max:365',
             ]);
         } catch (ValidationException $e) {
             $firstErrorField = array_key_first($e->errors());
@@ -180,6 +189,7 @@ class SystemSettingsPage extends Page
                 'tallyHost' => 'tally',
                 'tallyPort' => 'tally',
                 'tallyCompany' => 'tally',
+                'auditLogRetentionDays' => 'audit',
             ];
             if ($firstErrorField && isset($tabByField[$firstErrorField])) {
                 $this->activeTab = $tabByField[$firstErrorField];
@@ -245,9 +255,31 @@ class SystemSettingsPage extends Page
         SystemSetting::set('print_wallet_balance_on_receipt', $this->printWalletBalanceOnReceipt ? '1' : '0', 'hardware');
         SystemSetting::set('print_gst_breakdown_on_receipt', $this->printGstBreakdownOnReceipt ? '1' : '0', 'hardware');
 
+        // Save Tab 6
+        SystemSetting::set('audit_log_retention_days', (int) $this->auditLogRetentionDays, 'security');
+
+        app(AuditLogService::class)->logSettingsChange(
+            changedKeys: ['club_name', 'audit_log_retention_days', 'tally_company', 'min_wallet_recharge'],
+            newValues: [
+                'audit_log_retention_days' => $this->auditLogRetentionDays,
+                'min_wallet_recharge' => $this->minWalletRecharge,
+                'max_wallet_recharge' => $this->maxWalletRecharge,
+            ]
+        );
+
         Notification::make()
             ->title('Settings Saved Successfully')
             ->body('Club configuration updated. All billing, receipting, and front-desk modules will immediately reflect these parameters.')
+            ->success()
+            ->send();
+    }
+
+    public function pruneAuditLogsNow(): void
+    {
+        $count = app(AuditLogService::class)->pruneExpired((int) $this->auditLogRetentionDays);
+        Notification::make()
+            ->title('Audit Logs Pruned')
+            ->body("Deleted {$count} log entries older than {$this->auditLogRetentionDays} days.")
             ->success()
             ->send();
     }
@@ -312,6 +344,8 @@ class SystemSettingsPage extends Page
         $this->autoPrintReceipt = false;
         $this->printWalletBalanceOnReceipt = true;
         $this->printGstBreakdownOnReceipt = true;
+
+        $this->auditLogRetentionDays = 30;
 
         $this->saveSettings();
     }

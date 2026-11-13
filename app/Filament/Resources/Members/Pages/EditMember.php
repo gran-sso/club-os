@@ -60,6 +60,13 @@ class EditMember extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         /** @var \App\Domain\Membership\Models\Member $record */
+        $oldStatus = (string) ($record->status?->value ?? $record->status);
+        $oldData = [
+            'status' => $oldStatus,
+            'phone' => $record->person?->phone,
+            'email' => $record->person?->email,
+        ];
+
         if ($record->person) {
             $oldPhotoPath = $record->person->photo_path;
             $newPhotoPath = $data['photo_path'] ?? null;
@@ -90,6 +97,18 @@ class EditMember extends EditRecord
             'joined_at' => $data['joined_at'],
             'valid_until' => $data['valid_until'] ?? null,
         ]);
+
+        $action = ($oldStatus !== (string) $data['status']) ? 'status_changed' : 'updated';
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logMemberChange(
+            member: $record,
+            action: $action,
+            old: $oldData,
+            new: [
+                'status' => (string) $data['status'],
+                'phone' => $data['phone'] ?? null,
+                'email' => $data['email'] ?? null,
+            ]
+        );
 
         return $record;
     }

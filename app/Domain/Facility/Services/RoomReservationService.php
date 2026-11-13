@@ -166,6 +166,13 @@ class RoomReservationService
                 'checked_in_at' => now(),
             ]);
 
+            app(\App\Domain\Shared\Services\AuditLogService::class)->log(
+                category: 'facilities',
+                action: 'room.checked_in',
+                description: "Checked in guest/member into {$facility->name} (Reservation #{$locked->id})",
+                auditable: $locked
+            );
+
             return $locked;
         });
     }
@@ -186,6 +193,13 @@ class RoomReservationService
             ]);
 
             $facility->update(['housekeeping_status' => 'dirty']);
+
+            app(\App\Domain\Shared\Services\AuditLogService::class)->log(
+                category: 'facilities',
+                action: 'room.checked_out',
+                description: "Checked out guest/member from {$facility->name} (Reservation #{$locked->id}); room marked dirty",
+                auditable: $locked
+            );
 
             return $locked;
         });

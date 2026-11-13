@@ -468,6 +468,12 @@ final class ClubPermissionRegistry
                 'default_roles' => [],
                 'sensitive' => true,
             ],
+            'audit_logs.view' => [
+                'group' => 'system',
+                'label' => 'View Audit Trail & User Activity Logs',
+                'description' => 'Inspect staff operational logs, master changes, security logins, and administrative overrides.',
+                'default_roles' => ['manager', 'auditor'],
+            ],
         ];
     }
 

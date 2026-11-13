@@ -99,6 +99,13 @@
                 <span>🖨️</span>
                 <span>Receipt Printing</span>
             </button>
+
+            <button type="button"
+                wire:click="setTab('audit')"
+                class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'audit' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                <span>🛡️</span>
+                <span>Audit Trail &amp; Retention</span>
+            </button>
         </div>
 
         <!-- ================================================================= -->
@@ -503,6 +510,87 @@
                                 <p class="text-[10px] text-slate-500">Explicitly prints 9% CGST + 9% SGST breakdown rows on customer tax invoices.</p>
                             </div>
                         </label>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- ================================================================= -->
+        <!-- TAB 6: AUDIT TRAIL RETENTION & SECURITY POLICY                    -->
+        <!-- ================================================================= -->
+        @if ($activeTab === 'audit')
+            <div class="space-y-5 animate-fade-in">
+                <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">User Action Log &amp; Audit Trail Retention</h3>
+                        <p class="text-xs text-slate-500">Configure how long staff action logs, master pricing modifications, and security events are retained before automated scheduled pruning.</p>
+                    </div>
+
+                    @php
+                        $totalAuditLogs = \App\Domain\Shared\Models\AuditLog::count();
+                        $oldestAuditLog = \App\Domain\Shared\Models\AuditLog::orderBy('created_at')->value('created_at');
+                    @endphp
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 border border-slate-200/90 rounded-2xl">
+                        <div>
+                            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Active Retention Window</div>
+                            <div class="text-base font-extrabold text-slate-900 mt-0.5">{{ $auditLogRetentionDays }} Days</div>
+                            <div class="text-[10px] text-slate-400">Scheduled pruning runs daily</div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Logged Actions</div>
+                            <div class="text-base font-extrabold text-slate-900 mt-0.5">{{ number_format($totalAuditLogs) }} Entries</div>
+                            <div class="text-[10px] text-slate-400">Across all staff and modules</div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Oldest Log on Record</div>
+                            <div class="text-base font-extrabold text-slate-900 mt-0.5">
+                                {{ $oldestAuditLog ? $oldestAuditLog->format('d M Y') : 'No logs yet' }}
+                            </div>
+                            <div class="text-[10px] text-slate-400">Earliest active audit trail timestamp</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 pt-2">
+                        <div class="max-w-md">
+                            <label for="setting-audit-retention" class="block text-xs font-bold text-slate-700 mb-1">
+                                Action Log Retention Period (Days)
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="setting-audit-retention" wire:model="auditLogRetentionDays" min="7" max="365" step="1"
+                                    class="w-32 px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                <span class="text-xs text-slate-600 font-semibold">Days</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                                Sets the rolling retention threshold. Log entries older than this number of days will be automatically deleted by the daily scheduler.
+                                <br><span class="text-slate-600 font-medium">Recommended: <strong>30 to 45 days</strong> so records cover monthly managing committee reviews. (Min: 7 days, Max: 365 days).</span>
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <span class="text-xs font-bold text-slate-600 mr-1">Quick Presets:</span>
+                            @foreach ([15, 30, 45, 60, 90, 180] as $presetDays)
+                                <button type="button"
+                                    wire:click="$set('auditLogRetentionDays', {{ $presetDays }})"
+                                    class="px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer {{ $auditLogRetentionDays === $presetDays ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }}">
+                                    {{ $presetDays }} Days
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900">Manual Pruning Trigger</span>
+                                <p class="text-[11px] text-slate-500">Force immediate cleanup of any log entries older than {{ $auditLogRetentionDays }} days.</p>
+                            </div>
+                            <button type="button"
+                                wire:click="pruneAuditLogsNow"
+                                wire:confirm="Are you sure you want to permanently delete all audit log records older than {{ $auditLogRetentionDays }} days?"
+                                class="h-9 px-4 inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                                <span>🧹</span>
+                                <span>Prune Expired Logs Now</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

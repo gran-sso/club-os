@@ -51,6 +51,8 @@ class DocumentController extends Controller
         $isIdProof = in_array($normalized, ['id_proof', 'id_proof.jpg', 'id_proof.png', 'id_proof.pdf', 'kyc'], true);
         $isApplication = in_array($normalized, ['application_form', 'application_form.pdf', 'application_form.jpg', 'application_form.png', 'application'], true);
 
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logKycView($member, $isIdProof ? 'id_proof' : ($isApplication ? 'application_form' : $filename));
+
         $targetPath = null;
         if ($isIdProof && $member->person?->id_proof_path) {
             $targetPath = $member->person->id_proof_path;

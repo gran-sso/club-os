@@ -41,6 +41,8 @@ class EditRole extends EditRecord
                     $this->record->syncPermissions($permissions);
                     app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+                    app(\App\Domain\Shared\Services\AuditLogService::class)->logRoleChange($this->record, 'restored_defaults', $defaults);
+
                     $this->fillForm();
 
                     Notification::make()
@@ -51,7 +53,8 @@ class EditRole extends EditRecord
 
             DeleteAction::make()
                 ->visible(fn (): bool => ! ClubPermissionRegistry::isSystemRole($this->record->name)
-                    && $this->record->users()->count() === 0),
+                    && $this->record->users()->count() === 0)
+                ->before(fn () => app(\App\Domain\Shared\Services\AuditLogService::class)->logRoleChange($this->record, 'deleted')),
         ];
     }
 
@@ -126,6 +129,8 @@ class EditRole extends EditRecord
         }
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logRoleChange($this->record, 'updated', $this->selectedPermissions);
     }
 
     protected function getRedirectUrl(): string

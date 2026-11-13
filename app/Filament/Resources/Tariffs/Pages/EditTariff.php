@@ -67,6 +67,7 @@ class EditTariff extends EditRecord
 
         try {
             return DB::transaction(function () use ($record, $tariffData, $inventoryItemId, $servingName, $servingQty): Model {
+                $old = $record->only(array_keys($tariffData));
                 $record->update($tariffData);
 
                 app(InventoryService::class)->syncTariffServingMapping(
@@ -75,6 +76,13 @@ class EditTariff extends EditRecord
                     servingName: $servingName,
                     servingQty: $servingQty,
                     actor: auth()->user(),
+                );
+
+                app(\App\Domain\Shared\Services\AuditLogService::class)->logTariffChange(
+                    tariff: $record,
+                    action: 'updated',
+                    old: $old,
+                    new: $tariffData
                 );
 
                 return $record->fresh(['servingMapping.inventoryItem']);

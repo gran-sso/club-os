@@ -23,7 +23,7 @@ class PeriodClosingService
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
-        return FinancialPeriod::updateOrCreate(
+        $period = FinancialPeriod::updateOrCreate(
             ['period_code' => $periodCode],
             [
                 'start_date' => $start->toDateString(),
@@ -34,6 +34,16 @@ class PeriodClosingService
                 'notes' => $notes,
             ]
         );
+
+        app(\App\Domain\Shared\Services\AuditLogService::class)->log(
+            category: 'finance',
+            action: 'period.closed',
+            description: "Closed financial period '{$periodCode}' ({$start->toDateString()} to {$end->toDateString()})",
+            auditable: $period,
+            user: $user
+        );
+
+        return $period;
     }
 
     /**

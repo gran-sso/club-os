@@ -50,6 +50,8 @@ class CreateRole extends CreateRecord
         $this->record->syncPermissions($permissions);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logRoleChange($this->record, 'created', $this->selectedPermissions);
     }
 
     protected function getRedirectUrl(): string

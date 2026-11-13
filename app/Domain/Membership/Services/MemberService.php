@@ -271,6 +271,12 @@ class MemberService
     {
         $downloadName = $filename ?: ('malabar_club_members_' . now()->format('Ymd_His') . '.csv');
 
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logDataExport(
+            exportType: 'members_csv',
+            recordCount: is_countable($members) ? count($members) : 0,
+            notes: $includeKyc ? 'Included confidential KYC columns' : 'Standard member directory'
+        );
+
         return response()->streamDownload(function () use ($members, $includeKyc) {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");

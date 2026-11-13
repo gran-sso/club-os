@@ -20,3 +20,8 @@ Schedule::command('tally:sync')
             return false;
         }
     });
+
+Schedule::command('audit:prune')
+    ->daily()
+    ->withoutOverlapping();
+

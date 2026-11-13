@@ -24,11 +24,19 @@ class CreateTariff extends CreateRecord
         ] : null;
 
         try {
-            return app(InventoryService::class)->createTariffWithServingMapping(
+            $tariff = app(InventoryService::class)->createTariffWithServingMapping(
                 tariffData: $data,
                 mappingData: $mappingData,
                 actor: auth()->user(),
             );
+
+            app(\App\Domain\Shared\Services\AuditLogService::class)->logTariffChange(
+                tariff: $tariff,
+                action: 'created',
+                new: $data
+            );
+
+            return $tariff;
         } catch (InvalidArgumentException|UnauthorizedActionException $e) {
             Notification::make()
                 ->title('Unable to Save Menu Item')

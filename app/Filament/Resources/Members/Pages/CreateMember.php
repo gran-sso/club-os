@@ -154,6 +154,12 @@ class CreateMember extends CreateRecord
             ]);
         }
 
+        app(\App\Domain\Shared\Services\AuditLogService::class)->logMemberChange(
+            member: $member,
+            action: 'admitted',
+            new: ['membership_number' => $member->membership_number, 'status' => (string) ($member->status?->value ?? $member->status)]
+        );
+
         return $member;
     }
 }

@@ -139,6 +139,12 @@ class InventoryItemsTable
                                 actor: auth()->user(),
                             );
 
+                            app(\App\Domain\Shared\Services\AuditLogService::class)->logTariffChange(
+                                tariff: $tariff,
+                                action: 'created',
+                                new: $data
+                            );
+
                             Notification::make()
                                 ->title('Selling Price Created & Linked')
                                 ->body("Added {$tariff->name} ({$tariff->code}) linked to deduct {$data['serving_qty']} {$record->base_unit} per sale.")

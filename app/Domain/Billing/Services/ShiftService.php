@@ -139,7 +139,20 @@ class ShiftService
                 'notes' => $notes ? ($lockedShift->notes ? ($lockedShift->notes . " | " . $notes) : $notes) : $lockedShift->notes,
             ]);
 
-            return $lockedShift->fresh();
+            $freshShift = $lockedShift->fresh(['counter', 'user']);
+
+            if ($discrepancy !== 0) {
+                app(\App\Domain\Shared\Services\AuditLogService::class)->logShiftVariance($freshShift, $discrepancy, $notes);
+            } else {
+                app(\App\Domain\Shared\Services\AuditLogService::class)->log(
+                    category: 'shifts',
+                    action: 'shift.closed',
+                    description: "Shift #{$freshShift->shift_number} closed with balanced drawer (₹" . number_format($closingCashCountedPaise / 100, 2) . ")",
+                    auditable: $freshShift
+                );
+            }
+
+            return $freshShift;
         });
     }
 
