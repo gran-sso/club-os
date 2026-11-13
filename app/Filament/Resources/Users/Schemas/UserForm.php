@@ -25,13 +25,29 @@ class UserForm
                     ->description('Personal identification, contact information, and active account status for club software users.')
                     ->columnSpanFull()
                     ->schema([
-                        Grid::make(3)->schema([
+                        Grid::make(4)->schema([
                             TextInput::make('name')
                                 ->label('Full Name')
                                 ->required()
                                 ->maxLength(100)
                                 ->placeholder('e.g. Suresh Pillai')
-                                ->helperText('Legal or official display name of the staff member.'),
+                                ->helperText('Legal or official display name of the staff member.')
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (string $context, ?string $state, $set, $get) {
+                                    if ($context === 'create' && blank($get('username')) && filled($state)) {
+                                        $set('username', strtolower(preg_replace('/[^a-zA-Z0-9._-]/', '', \Illuminate\Support\Str::slug($state, '.'))));
+                                    }
+                                }),
+
+                            TextInput::make('username')
+                                ->label('Username (Login Handle)')
+                                ->required()
+                                ->maxLength(50)
+                                ->unique(ignoreRecord: true)
+                                ->regex('/^[a-zA-Z0-9._-]+$/')
+                                ->placeholder('e.g. suresh.p or cashier1')
+                                ->helperText('Unique login handle for counter POS and terminal access. Lowercase letters, digits, dots, and hyphens.')
+                                ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? strtolower(trim($state)) : null),
 
                             TextInput::make('employee_id')
                                 ->label('Staff / Employee ID')
@@ -49,13 +65,13 @@ class UserForm
 
                         Grid::make(3)->schema([
                             TextInput::make('email')
-                                ->label('Email Address (Login Username)')
+                                ->label('Contact / Official Email')
                                 ->email()
-                                ->required()
+                                ->nullable()
                                 ->maxLength(150)
                                 ->unique(ignoreRecord: true)
-                                ->placeholder('e.g. cashier1@malabarclub.local')
-                                ->helperText('Primary email address used for authenticating into the application.'),
+                                ->placeholder('e.g. suresh@malabarclub.local')
+                                ->helperText('Optional contact email address for official correspondence and notifications.'),
 
                             TextInput::make('phone')
                                 ->label('Phone / Mobile Number')
@@ -84,7 +100,7 @@ class UserForm
                     ->description('Set or reset software access credentials. Passwords are securely hashed with bcrypt.')
                     ->columnSpanFull()
                     ->schema([
-                        Grid::make(2)->schema([
+                        Grid::make(3)->schema([
                             TextInput::make('password')
                                 ->label('Password')
                                 ->password()
@@ -106,6 +122,12 @@ class UserForm
                                 ->dehydrated(false)
                                 ->required(fn (string $context): bool => $context === 'create')
                                 ->helperText('Re-enter the password to verify accuracy.'),
+
+                            Toggle::make('must_change_password')
+                                ->label('Require Password Change on Next Login')
+                                ->default(true)
+                                ->inline(false)
+                                ->helperText('Forces the staff member to establish their own private password upon signing in with this temporary password.'),
                         ]),
                     ]),
 

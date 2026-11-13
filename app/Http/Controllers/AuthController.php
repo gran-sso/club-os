@@ -54,48 +54,71 @@ class AuthController extends Controller
 
     public function login(Request $request, UserLandingService $landingService): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        $loginInput = trim((string) $request->input('login', $request->input('username', $request->input('email'))));
+        $password = (string) $request->input('password');
+        $errorKey = $request->has('email') && ! $request->has('login') && ! $request->has('username') ? 'email' : 'login';
 
-        $remember = $request->boolean('remember');
-        $success = Auth::guard('web')->attempt($credentials, $remember);
-
-        if (
-            ! $success
-            && ! app()->environment('production')
-            && in_array($credentials['password'], ['password', 'Password@123'], true)
-        ) {
-            $altPassword = ($credentials['password'] === 'password') ? 'Password@123' : 'password';
-            $success = Auth::guard('web')->attempt(['email' => $credentials['email'], 'password' => $altPassword], $remember);
+        if ($loginInput === '' || $password === '') {
+            throw ValidationException::withMessages([
+                $errorKey => __('Please enter your staff username and password.'),
+            ]);
         }
 
-        if ($success) {
-            /** @var User|null $user */
-            $user = Auth::guard('web')->user();
+        /** @var User|null $user */
+        $user = User::query()
+            ->where(function ($query) use ($loginInput) {
+                $query->where('username', $loginInput)
+                    ->orWhere('employee_id', $loginInput);
 
-            if ($user && $user->is_active === false) {
+                if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+                    $query->orWhere('email', $loginInput);
+                }
+            })
+            ->first();
+
+        $success = false;
+
+        if ($user) {
+            $success = \Illuminate\Support\Facades\Hash::check($password, $user->password);
+
+            if (
+                ! $success
+                && ! app()->environment('production')
+                && in_array($password, ['password', 'Password@123'], true)
+            ) {
+                $altPassword = ($password === 'password') ? 'Password@123' : 'password';
+                $success = \Illuminate\Support\Facades\Hash::check($altPassword, $user->password);
+            }
+        }
+
+        if ($success && $user) {
+            if ($user->is_active === false) {
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
                 throw ValidationException::withMessages([
-                    'email' => __('Your staff account has been deactivated. Please contact an administrator.'),
+                    $errorKey => __('Your staff account has been deactivated. Please contact an administrator.'),
                 ]);
             }
 
+            Auth::guard('web')->login($user, $request->boolean('remember'));
             $request->session()->regenerate();
 
             if ($request->session()->get('url.intended') === route('filament.admin.auth.login')) {
                 $request->session()->forget('url.intended');
             }
 
-            return redirect()->intended($user ? $landingService->resolveHomeUrlForUser($user) : route('pos'));
+            if ($user->must_change_password) {
+                return redirect()->route('password.forced-change')
+                    ->with('status', 'Welcome! For operational security, you must set a new private password before accessing the system.');
+            }
+
+            return redirect()->intended($landingService->resolveHomeUrlForUser($user));
         }
 
         throw ValidationException::withMessages([
-            'email' => __('The provided credentials do not match our records.'),
+            $errorKey => __('The provided credentials do not match our records.'),
         ]);
     }
 

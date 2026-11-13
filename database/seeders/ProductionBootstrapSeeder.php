@@ -256,6 +256,7 @@ class ProductionBootstrapSeeder extends Seeder
         // If an administrator already exists, reseeding does NOT modify or reset credentials
         if (User::whereHas('roles', fn($q) => $q->where('name', 'admin'))->count() === 0) {
             $adminEmail = env('INITIAL_ADMIN_EMAIL', 'admin@malabarclub.local');
+            $adminUsername = env('INITIAL_ADMIN_USERNAME', 'admin');
             $adminPassword = env('INITIAL_ADMIN_PASSWORD');
 
             if (empty($adminPassword)) {
@@ -266,6 +267,7 @@ class ProductionBootstrapSeeder extends Seeder
                     $adminPassword = Str::password(24, true, true);
                     $this->command?->warn("=================================================================");
                     $this->command?->warn("INITIAL PRODUCTION ADMINISTRATOR CREATED");
+                    $this->command?->warn("Username: {$adminUsername}");
                     $this->command?->warn("Email:    {$adminEmail}");
                     $this->command?->warn("Password: {$adminPassword}");
                     $this->command?->warn("Please record this password securely. It will NOT be shown again.");
@@ -274,10 +276,12 @@ class ProductionBootstrapSeeder extends Seeder
             }
 
             $adminUser = User::firstOrCreate(
-                ['email' => $adminEmail],
+                ['username' => $adminUsername],
                 [
                     'name' => 'System Administrator',
+                    'email' => $adminEmail,
                     'password' => Hash::make($adminPassword),
+                    'must_change_password' => false,
                 ]
             );
             $adminUser->syncRoles([$adminRole]);

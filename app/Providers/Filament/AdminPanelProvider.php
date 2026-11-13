@@ -77,6 +77,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()
+                    ->label('Change My Password')
+                    ->url(fn (): string => route('password.change'))
+                    ->icon(Heroicon::OutlinedKey),
+                \Filament\Navigation\MenuItem::make()
                     ->label('Help')
                     ->url(fn (): string => url('/admin/help'))
                     ->icon(Heroicon::OutlinedQuestionMarkCircle),
@@ -113,6 +117,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                \App\Http\Middleware\EnsurePasswordIsChanged::class,
             ]);
     }
 }

@@ -50,28 +50,30 @@ class DemoDataSeeder extends Seeder
 
         // 1. Staff Users for Testing (both @malabarclub.com and @malabarclub.local aliases)
         $staffAccounts = [
-            ['email' => 'admin@malabarclub.com', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
-            ['email' => 'admin@malabarclub.local', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
-            ['email' => 'manager@malabarclub.com', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
-            ['email' => 'manager@malabarclub.local', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
-            ['email' => 'fbmanager@malabarclub.com', 'name' => 'S. Rajendran (F&B Manager)', 'role' => $managerRole],
-            ['email' => 'cashier1@malabarclub.com', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
-            ['email' => 'cashier1@malabarclub.local', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
-            ['email' => 'cashier2@malabarclub.com', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
-            ['email' => 'cashier2@malabarclub.local', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
-            ['email' => 'reception@malabarclub.com', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
-            ['email' => 'reception@malabarclub.local', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
-            ['email' => 'accountant@malabarclub.com', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
-            ['email' => 'accountant@malabarclub.local', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
+            ['username' => 'admin', 'email' => 'admin@malabarclub.local', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
+            ['username' => 'admin.com', 'email' => 'admin@malabarclub.com', 'name' => 'K. Ramanathan (Admin)', 'role' => $adminRole],
+            ['username' => 'manager', 'email' => 'manager@malabarclub.local', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
+            ['username' => 'manager.com', 'email' => 'manager@malabarclub.com', 'name' => 'V. Jayaprakash (Manager)', 'role' => $managerRole],
+            ['username' => 'fbmanager', 'email' => 'fbmanager@malabarclub.com', 'name' => 'S. Rajendran (F&B Manager)', 'role' => $managerRole],
+            ['username' => 'cashier1', 'email' => 'cashier1@malabarclub.local', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
+            ['username' => 'cashier1.com', 'email' => 'cashier1@malabarclub.com', 'name' => 'Suresh Pillai (Cashier 1)', 'role' => $cashierRole],
+            ['username' => 'cashier2', 'email' => 'cashier2@malabarclub.local', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
+            ['username' => 'cashier2.com', 'email' => 'cashier2@malabarclub.com', 'name' => 'Deepa Nair (Cashier 2)', 'role' => $cashierRole],
+            ['username' => 'reception', 'email' => 'reception@malabarclub.local', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
+            ['username' => 'reception.com', 'email' => 'reception@malabarclub.com', 'name' => 'Anil Kumar (Reception)', 'role' => $receptionRole],
+            ['username' => 'accountant', 'email' => 'accountant@malabarclub.local', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
+            ['username' => 'accountant.com', 'email' => 'accountant@malabarclub.com', 'name' => 'M. Unnikrishnan (Accountant)', 'role' => $accountantRole],
         ];
 
         foreach ($staffAccounts as $acc) {
             $user = User::updateOrCreate(
                 ['email' => $acc['email']],
                 [
+                    'username' => $acc['username'],
                     'name' => $acc['name'],
                     'password' => $defaultPassword,
                     'is_active' => true,
+                    'must_change_password' => false,
                 ]
             );
             $user->syncRoles([$acc['role']]);

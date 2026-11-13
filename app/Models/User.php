@@ -16,8 +16,11 @@ class User extends Authenticatable implements FilamentUser
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'must_change_password',
+        'password_changed_at',
         'phone',
         'employee_id',
         'designation',
@@ -31,6 +34,7 @@ class User extends Authenticatable implements FilamentUser
 
     protected $attributes = [
         'is_active' => true,
+        'must_change_password' => false,
     ];
 
     protected function casts(): array
@@ -39,7 +43,19 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
         ];
+    }
+
+    public function setUsernameAttribute(?string $value): void
+    {
+        $this->attributes['username'] = $value !== null ? strtolower(trim($value)) : null;
+    }
+
+    public function needsPasswordChange(): bool
+    {
+        return (bool) $this->must_change_password;
     }
 
     public function canAccessPanel(Panel $panel): bool

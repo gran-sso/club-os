@@ -89,11 +89,16 @@
 
                 @auth('web')
                     <div class="h-5 w-px bg-slate-200 mx-1"></div>
-                    <div class="flex items-center space-x-3 pl-2">
+                    <div class="flex items-center space-x-2 pl-2">
                         <div class="text-right hidden sm:block">
                             <div class="text-xs font-semibold text-slate-900">{{ auth('web')->user()->name }}</div>
-                            <div class="text-[10px] text-amber-700 font-medium capitalize">{{ auth('web')->user()->roles?->first()?->name ?? 'Staff' }}</div>
+                            <div class="text-[10px] text-amber-700 font-medium capitalize">{{ auth('web')->user()->roles?->first()?->name ?? 'Staff' }} ({{ auth('web')->user()->username }})</div>
                         </div>
+                        <a href="{{ route('password.change') }}" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Change My Password">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                        </a>
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
                             <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Sign Out">

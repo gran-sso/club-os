@@ -50,18 +50,20 @@ class UserResource extends Resource
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['name', 'email', 'employee_id', 'phone', 'designation'];
+        return ['name', 'username', 'email', 'employee_id', 'phone', 'designation'];
     }
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return "Staff: {$record->name} ({$record->email})";
+        /** @var User $record */
+        return "Staff: {$record->name} (@{$record->username}" . ($record->email ? " • {$record->email}" : '') . ")";
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         /** @var User $record */
         return [
+            'Username' => "@{$record->username}",
             'Role' => $record->roles->pluck('name')->map(fn ($r) => ClubPermissionRegistry::roleShortBadgeLabel($r))->join(', ') ?: 'No Role Assigned',
             'Staff ID' => $record->employee_id ?? 'N/A',
             'Status' => $record->is_active ? 'Active' : 'Deactivated',

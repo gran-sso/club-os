@@ -24,11 +24,25 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth:web'])->group(function () {
-    Route::get('/pos', CounterPos::class)->name('pos');
-    Route::get('/documents/members/{member}/{filename}', [\App\Http\Controllers\DocumentController::class, 'showMemberDocument'])
-        ->name('members.documents.show');
-    Route::get('/documents/dependents/{dependent}/photo', [\App\Http\Controllers\DocumentController::class, 'showDependentPhoto'])
-        ->name('dependents.photo.show');
+    // Password Rotation Routes
+    Route::get('/password/forced-change', [\App\Http\Controllers\PasswordChangeController::class, 'showForcedChange'])
+        ->name('password.forced-change');
+    Route::post('/password/forced-change', [\App\Http\Controllers\PasswordChangeController::class, 'updatePassword'])
+        ->name('password.forced-change.update');
+
+    Route::get('/password/change', [\App\Http\Controllers\PasswordChangeController::class, 'showSelfServiceChange'])
+        ->name('password.change');
+    Route::post('/password/change', [\App\Http\Controllers\PasswordChangeController::class, 'updatePassword'])
+        ->name('password.change.update');
+
+    // Operational routes guarded by mandatory password setup
+    Route::middleware([\App\Http\Middleware\EnsurePasswordIsChanged::class])->group(function () {
+        Route::get('/pos', CounterPos::class)->name('pos');
+        Route::get('/documents/members/{member}/{filename}', [\App\Http\Controllers\DocumentController::class, 'showMemberDocument'])
+            ->name('members.documents.show');
+        Route::get('/documents/dependents/{dependent}/photo', [\App\Http\Controllers\DocumentController::class, 'showDependentPhoto'])
+            ->name('dependents.photo.show');
+    });
 });
 
 // Member Portal Routes

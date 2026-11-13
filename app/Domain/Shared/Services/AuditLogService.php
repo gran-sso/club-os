@@ -29,6 +29,29 @@ class AuditLogService
     ];
 
     /**
+     * Convenient static facade for recording audit logs anywhere in the application.
+     */
+    public static function record(
+        string $category,
+        string $action,
+        string $description,
+        ?Model $auditable = null,
+        ?array $oldValues = null,
+        ?array $newValues = null,
+        ?User $user = null
+    ): ?AuditLog {
+        return app(self::class)->log(
+            category: $category,
+            action: $action,
+            description: $description,
+            auditable: $auditable,
+            oldValues: $oldValues,
+            newValues: $newValues,
+            user: $user
+        );
+    }
+
+    /**
      * Record an audit trail action.
      * Guaranteed fail-safe: failures during audit logging never interrupt the primary transaction.
      */

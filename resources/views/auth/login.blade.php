@@ -134,13 +134,13 @@
                             <h2 id="staff-form-heading" class="sr-only">Staff Terminal Sign In</h2>
 
                             <div>
-                                <label for="staff-email" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                                    Staff Official Email <span aria-hidden="true" class="text-amber-400">*</span>
+                                <label for="staff-login" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                                    Staff Username / ID <span aria-hidden="true" class="text-amber-400">*</span>
                                 </label>
-                                <input type="email"
-                                       id="staff-email"
-                                       name="email"
-                                       value="{{ old('email') }}"
+                                <input type="text"
+                                       id="staff-login"
+                                       name="login"
+                                       value="{{ old('login', old('email')) }}"
                                        required
                                        autocomplete="username"
                                        autocorrect="off"
@@ -149,7 +149,8 @@
                                        enterkeyhint="next"
                                        @if($staffHasError) aria-invalid="true" aria-describedby="staff-form-error" @endif
                                        class="login-input w-full min-h-12 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 transition-colors shadow-2xs"
-                                       placeholder="staff@malabarclub.local">
+                                       placeholder="e.g. admin, cashier1, or EMP-104">
+                                <p class="text-[11px] text-slate-500 mt-1">Sign in with your assigned staff username or employee ID.</p>
                             </div>
 
                             <div>
@@ -206,22 +207,22 @@
                             <div class="mt-5 pt-5 border-t border-slate-800">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">Development Staff Quick Fill</p>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <button type="button" data-demo-staff="admin@malabarclub.local"
+                                    <button type="button" data-demo-staff="admin"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                         <div class="font-bold text-amber-400">Admin</div>
                                         <div class="text-[10px] text-slate-400">Admin Console</div>
                                     </button>
-                                    <button type="button" data-demo-staff="manager@malabarclub.local"
+                                    <button type="button" data-demo-staff="manager"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                         <div class="font-bold text-amber-400">Manager</div>
                                         <div class="text-[10px] text-slate-400">V. Jayaprakash</div>
                                     </button>
-                                    <button type="button" data-demo-staff="reception@malabarclub.local"
+                                    <button type="button" data-demo-staff="reception"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                         <div class="font-bold text-amber-400">Reception</div>
                                         <div class="text-[10px] text-slate-400">Guest Rooms (101–105)</div>
                                     </button>
-                                    <button type="button" data-demo-staff="cashier1@malabarclub.local"
+                                    <button type="button" data-demo-staff="cashier1"
                                         class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
                                         <div class="font-bold text-amber-400">Cashier 1</div>
                                         <div class="text-[10px] text-slate-400">Counter POS</div>
@@ -463,11 +464,11 @@
 
             container.querySelectorAll('[data-demo-staff]').forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    const emailInput = document.getElementById('staff-email');
+                    const loginInput = document.getElementById('staff-login') || document.getElementById('staff-email');
                     const passwordInput = document.getElementById('staff-password');
-                    if (emailInput) emailInput.value = btn.dataset.demoStaff || '';
+                    if (loginInput) loginInput.value = btn.dataset.demoStaff || '';
                     if (passwordInput) passwordInput.value = 'Password@123';
-                    emailInput?.focus();
+                    loginInput?.focus();
                 });
             });
 
