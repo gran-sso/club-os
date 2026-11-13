@@ -75,7 +75,12 @@ class FrontDeskAndOperationalWorkflowsTest extends TestCase
             ->test(RoomRackPage::class)
             ->call('openNewBookingModal', $this->room->id)
             ->assertSet('showNewBookingModal', true)
+            ->assertSet('newBooking.facility_id', $this->room->id)
+            ->assertSet('newBooking.member_id', null)
+            ->assertSet('newBooking.guest_id', null)
             ->assertSee('Front Desk Room Reservation')
+            ->set('newBooking.guest_type', 'member')
+            ->set('newBooking.member_id', $this->member->id)
             ->call('confirmNewBooking')
             ->assertSet('showNewBookingModal', false)
             ->assertHasNoErrors();

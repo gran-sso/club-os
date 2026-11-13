@@ -7,9 +7,20 @@
     'searchPlaceholder' => 'Type to search items...',
     'emptyMessage' => 'No matching items found.',
     'class' => '',
+    'value' => null,
 ])
 
 @php
+    $currentVal = $value;
+    if ($currentVal === null && !empty($wireModel) && isset($this)) {
+        try {
+            $currentVal = data_get($this, $wireModel);
+        } catch (\Throwable $e) {
+            $currentVal = null;
+        }
+    }
+    $initialSelectedId = $currentVal !== null && $currentVal !== '' ? (string) $currentVal : '';
+
     $normalizedOptions = collect($options)->map(function ($opt) {
         if (is_array($opt)) {
             return [
@@ -29,15 +40,29 @@
 <div x-data="{
     open: false,
     search: '',
-    selectedId: '',
+    selectedId: '{{ addslashes($initialSelectedId) }}',
     selectedLabel: '',
     options: {{ Js::from($normalizedOptions) }},
     placeholder: '{{ addslashes($placeholder) }}',
 
     init() {
-        this.syncFromSelect();
+        this.updateLabel();
+
+        if (!this.selectedId) {
+            this.syncFromSelect();
+        }
 
         @if (!empty($wireModel))
+            if (!this.selectedId) {
+                try {
+                    const wireVal = this.$wire?.get ? this.$wire.get('{{ $wireModel }}') : null;
+                    if (wireVal !== undefined && wireVal !== null && wireVal !== '') {
+                        this.selectedId = String(wireVal);
+                        this.updateLabel();
+                    }
+                } catch (e) {}
+            }
+
             this.$watch('$wire.{{ $wireModel }}', (newVal) => {
                 this.selectedId = newVal ? String(newVal) : '';
                 this.updateLabel();
@@ -46,8 +71,8 @@
     },
 
     syncFromSelect() {
-        if (this.$refs.nativeSelect) {
-            this.selectedId = this.$refs.nativeSelect.value ? String(this.$refs.nativeSelect.value) : '';
+        if (this.$refs.nativeSelect && this.$refs.nativeSelect.value) {
+            this.selectedId = String(this.$refs.nativeSelect.value);
             this.updateLabel();
         }
     },
@@ -238,7 +263,7 @@ class="relative w-full {{ $class }}">
         aria-hidden="true">
         <option value="">{{ $placeholder }}</option>
         @foreach ($normalizedOptions as $opt)
-            <option value="{{ $opt['id'] }}">{{ $opt['label'] }}</option>
+            <option value="{{ $opt['id'] }}" {{ (string)$opt['id'] === (string)$initialSelectedId ? 'selected' : '' }}>{{ $opt['label'] }}</option>
         @endforeach
     </select>
 </div>

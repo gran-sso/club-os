@@ -670,21 +670,18 @@ class RoomRackPage extends Page
         }
         $rateRupees = $tariff ? (int) ($tariff->rate_paise / 100) : 2500;
 
-        $firstGuest = Guest::first();
-        $firstMember = Member::where('status', 'active')->first();
-
         $this->newBooking = [
             'facility_id' => $selectedFacility?->id,
-            'guest_type' => $firstGuest ? 'guest' : 'member',
-            'guest_id' => $firstGuest?->id,
-            'member_id' => $firstMember?->id,
-            'sponsor_member_id' => $firstMember?->id,
+            'guest_type' => 'guest',
+            'guest_id' => null,
+            'member_id' => null,
+            'sponsor_member_id' => null,
             'check_in_date' => $this->selectedDate,
             'check_out_date' => Carbon::parse($this->selectedDate)->addDay()->toDateString(),
             'rate_per_night_rupees' => $rateRupees,
             'paid_amount_rupees' => $rateRupees,
             'payment_mode' => 'cash',
-            'notes' => 'Walk-in booking via Accommodation Deck',
+            'notes' => '',
         ];
 
         $this->showNewBookingModal = true;

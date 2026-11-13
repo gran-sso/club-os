@@ -301,7 +301,12 @@
                             </div>
                             <div>
                                 <h3 id="new-room-booking-title" class="text-base font-extrabold text-slate-900 tracking-tight">Front Desk Room Reservation</h3>
-                                <p class="text-xs text-slate-500">{{ config('club.name', 'Malabar Club') }} Guest Accommodation Rooms</p>
+                                @php
+                                    $targetRoomFacility = !empty($newBooking['facility_id']) ? App\Domain\Tariff\Models\Facility::find($newBooking['facility_id']) : null;
+                                @endphp
+                                <p class="text-xs text-slate-500">
+                                    {{ $targetRoomFacility ? "Selected: {$targetRoomFacility->name} ({$targetRoomFacility->code})" : config('club.name', 'Malabar Club') . ' Guest Accommodation Rooms' }}
+                                </p>
                             </div>
                         </div>
                         <button wire:click="$set('showNewBookingModal', false)" type="button" class="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer">&times;</button>
@@ -337,6 +342,7 @@
                                 <x-searchable-combobox
                                     id="new-booking-room"
                                     wireModel="newBooking.facility_id"
+                                    :wireModelLive="true"
                                     placeholder="-- Choose Room --"
                                     searchPlaceholder="Search room code or name..."
                                     :options="$rackRoomOptions"

@@ -476,4 +476,22 @@ class RoomRackCheckInWorkflowTest extends TestCase
         $this->assertTrue($component->get('showHousekeepingModal'));
         $this->assertEquals(0, \App\Domain\Facility\Models\FacilityMaintenanceBlock::where('facility_id', $room->id)->count());
     }
+
+    public function test_open_new_booking_modal_preselects_clicked_room(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('code', 'ROOM-103')->firstOrFail();
+
+        \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->call('openNewBookingModal', $room->id)
+            ->assertSet('showNewBookingModal', true)
+            ->assertSet('newBooking.facility_id', $room->id)
+            ->assertSet('newBooking.member_id', null)
+            ->assertSet('newBooking.guest_id', null)
+            ->assertSet('newBooking.sponsor_member_id', null)
+            ->assertSet('newBooking.notes', '')
+            ->assertSeeHtml('value="' . $room->id . '" selected')
+            ->assertSee("Selected: {$room->name} ({$room->code})");
+    }
 }

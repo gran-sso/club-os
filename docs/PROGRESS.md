@@ -2543,7 +2543,47 @@ For environments where full browser automation is unavailable, operators should 
   - Executed POS test suite: **33 passed, 199 assertions, 0 failures** across `CounterPosKeyboardTest`, `CounterPosTest`, `CounterPosHeldTabsTest`, and `CounterPosRoomGuestSaleTest`.
   - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
 
+## Room Reservation Pre-selection & Searchable Combobox State Synchronization (Completed 2026-11-13)
 
+- **Scope & Design Decisions:**
+  - Resolved missing room pre-selection when opening the Front Desk Room Reservation modal from room cards on the Accommodation Deck (`D79`).
+  - When clicking "Book Room" on any room card (e.g. Room 101), the modal opens with that specific room already selected in the Accommodation Room combobox and displays *"Selected: {Room Name} ({Code})"* in the modal header.
+  - Upgraded the shared `<x-searchable-combobox>` component to synchronize initial values from the parent Livewire component (`data_get($this, $wireModel)` or an explicit `value` prop), render `<option selected>` in the underlying select, and initialize Alpine.js `selectedId` and `selectedLabel` synchronously on mount.
+  - Enabled `:wireModelLive="true"` on the room combobox so that if reception staff choose to switch rooms inside the modal, Livewire's `updatedNewBookingFacilityId()` hook immediately updates the per-night tariff and required advance on screen.
+- **Implementation:**
+  - **Component ([`searchable-combobox.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/components/searchable-combobox.blade.php)):**
+    - Added `$initialSelectedId` resolution in Blade from `$value ?? data_get($this, $wireModel)`.
+    - Added `selected` attribute rendering to the matching `<option>` tag.
+    - Initialized Alpine `selectedId: '{{ addslashes($initialSelectedId) }}'` and called `this.updateLabel()` on mount, with fallback to `$wire.get()` and `$watch` for dynamic updates.
+  - **View ([`room-rack.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/room-rack.blade.php)):**
+    - Enabled `:wireModelLive="true"` on the Accommodation Room combobox (`id="new-booking-room"`).
+    - Added dynamic subtitle to modal header showing the selected room's name and code.
+- **Verification:**
+  - Added feature test `test_open_new_booking_modal_preselects_clicked_room` to [`tests/Feature/RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php).
+  - Executed tests:
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **10 passed, 87 assertions, 0 failures**.
+    - [`FacilityAndBookingTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FacilityAndBookingTest.php): **8 passed, 42 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).## Clean Occupant & Sponsor State in Front Desk Room Reservation (Completed 2026-11-13)
 
-
+- **Scope & Design Decisions:**
+  - Resolved unwanted auto-selection of occupants and sponsors in the Front Desk Room Reservation modal (`D80`).
+  - Previously, `RoomRackPage::openNewBookingModal()` grabbed `$firstGuest = Guest::first()` and `$firstMember = Member::where('status', 'active')->first()` as fallback fixtures. Once the `<x-searchable-combobox>` component was fixed to properly hydrate selected values on mount, these fixture IDs caused arbitrary guests and members to appear pre-selected in the form.
+  - Front desk reception staff should have the clicked room pre-selected, but occupant fields (`guest_id`, `member_id`, `sponsor_member_id`) must remain `null` and notes `''` so that staff explicitly search and choose the actual checking-in guest/member.
+- **Implementation:**
+  - **Component ([`RoomRackPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/RoomRackPage.php)):**
+    - Updated `openNewBookingModal(?int $facilityId)` to remove arbitrary `$firstGuest` and `$firstMember` lookups.
+    - Set `facility_id => $selectedFacility?->id` (retaining room pre-selection).
+    - Set `guest_type => 'guest'`.
+    - Set `guest_id => null`, `member_id => null`, `sponsor_member_id => null`.
+    - Set `notes => ''` (clearing default filler text).
+- **Verification:**
+  - Updated [`tests/Feature/RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php) to assert that `facility_id` is set to the room, while `guest_id`, `member_id`, and `sponsor_member_id` are `null`, and `notes` is empty.
+  - Updated [`tests/Feature/FrontDeskAndOperationalWorkflowsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FrontDeskAndOperationalWorkflowsTest.php) to explicitly populate `member_id` when testing booking confirmation.
+  - Executed tests on MySQL:
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **10 passed, 87 assertions, 0 failures**.
+    - [`FrontDeskAndOperationalWorkflowsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FrontDeskAndOperationalWorkflowsTest.php): **9 passed, 56 assertions, 0 failures**.
+    - [`SearchableComboBoxesTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SearchableComboBoxesTest.php): **1 passed, 1 assertion, 0 failures**.
+    - [`FacilityAndBookingTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FacilityAndBookingTest.php): **8 passed, 42 assertions, 0 failures**.
+    - Total: **28 passed, 186 assertions, 0 failures**.
+  - Rebuilt production assets (`npm run build && php artisan view:clear`).
 
