@@ -153,6 +153,38 @@ class CounterPosKeyboardTest extends TestCase
         $t3->assertSeeHtml('Kingfisher Premium Beer 650ml');
     }
 
+    public function test_item_search_input_clears_immediately_after_adding_item_to_cart(): void
+    {
+        $this->actingAs($this->cashier);
+
+        // 1. Search for item typing prefix "King"
+        $test = Livewire::test(CounterPos::class)
+            ->set('itemSearch', 'King');
+
+        $results = $test->get('itemSearchResults');
+        $this->assertNotEmpty($results);
+        $tariffId = (int) $results[0]['tariff_id'];
+
+        // 2. Add to cart (via Enter / selectHighlightedItem or direct addToCart)
+        $test->call('selectHighlightedItem')
+            ->assertCount('cart', 1)
+            ->assertSet('itemSearch', '')
+            ->assertSet('itemSearchResults', [])
+            ->assertSet('highlightedItemIndex', 0)
+            ->assertDispatched('focus-item-search');
+
+        // 3. Direct addToCart with a different item also wipes search state cleanly
+        $mealsTariff = Tariff::where('code', 'FOOD-MEALS')->firstOrFail();
+        $test->set('itemSearch', 'Meals');
+        $this->assertNotEmpty($test->get('itemSearchResults'));
+        $test->call('addToCart', $mealsTariff->id)
+            ->assertCount('cart', 2)
+            ->assertSet('itemSearch', '')
+            ->assertSet('itemSearchResults', [])
+            ->assertSet('highlightedItemIndex', 0)
+            ->assertDispatched('focus-item-search');
+    }
+
     public function test_multi_serving_item_requires_explicit_serving_selection(): void
     {
         $this->actingAs($this->cashier);

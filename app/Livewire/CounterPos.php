@@ -707,6 +707,9 @@ class CounterPos extends Component
         $this->servingItemOptions = $item['serving_options'] ?? [];
         $this->highlightedServingIndex = 0;
         $this->showServingModal = true;
+        $this->itemSearch = '';
+        $this->itemSearchResults = [];
+        $this->highlightedItemIndex = 0;
     }
 
     public function openServingModalForInventoryItem(int $inventoryItemId): void
@@ -744,6 +747,9 @@ class CounterPos extends Component
         $this->servingItemOptions = $servingOptions;
         $this->highlightedServingIndex = 0;
         $this->showServingModal = true;
+        $this->itemSearch = '';
+        $this->itemSearchResults = [];
+        $this->highlightedItemIndex = 0;
     }
 
     public function navigateServingOptions(string $direction): void
@@ -774,6 +780,7 @@ class CounterPos extends Component
         $this->closeServingModal();
         $this->itemSearch = '';
         $this->itemSearchResults = [];
+        $this->highlightedItemIndex = 0;
         $this->dispatch('focus-item-search');
     }
 
@@ -793,6 +800,14 @@ class CounterPos extends Component
     public function addToCart(int $tariffId): void
     {
         $this->addTariffToCartInternal($tariffId, false);
+
+        if (!$this->showServingModal) {
+            $this->itemSearch = '';
+            $this->itemSearchResults = [];
+            $this->highlightedItemIndex = 0;
+        }
+
+        $this->dispatch('focus-item-search');
     }
 
     protected function addTariffToCartInternal(int $tariffId, bool $skipServingModalCheck = false): void

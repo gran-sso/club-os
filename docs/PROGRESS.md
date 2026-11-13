@@ -2525,6 +2525,24 @@ For environments where full browser automation is unavailable, operators should 
     - [`MemberProfileViewTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberProfileViewTest.php): **27 passed, 123 assertions, 0 failures**.
   - Built production assets (`npm run build && php artisan view:clear && php artisan config:clear`).
 
+## Instant Search Input Reset on Counter POS Item Selection (Completed 2026-11-13)
+
+- **Scope & Design Decisions:**
+  - Resolved lingering search terms in Counter POS (`D78`): when searching for an item (e.g. typing `"Bi"` for Biryani) and pressing <kbd>Enter</kbd> (or clicking the autocomplete result), the item is added to the active bill, and the search input is immediately reset to blank (`""`), the dropdown list is dismissed, and focus is kept on the search box with the cursor ready.
+  - Enables cashiers to rapidly add successive items without manually backspacing or clicking the "Clear" button.
+- **Implementation:**
+  - **Component ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php)):**
+    - Updated `addToCart(int $tariffId)` to reset `$this->itemSearch = ''`, `$this->itemSearchResults = []`, and `$this->highlightedItemIndex = 0` whenever an item is added, and dispatch `focus-item-search`.
+    - Updated `openServingModalForItem()` and `openServingModalForInventoryItem()` to clear `$this->itemSearch` and `$this->itemSearchResults` so the autocomplete dropdown is dismissed while the serving size modal (e.g., 30ml vs 60ml) is open.
+    - Updated `selectServingAndAddToCart()` to ensure `$this->highlightedItemIndex = 0`.
+  - **View & Alpine.js ([`counter-pos.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/counter-pos.blade.php)):**
+    - Updated `selectItem()` in the Alpine store to immediately clear `input.value = ''` on the client when an item is chosen.
+    - Added `@click` handler on `#item-result-{{ $idx }}` to clear the input and maintain focus when clicked with a mouse.
+- **Verification:**
+  - Added feature test `test_item_search_input_clears_immediately_after_adding_item_to_cart` to [`tests/Feature/CounterPosKeyboardTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosKeyboardTest.php).
+  - Executed POS test suite: **33 passed, 199 assertions, 0 failures** across `CounterPosKeyboardTest`, `CounterPosTest`, `CounterPosHeldTabsTest`, and `CounterPosRoomGuestSaleTest`.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
 
 
 

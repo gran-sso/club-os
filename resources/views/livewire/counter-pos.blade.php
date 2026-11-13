@@ -33,8 +33,12 @@
                 this.selectServing();
                 return;
             }
+            const input = this.$refs.itemSearchInput || document.getElementById('item-search-input');
             const activeEl = document.getElementById('item-result-' + this.highlightedItemIdx);
             if (activeEl) {
+                if (input) {
+                    input.value = '';
+                }
                 activeEl.click();
                 this.highlightedItemIdx = 0;
                 return;
@@ -43,6 +47,9 @@
             if (results && results.length > 0) {
                 const item = results[this.highlightedItemIdx] || results[0];
                 if (item) {
+                    if (input) {
+                        input.value = '';
+                    }
                     if (item.has_multiple_servings) {
                         this.getWire()?.openServingModalForItem(item);
                     } else {
@@ -56,6 +63,9 @@
             }
             const query = this.getProp('itemSearch');
             if (query && query.trim().length > 0) {
+                if (input) {
+                    input.value = '';
+                }
                 this.getWire()?.selectHighlightedItem();
             }
         },
@@ -1065,6 +1075,7 @@
                             @foreach ($itemSearchResults as $idx => $itemMatch)
                                 <div id="item-result-{{ $idx }}"
                                     wire:click="{{ $itemMatch['has_multiple_servings'] ? 'openServingModalForItem(' . json_encode($itemMatch) . ')' : 'addToCart(' . $itemMatch['tariff_id'] . ')' }}"
+                                    @click="const inp = document.getElementById('item-search-input'); if (inp) { inp.value = ''; inp.focus(); }"
                                     @mouseenter="highlightedItemIdx = {{ $idx }}"
                                     class="p-3.5 cursor-pointer flex items-center justify-between text-xs transition-colors"
                                     :class="highlightedItemIdx === {{ $idx }} ? 'bg-amber-50 text-amber-950 border-l-4 border-amber-500 font-medium' : 'text-slate-700 hover:bg-slate-50'">
