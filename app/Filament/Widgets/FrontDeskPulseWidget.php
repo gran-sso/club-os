@@ -40,7 +40,7 @@ class FrontDeskPulseWidget extends Widget
                 ->whereDate('end_date', '>', $todayStr)
                 ->exists();
 
-            $occupiedRes = RoomReservation::with(['guest.person', 'sponsorMember.person'])
+            $occupiedRes = RoomReservation::with(['guest.person', 'sponsorMember.person', 'payer'])
                 ->where('facility_id', $room->id)
                 ->where('status', 'checked_in')
                 ->whereDate('check_in_date', '<=', $todayStr)
@@ -49,7 +49,7 @@ class FrontDeskPulseWidget extends Widget
                 ->first();
 
             $reservedToday = !$occupiedRes
-                ? RoomReservation::with(['guest.person', 'sponsorMember.person'])
+                ? RoomReservation::with(['guest.person', 'sponsorMember.person', 'payer'])
                     ->where('facility_id', $room->id)
                     ->where('status', 'reserved')
                     ->whereDate('check_in_date', '<=', $todayStr)
@@ -73,15 +73,10 @@ class FrontDeskPulseWidget extends Widget
                 $status = 'maintenance';
             } elseif ($occupiedRes) {
                 $status = 'occupied';
-                $occupantName = $occupiedRes->guest?->name
-                    ?? $occupiedRes->sponsorMember?->name
-                    ?? 'Occupied Guest';
+                $occupantName = $occupiedRes->occupant_name;
             } elseif ($reservedToday) {
                 $status = 'reserved_today';
-                $guestName = $reservedToday->guest?->name
-                    ?? $reservedToday->sponsorMember?->name
-                    ?? 'Guest';
-                $occupantName = 'Arriving: ' . $guestName;
+                $occupantName = 'Arriving: ' . $reservedToday->occupant_name;
             } elseif (($room->housekeeping_status ?? 'clean') === 'dirty' || $latestCheckedOut?->housekeeping_status === 'dirty') {
                 $status = 'cleaning';
             }

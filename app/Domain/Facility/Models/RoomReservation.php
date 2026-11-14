@@ -74,4 +74,55 @@ class RoomReservation extends Model
     {
         return $this->paid_amount_paise >= $this->total_charge_paise;
     }
+
+    public function getOccupantNameAttribute(): string
+    {
+        if ($this->guest) {
+            return $this->guest->name;
+        }
+
+        if ($this->sponsorMember) {
+            return $this->sponsorMember->name;
+        }
+
+        if ($this->payer instanceof Member) {
+            return $this->payer->name;
+        }
+
+        return 'Guest #' . $this->id;
+    }
+
+    public function getOccupantPhoneAttribute(): ?string
+    {
+        return $this->guest?->phone 
+            ?? $this->sponsorMember?->phone 
+            ?? ($this->payer instanceof Member ? $this->payer->phone : null);
+    }
+
+    public function getOccupantTypeAttribute(): string
+    {
+        if ($this->guest) {
+            return 'guest';
+        }
+
+        if ($this->sponsorMember || $this->payer instanceof Member) {
+            return 'member';
+        }
+
+        return 'guest';
+    }
+
+    public function getOccupantBadgeAttribute(): string
+    {
+        if ($this->guest) {
+            return 'Visiting Guest';
+        }
+
+        $member = $this->sponsorMember ?? ($this->payer instanceof Member ? $this->payer : null);
+        if ($member) {
+            return "Member ({$member->membership_number})";
+        }
+
+        return 'Guest';
+    }
 }

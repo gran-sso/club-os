@@ -141,4 +141,67 @@ class CounterPosTest extends TestCase
             ->assertSee('Insufficient prepaid balance')
             ->assertSet('memberWalletBalancePaise', 0);
     }
+
+    public function test_cannot_close_shift_with_unfilled_closing_cash(): void
+    {
+        Livewire::actingAs($this->cashier)
+            ->test(CounterPos::class)
+            ->set('selectedCounterId', $this->counter->id)
+            ->set('openingFloat', 2000.00)
+            ->call('openShift')
+            ->assertSet('errorMessage', null)
+            ->assertSet('closingCashCounted', null)
+            // Attempting to close without filling closingCashCounted should fail
+            ->call('closeShift')
+            ->assertSet('activeShift.status', \App\Domain\Shared\Enums\ShiftStatus::OPEN)
+            ->assertSeeHtml('Please enter the physical closing cash counted or click &quot;Match Expected&quot;');
+    }
+
+    public function test_fill_expected_cash_populates_exact_expected_amount(): void
+    {
+        Livewire::actingAs($this->cashier)
+            ->test(CounterPos::class)
+            ->set('selectedCounterId', $this->counter->id)
+            ->set('openingFloat', 2000.00)
+            ->call('openShift')
+            ->assertSet('errorMessage', null)
+            ->set('searchQuery', 'MC-001')
+            ->call('searchMember')
+            ->set('rechargeAmount', 500.00)
+            ->set('rechargeTender', 'cash')
+            ->call('rechargeWallet')
+            ->assertSet('errorMessage', null)
+            ->call('closeReceiptModal')
+            // Expected cash is now 2000 + 500 = 2500
+            ->assertSet('closingCashCounted', null)
+            ->call('fillExpectedCash')
+            ->assertSet('closingCashCounted', 2500.00)
+            ->call('closeShift')
+            ->assertSet('errorMessage', null)
+            ->assertSet('activeShift', null)
+            ->assertDispatched('shift-closed');
+    }
+
+    public function test_closing_shift_with_discrepancy_requires_remarks(): void
+    {
+        Livewire::actingAs($this->cashier)
+            ->test(CounterPos::class)
+            ->set('selectedCounterId', $this->counter->id)
+            ->set('openingFloat', 2000.00)
+            ->call('openShift')
+            ->assertSet('errorMessage', null)
+            // Counted cash is 1900.00 (shortage of 100.00)
+            ->set('closingCashCounted', 1900.00)
+            ->set('shiftNotes', '')
+            // Attempt close without remarks -> blocked with helpful guidance
+            ->call('closeShift')
+            ->assertSet('activeShift.status', \App\Domain\Shared\Enums\ShiftStatus::OPEN)
+            ->assertSeeHtml('cash Shortage of ₹100.00 was detected')
+            // Now provide mandatory variance explanation
+            ->set('shiftNotes', 'Drawer counted ₹100 short; ₹100 note damaged and sent to treasury.')
+            ->call('closeShift')
+            ->assertSet('errorMessage', null)
+            ->assertSet('activeShift', null)
+            ->assertDispatched('shift-closed');
+    }
 }

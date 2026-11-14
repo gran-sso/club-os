@@ -157,7 +157,7 @@ class RoomRackPage extends Page
                     ->where('check_in_date', '<=', $dateStr)
                     ->orderByDesc('check_in_date')
                     ->orderByDesc('id')
-                    ->with(['guest.person', 'sponsorMember.person'])
+                    ->with(['guest.person', 'sponsorMember.person', 'payer'])
                     ->first();
             }
 
@@ -167,7 +167,7 @@ class RoomRackPage extends Page
                 ->where('check_out_date', '>', $dateStr)
                 ->orderByRaw("CASE WHEN status = 'checked_in' THEN 0 ELSE 1 END")
                 ->orderBy('check_in_date')
-                ->with(['guest.person', 'sponsorMember.person'])
+                ->with(['guest.person', 'sponsorMember.person', 'payer'])
                 ->first();
 
             // Next arriving/upcoming reserved booking (including back-to-back check-ins on check-out day)
@@ -177,7 +177,7 @@ class RoomRackPage extends Page
                     ->where('status', 'reserved')
                     ->where('check_out_date', '>', $dateStr)
                     ->orderBy('check_in_date')
-                    ->with(['guest.person', 'sponsorMember.person']);
+                    ->with(['guest.person', 'sponsorMember.person', 'payer']);
 
                 if ($activeReservation) {
                     $upcomingQuery->where('id', '!=', $activeReservation->id);
@@ -280,9 +280,11 @@ class RoomRackPage extends Page
                 'active_reservation' => $activeReservation ? [
                     'id' => $activeReservation->id,
                     'reservation_number' => $activeReservation->reservation_number,
-                    'guest_name' => $activeReservation->guest?->name ?? $activeReservation->sponsorMember?->name ?? 'Guest',
-                    'guest_phone' => $activeReservation->guest?->phone ?? $activeReservation->sponsorMember?->phone ?? '—',
-                    'sponsor_name' => $activeReservation->sponsorMember?->name,
+                    'occupant_type' => $activeReservation->occupant_type,
+                    'occupant_badge' => $activeReservation->occupant_badge,
+                    'guest_name' => $activeReservation->occupant_name,
+                    'guest_phone' => $activeReservation->occupant_phone ?? '—',
+                    'sponsor_name' => $activeReservation->guest ? $activeReservation->sponsorMember?->name : null,
                     'check_in_date' => $activeReservation->check_in_date->format('d M Y'),
                     'check_out_date' => $activeReservation->check_out_date->format('d M Y'),
                     'rate_per_night_rupees' => $activeReservation->rate_per_night_paise / 100,
@@ -298,7 +300,11 @@ class RoomRackPage extends Page
                 'upcoming_reservation' => $upcomingReservation ? [
                     'id' => $upcomingReservation->id,
                     'reservation_number' => $upcomingReservation->reservation_number,
-                    'guest_name' => $upcomingReservation->guest?->name ?? $upcomingReservation->sponsorMember?->name ?? 'Guest',
+                    'occupant_type' => $upcomingReservation->occupant_type,
+                    'occupant_badge' => $upcomingReservation->occupant_badge,
+                    'guest_name' => $upcomingReservation->occupant_name,
+                    'guest_phone' => $upcomingReservation->occupant_phone ?? '—',
+                    'sponsor_name' => $upcomingReservation->guest ? $upcomingReservation->sponsorMember?->name : null,
                     'check_in_date' => $upcomingReservation->check_in_date->format('d M Y'),
                     'is_arriving_on_selected_date' => $upcomingReservation->check_in_date->toDateString() <= $dateStr,
                 ] : null,
@@ -316,7 +322,7 @@ class RoomRackPage extends Page
     public function openCheckIn(int $reservationId): void
     {
         abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
-        $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person'])->findOrFail($reservationId);
+        $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person', 'payer'])->findOrFail($reservationId);
         $this->activeReservationId = $res->id;
         $unpaidPaise = max(0, $res->total_charge_paise - $res->paid_amount_paise);
         $this->paymentAmountRupees = (int) ($unpaidPaise / 100);
@@ -326,7 +332,9 @@ class RoomRackPage extends Page
             'id' => $res->id,
             'reservation_number' => $res->reservation_number,
             'room_name' => $res->facility->name,
-            'guest_name' => $res->guest?->name ?? $res->sponsorMember?->name ?? 'Guest',
+            'guest_name' => $res->occupant_name,
+            'occupant_type' => $res->occupant_type,
+            'occupant_badge' => $res->occupant_badge,
             'check_in_date' => $res->check_in_date->format('d M Y'),
             'check_out_date' => $res->check_out_date->format('d M Y'),
             'total_rupees' => $res->total_charge_paise / 100,
@@ -455,13 +463,15 @@ class RoomRackPage extends Page
     public function openCheckOut(int $reservationId): void
     {
         abort_unless((bool) auth()->user()?->hasClubPermission('rooms.manage_reservations'), 403);
-        $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person'])->findOrFail($reservationId);
+        $res = RoomReservation::with(['facility', 'guest.person', 'sponsorMember.person', 'payer'])->findOrFail($reservationId);
         $this->activeReservationId = $res->id;
         $this->activeReservationData = [
             'id' => $res->id,
             'reservation_number' => $res->reservation_number,
             'room_name' => $res->facility->name,
-            'guest_name' => $res->guest?->name ?? $res->sponsorMember?->name ?? 'Guest',
+            'guest_name' => $res->occupant_name,
+            'occupant_type' => $res->occupant_type,
+            'occupant_badge' => $res->occupant_badge,
             'check_in_date' => $res->check_in_date->format('d M Y'),
             'check_out_date' => $res->check_out_date->format('d M Y'),
             'total_rupees' => $res->total_charge_paise / 100,
@@ -709,8 +719,11 @@ class RoomRackPage extends Page
         try {
             $service = app(RoomReservationService::class);
 
-            $guestId = $this->newBooking['guest_type'] === 'guest' ? $this->newBooking['guest_id'] : null;
-            $sponsorMemberId = $this->newBooking['sponsor_member_id'] ?? null;
+            $isMemberBooking = ($this->newBooking['guest_type'] ?? '') === 'member';
+            $guestId = $isMemberBooking ? null : ($this->newBooking['guest_id'] ?? null);
+            $sponsorMemberId = $isMemberBooking
+                ? ($this->newBooking['member_id'] ?? null)
+                : ($this->newBooking['sponsor_member_id'] ?? null);
 
             $paidAmountPaise = (int) ($this->newBooking['paid_amount_rupees'] * 100);
 
@@ -718,8 +731,8 @@ class RoomRackPage extends Page
                 'facility_id' => $this->newBooking['facility_id'],
                 'guest_id' => $guestId,
                 'sponsor_member_id' => $sponsorMemberId,
-                'payer_type' => $this->newBooking['guest_type'] === 'guest' ? Guest::class : Member::class,
-                'payer_id' => $this->newBooking['guest_type'] === 'guest' ? $guestId : $this->newBooking['member_id'],
+                'payer_type' => $isMemberBooking ? Member::class : Guest::class,
+                'payer_id' => $isMemberBooking ? $this->newBooking['member_id'] : $guestId,
                 'check_in_date' => $this->newBooking['check_in_date'],
                 'check_out_date' => $this->newBooking['check_out_date'],
                 'rate_per_night_paise' => (int) ($this->newBooking['rate_per_night_rupees'] * 100),

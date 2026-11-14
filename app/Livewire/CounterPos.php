@@ -34,7 +34,7 @@ class CounterPos extends Component
     public ?Shift $activeShift = null;
     public int $selectedCounterId = 1;
     public float $openingFloat = 2000.00;
-    public float $closingCashCounted = 0.00;
+    public ?float $closingCashCounted = null;
     public ?string $shiftNotes = null;
 
     // Customer & Search state
@@ -146,6 +146,14 @@ class CounterPos extends Component
         }
     }
 
+    public function fillExpectedCash(): void
+    {
+        if ($this->activeShift) {
+            $this->closingCashCounted = round($this->activeShift->calculateExpectedCashPaise() / 100, 2);
+            $this->clearMessages();
+        }
+    }
+
     public function closeShift(ShiftService $shiftService): void
     {
         $this->clearMessages();
@@ -166,17 +174,41 @@ class CounterPos extends Component
             return;
         }
 
+        if ($this->closingCashCounted === null) {
+            $this->errorMessage = 'Please enter the physical closing cash counted or click "Match Expected" before closing the shift.';
+            return;
+        }
+
+        if ($this->closingCashCounted < 0) {
+            $this->errorMessage = 'Counted closing cash cannot be negative.';
+            return;
+        }
+
+        $expectedPaise = $this->activeShift->calculateExpectedCashPaise();
+        $countedPaise = (int) round($this->closingCashCounted * 100);
+        $discrepancyPaise = $countedPaise - $expectedPaise;
+
+        if ($discrepancyPaise !== 0 && empty(trim($this->shiftNotes ?? ''))) {
+            $varianceType = $discrepancyPaise < 0 ? 'Shortage' : 'Surplus';
+            $varianceRupees = number_format(abs($discrepancyPaise) / 100, 2);
+            $this->errorMessage = "A cash {$varianceType} of ₹{$varianceRupees} was detected (Expected: ₹" . number_format($expectedPaise / 100, 2) . ", Counted: ₹" . number_format($countedPaise / 100, 2) . "). Please enter an explanation in Handover & Variance Remarks before closing.";
+            return;
+        }
+
         try {
             $closed = $shiftService->closeShift(
                 shift: $this->activeShift,
-                closingCashCountedPaise: (int) round($this->closingCashCounted * 100),
+                closingCashCountedPaise: $countedPaise,
                 notes: $this->shiftNotes
             );
 
             $this->successMessage = "Shift {$closed->shift_number} closed. Expected: ₹" . number_format($closed->expected_cash_paise / 100, 2) . ", Counted: ₹" . number_format($closed->closing_cash_counted_paise / 100, 2) . ", Discrepancy: ₹" . number_format($closed->discrepancy_paise / 100, 2);
             $this->activeShift = null;
+            $this->closingCashCounted = null;
+            $this->shiftNotes = null;
             $this->resetMember();
             $this->clearCart();
+            $this->dispatch('shift-closed');
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
         }
@@ -1423,7 +1455,7 @@ class CounterPos extends Component
 
             if ($this->selectedRoomReservation) {
                 $customer = $this->selectedGuest ?? $this->selectedMember ?? Member::first();
-                $guestName = $this->selectedGuest?->name ?? $this->selectedRoomReservation->guest?->name ?? $this->selectedRoomReservation->sponsorMember?->name ?? 'Resident Guest';
+                $guestName = $this->selectedGuest?->name ?? $this->selectedRoomReservation->occupant_name;
                 $notes = "Counter sale for {$this->selectedRoomReservation->facility->name} (Resident: {$guestName})";
             } elseif ($this->isGuestSale && !empty($this->guestFirstName)) {
                 if (! auth('web')->user()?->hasClubPermission('guests.register')) {

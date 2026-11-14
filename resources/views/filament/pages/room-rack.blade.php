@@ -108,12 +108,27 @@
                         <div>
                             @if ($isOccupied || $isReserved)
                                 @php $res = $room['active_reservation']; @endphp
-                                <div class="bg-white p-3 rounded-2xl border border-slate-200 space-y-1.5 shadow-2xs">
-                                    <div class="font-bold text-slate-900 truncate text-xs" title="{{ $res['guest_name'] }}">
-                                        {{ $res['guest_name'] }}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500 font-mono">
-                                        {{ $res['guest_phone'] }}
+                                <div class="bg-white p-3 rounded-2xl border border-slate-200 space-y-2 shadow-2xs">
+                                    <div>
+                                        <div class="flex items-center justify-between gap-1 mb-1">
+                                            <span class="text-[9px] font-extrabold uppercase tracking-wider {{ ($res['occupant_type'] ?? '') === 'member' ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-amber-800 bg-amber-50 border-amber-200' }} px-1.5 py-0.5 rounded border">
+                                                {{ $res['occupant_badge'] ?? (($res['occupant_type'] ?? '') === 'member' ? 'Club Member' : 'Visiting Guest') }}
+                                            </span>
+                                            @if(!empty($res['sponsor_name']))
+                                                <span class="text-[9px] text-slate-500 truncate max-w-[110px]" title="Sponsored by {{ $res['sponsor_name'] }}">
+                                                    Sponsor: {{ $res['sponsor_name'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="font-bold text-slate-900 truncate text-xs" title="{{ $res['guest_name'] }}">
+                                            {{ $res['guest_name'] }}
+                                        </div>
+                                        @if (!empty($res['guest_phone']) && $res['guest_phone'] !== '—')
+                                            <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                                                <svg class="w-2.5 h-2.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                                <span>{{ $res['guest_phone'] }}</span>
+                                            </div>
+                                        @endif
                                     </div>
                                     @if (!empty($res['is_overstay']))
                                         <div class="px-2 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[10px] font-bold text-rose-700">
@@ -129,9 +144,13 @@
                                             Room needs cleaning before check-in
                                         </div>
                                     @endif
-                                    <div class="pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px]">
-                                        <span class="text-slate-500">Dates:</span>
-                                        <span class="font-semibold text-slate-800 font-mono">{{ $res['check_in_date'] }} &rarr; {{ $res['check_out_date'] }}</span>
+                                    <div class="pt-1.5 border-t border-slate-100 text-[10px]">
+                                        <div class="flex justify-between items-baseline gap-1">
+                                            <span class="text-slate-500 shrink-0">Dates:</span>
+                                            <span class="font-semibold text-slate-800 font-mono text-right text-[9.5px] leading-tight">
+                                                {{ $res['check_in_date'] }} &rarr; {{ $res['check_out_date'] }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="flex justify-between items-center text-[10px]">
                                         <span class="text-slate-500">Total:</span>
@@ -490,9 +509,14 @@
                     </div>
 
                     <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5">
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Guest Name:</span>
-                            <span class="font-bold text-slate-900">{{ $activeReservationData['guest_name'] }}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Occupant:</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider {{ ($activeReservationData['occupant_type'] ?? '') === 'member' ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-amber-800 bg-amber-50 border-amber-200' }} px-1.5 py-0.5 rounded border">
+                                    {{ $activeReservationData['occupant_badge'] ?? (($activeReservationData['occupant_type'] ?? '') === 'member' ? 'Club Member' : 'Visiting Guest') }}
+                                </span>
+                                <span class="font-bold text-slate-900">{{ $activeReservationData['guest_name'] }}</span>
+                            </div>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-500">Stay Period:</span>
@@ -617,9 +641,14 @@
                     </div>
 
                     <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Guest Name:</span>
-                            <span class="font-bold text-slate-900">{{ $activeReservationData['guest_name'] }}</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-500">Occupant:</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider {{ ($activeReservationData['occupant_type'] ?? '') === 'member' ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-amber-800 bg-amber-50 border-amber-200' }} px-1.5 py-0.5 rounded border">
+                                    {{ $activeReservationData['occupant_badge'] ?? (($activeReservationData['occupant_type'] ?? '') === 'member' ? 'Club Member' : 'Visiting Guest') }}
+                                </span>
+                                <span class="font-bold text-slate-900">{{ $activeReservationData['guest_name'] }}</span>
+                            </div>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-500">Total Settled:</span>

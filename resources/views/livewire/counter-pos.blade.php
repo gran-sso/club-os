@@ -1756,6 +1756,7 @@
         <!-- MODAL 4: Reconcile & Close Counter Dialog -->
         <!-- ========================================== -->
         <div x-show="showCloseShiftModal" x-cloak
+            @shift-closed.window="showCloseShiftModal = false"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
             role="dialog" aria-modal="true" aria-labelledby="close-counter-dialog-title" style="display: none;">
             <div @click.away="showCloseShiftModal = false"
@@ -1764,7 +1765,7 @@
                     <div>
                         <span class="text-[11px] uppercase font-bold tracking-wider text-rose-600">Shift
                             Reconciliation</span>
-                        <h3 id="close-counter-dialog-title" class="text-lg font-bold text-slate-900 mt-0.5">Reconcile &
+                        <h3 id="close-counter-dialog-title" class="text-lg font-bold text-slate-900 mt-0.5">Reconcile &amp;
                             Close Counter</h3>
                     </div>
                     <button @click="showCloseShiftModal = false" type="button"
@@ -1777,29 +1778,73 @@
                     reconcile automatically.
                 </p>
 
-                <form wire:submit.prevent="closeShift" @submit="showCloseShiftModal = false" class="space-y-4">
+                <form wire:submit.prevent="closeShift" class="space-y-4">
                     <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] uppercase font-bold text-slate-500 block">Expected Closing Cash</span>
-                            <span class="text-xs text-slate-400">Opening + Cash Sales</span>
+                            <span class="text-xs text-slate-400">Opening Float + Cash Sales</span>
                         </div>
-                        <span class="text-xl font-bold font-mono text-slate-900">
-                            ₹{{ number_format($activeShift->calculateExpectedCashPaise() / 100, 2) }}
+                        <div class="text-right">
+                            <span class="text-xl font-bold font-mono text-slate-900 block">
+                                ₹{{ number_format($activeShift->calculateExpectedCashPaise() / 100, 2) }}
+                            </span>
+                            <button type="button" wire:click="fillExpectedCash"
+                                class="text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg mt-1 inline-flex items-center gap-1 transition-colors cursor-pointer">
+                                <span>⚡ Match Expected</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="closing-cash-counted-input"
+                                class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Closing Cash Counted (₹)
+                            </label>
+                            @if ($closingCashCounted !== null && $closingCashCounted !== '')
+                                @php
+                                    $countedP = (int) round(((float) $closingCashCounted) * 100);
+                                    $diffP = $countedP - $activeShift->calculateExpectedCashPaise();
+                                @endphp
+                                @if ($diffP === 0)
+                                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        ✓ Drawer Balanced
+                                    </span>
+                                @elseif ($diffP < 0)
+                                    <span class="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        ⚠️ Shortage: -₹{{ number_format(abs($diffP) / 100, 2) }}
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        ⚠️ Surplus: +₹{{ number_format($diffP / 100, 2) }}
+                                    </span>
+                                @endif
+                            @endif
+                        </div>
+                        <div class="relative">
+                            <span
+                                class="absolute left-4 top-3 text-slate-400 font-mono font-bold text-base pointer-events-none">₹</span>
+                            <input type="number" id="closing-cash-counted-input" step="any" min="0" wire:model.live="closingCashCounted"
+                                placeholder="Enter physical counted cash..."
+                                autofocus
+                                class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-4 py-3 text-slate-900 font-mono font-bold text-base focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <span class="text-[11px] text-slate-400 mt-1 block">
+                            Type the physically counted drawer cash, or click "⚡ Match Expected" if drawer balances.
                         </span>
                     </div>
 
                     <div>
-                        <label for="closing-cash-counted-input"
+                        <label for="shift-notes-input"
                             class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                            Closing Cash Counted (₹)
+                            Handover &amp; Variance Remarks
                         </label>
-                        <div class="relative">
-                            <span
-                                class="absolute left-4 top-3 text-slate-400 font-mono font-bold text-base pointer-events-none">₹</span>
-                            <input type="number" id="closing-cash-counted-input" step="10" wire:model="closingCashCounted"
-                                autofocus
-                                class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-4 py-3 text-slate-900 font-mono font-bold text-base focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
+                        <input type="text" id="shift-notes-input" wire:model="shiftNotes"
+                            placeholder="e.g. Exact cash balanced, or reason for shortage/surplus..."
+                            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <span class="text-[10px] text-slate-400 mt-1 block">
+                            Mandatory if closing cash does not match the expected drawer amount.
+                        </span>
                     </div>
 
                     <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
@@ -1809,7 +1854,7 @@
                         </button>
                         <button type="submit"
                             class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer">
-                            Confirm Closing Cash & End Shift [Enter] ↵
+                            Confirm Closing Cash &amp; End Shift [Enter] ↵
                         </button>
                     </div>
                 </form>

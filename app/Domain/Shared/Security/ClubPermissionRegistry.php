@@ -159,6 +159,18 @@ final class ClubPermissionRegistry
                 'description' => 'Open detailed shift inspection forms and administrative shift actions.',
                 'default_roles' => ['manager'],
             ],
+            'counters.view' => [
+                'group' => 'pos',
+                'label' => 'View Billing Counters Master (Read-Only)',
+                'description' => 'Inspect configured physical and logical billing counter stations.',
+                'default_roles' => ['manager', 'accountant', 'auditor'],
+            ],
+            'counters.manage' => [
+                'group' => 'pos',
+                'label' => 'Create & Edit Billing Counters',
+                'description' => 'Add, configure, rename, or deactivate billing counter stations and department bindings.',
+                'default_roles' => ['manager'],
+            ],
             'bills.view' => [
                 'group' => 'pos',
                 'label' => 'View Posted Bills & Receipts (Read-Only)',

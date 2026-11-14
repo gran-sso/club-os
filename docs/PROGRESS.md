@@ -2587,3 +2587,119 @@ For environments where full browser automation is unavailable, operators should 
     - Total: **28 passed, 186 assertions, 0 failures**.
   - Rebuilt production assets (`npm run build && php artisan view:clear`).
 
+## Room Occupant Name Resolution & Identification Badges on Room Rack Cards (Completed 2026-11-13)
+
+- **Scope & Defect Analysis:**
+  - Resolved missing occupant names and ambiguous `"Guest —"` cards on the Accommodation Deck (`D82`).
+  - Analysis of user screenshot showed room cards rendering `"Guest"` as a bold title with `" —"` underneath.
+  - Root cause was two-fold:
+    1. When a reservation was booked for a club member (`guest_type = 'member'`), `guest_id` was correctly null, but `$this->newBooking['member_id']` was only stored in `payer_id` without setting `sponsor_member_id`. Because `room_reservations` links members via `sponsor_member_id` (`Member::roomReservations()`), both `$reservation->guest` and `$reservation->sponsorMember` relationships returned `null`.
+    2. In `RoomRackPage`, `guest_name` had a fallback to the literal string `'Guest'`, and `guest_phone` fell back to `'—'`. Furthermore, the card lacked any badge indicating whether the occupant was a **Club Member** or **Visiting Guest**.
+- **Implementation:**
+  - **Model ([`RoomReservation.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Facility/Models/RoomReservation.php)):**
+    - Added accessors:
+      - `occupant_name`: Resolves `guest->name`, fallback `sponsorMember->name`, fallback `payer->name`, or `Guest #{id}`.
+      - `occupant_phone`: Resolves phone from `guest`, `sponsorMember`, or `payer`.
+      - `occupant_type`: Returns `'guest'` or `'member'`.
+      - `occupant_badge`: Returns `"Visiting Guest"` or `"Member ({$membership_number})"`.
+  - **Page & Controller ([`RoomRackPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/RoomRackPage.php)):**
+    - In `confirmNewBooking()`: When `guest_type === 'member'`, sets `sponsor_member_id` to `$this->newBooking['member_id']`.
+    - Eager loaded `['guest.person', 'sponsorMember.person', 'payer']` in `refreshRooms()`, `openCheckIn()`, and `openCheckOut()`.
+    - Populated `occupant_type`, `occupant_badge`, `guest_name`, and `guest_phone` using the new accessors.
+  - **View ([`room-rack.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/pages/room-rack.blade.php)):**
+    - Upgraded the card occupant box to render:
+      - Distinct occupant badge: Indigo `MEMBER (MC-001)` or Amber `VISITING GUEST`.
+      - Sponsoring member line when a visiting guest has a sponsor.
+      - Occupant full name in bold (`Krishnadas P`, `Priya Nair`, etc.).
+      - Phone number with a telephone icon (omits cleanly if no phone instead of displaying a lone em-dash).
+      - Balanced dates layout (`13 Nov 2026 → 14 Nov 2026`) that wraps cleanly without awkward spacing.
+      - Updated Check-In and Check-Out modals to display the styled occupant badge and name.
+  - **Widgets & POS ([`FrontDeskPulseWidget.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Widgets/FrontDeskPulseWidget.php), [`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php)):**
+    - Synchronized `occupant_name` usage across the front desk pulse widget and POS resident billing.
+  - **Data Healing:**
+    - Backfilled `sponsor_member_id` for existing database reservations where `payer_type === Member::class`.
+- **Verification:**
+  - Added feature test `test_room_card_displays_member_and_guest_occupant_names_and_badges_on_rack` to [`tests/Feature/RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php).
+  - Executed tests on MySQL:
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **11 passed, 91 assertions, 0 failures**.
+    - [`FrontDeskAndOperationalWorkflowsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FrontDeskAndOperationalWorkflowsTest.php): **9 passed, 56 assertions, 0 failures**.
+    - [`FacilityAndBookingTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FacilityAndBookingTest.php): **8 passed, 42 assertions, 0 failures**.
+    - Total: **28 passed, 189 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
+## Billing Counters Configuration & Master Administration (Completed 2026-11-14)
+
+- **Scope & Design Decisions:**
+  - Implemented dynamic administrative configuration for billing counters (`D83`).
+  - Previously, physical and logical counters were static in database seeders (`COUNTER-1`, `COUNTER-2`, `COUNTER-3`) without a dedicated management form in the Filament admin panel.
+  - Introduced `CounterResource` under navigation group **Commercial & Counters -> Billing Counters** (`/admin/counters`) backed by modal create and edit actions (`CounterForm`, `CountersTable`, `ListCounters`).
+  - Added permissions `counters.view` and `counters.manage` in `ClubPermissionRegistry` with automatic role synchronization (`syncMigrationDefaults()`).
+  - Deactivating a counter (`is_active = false`) immediately excludes it from the cashier Counter POS Open Shift dropdown.
+  - Destructive deletion is permanently disabled (`canDelete = false`) to safeguard immutable historical cashier shift records and financial sales audit trails.
+- **Implementation:**
+  - **Permissions ([`ClubPermissionRegistry.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Security/ClubPermissionRegistry.php)):**
+    - Added `counters.view` (default: manager, accountant, auditor) and `counters.manage` (default: manager).
+  - **Form Schema ([`CounterForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Counters/Schemas/CounterForm.php)):**
+    - Station identifier code (`code`, required, unique, uppercase).
+    - Display name (`name`, required, max 100).
+    - Primary operating department (`department_id`, nullable, searchable relation to `Department`).
+    - Operational status toggle (`is_active`, default true).
+  - **Table Schema ([`CountersTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Counters/Tables/CountersTable.php)):**
+    - Columns: Station Code, Counter Name, Home Department badge, Current Shift status badge (`Open: Shift #...` / `Closed`), and Active icon.
+    - Filters: Department filter, Active/Inactive ternary filter.
+    - Actions: Modal Edit action (`EditAction`).
+  - **Page & Resource ([`CounterResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Counters/CounterResource.php), [`ListCounters.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Counters/Pages/ListCounters.php)):**
+    - Positioned under `Commercial & Counters` (sort 5, icon: `heroicon-o-computer-desktop`).
+    - Integrated with Global Search (`Counter: {name} ({code})`).
+    - Gated via `canViewAny()`, `canCreate()`, and `canEdit()`, allowing admins and managers access while denying cashiers.
+- **Verification:**
+  - Created automated feature test [`tests/Feature/CounterManagementTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterManagementTest.php):
+    - `test_admin_and_manager_can_access_counters_master`: Confirmed 200 OK for admin and manager; 403 Forbidden for cashiers.
+    - `test_admin_can_view_existing_counters_in_table`: Verified all seeded counters render in the list table.
+    - `test_admin_can_create_new_billing_counter`: Verified modal creation of new counter (`COUNTER-4`) persists to database.
+    - `test_admin_can_edit_and_deactivate_counter`: Verified renaming and deactivating a counter hides it from Counter POS `openShift`.
+  - Executed tests on MySQL:
+    - [`CounterManagementTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterManagementTest.php): **4 passed, 23 assertions, 0 failures**.
+    - [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php): **4 passed, 27 assertions, 0 failures**.
+    - [`AdminDashboardWidgetsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminDashboardWidgetsTest.php): **11 passed, 117 assertions, 0 failures**.
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **11 passed, 91 assertions, 0 failures**.
+    - Total: **30 passed, 258 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
+## Cashier Shift Closure Guardrails & Blind Reconciliation Policy (Completed 2026-11-14)
+
+- **Scope & Design Decisions:**
+  - Implemented the 3-point cash audit guardrail when closing cashier shifts on Counter POS (`D84`).
+  - Previously, the closing cash counted field defaulted to `0.00`, and the modal form had a client-side hide on submit (`@submit="showCloseShiftModal = false"`). This allowed a cashier to submit an uncounted/blank drawer, erroneously logging an entire drawer as a false shortage without warning.
+  - Implemented:
+    1. **Strict Mandatory Counted Entry**: `$closingCashCounted` defaults to `null`. Attempting to close the shift without providing counted cash displays a validation error (`Please enter the physical closing cash counted or click "Match Expected" before closing the shift`) and prevents shift closure. Negative cash values are rejected.
+    2. **"⚡ Match Expected" Shortcut**: Added a single-click button inside the modal to populate the exact expected closing cash when the physical cash drawer balances, preserving high-speed operations.
+    3. **Real-Time Variance Calculation & Mandatory Explanation**: Calculates discrepancy (`Discrepancy = Counted - Expected`). Renders a live visual badge in the modal (`✓ Drawer Balanced`, `⚠️ Shortage: -₹X.XX`, or `⚠️ Surplus: +₹X.XX`). Any non-zero discrepancy strictly mandates entering an explanation in **Handover & Variance Remarks** (`shiftNotes`) before closure can proceed.
+    4. **Robust Server-Driven Modal Dismissal**: Removed client-side premature hiding; the modal now only closes upon dispatch of the `@shift-closed` event from the server upon successful reconciliation.
+- **Implementation:**
+  - **Component ([`CounterPos.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Livewire/CounterPos.php)):**
+    - Changed `public ?float $closingCashCounted = null;`.
+    - Added `fillExpectedCash()` to populate `closingCashCounted` from `$activeShift->calculateExpectedCashPaise() / 100`.
+    - Added strict validation checks in `closeShift()`:
+      - Validates `$this->closingCashCounted !== null` and `>= 0`.
+      - Checks `$discrepancyPaise !== 0`, requiring non-empty `shiftNotes` with clear guidance on variance.
+      - Dispatches `'shift-closed'` event and cleans up state on success.
+  - **Blade View ([`counter-pos.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/counter-pos.blade.php)):**
+    - Added `@shift-closed.window="showCloseShiftModal = false"` to the modal container.
+    - Added **⚡ Match Expected** button in the Expected Closing Cash summary.
+    - Added dynamic Alpine/Livewire variance indicator badge.
+    - Updated remarks textarea with clear helper text indicating remarks are mandatory if drawer is not balanced.
+- **Verification:**
+  - Added 3 automated test cases to [`tests/Feature/CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php):
+    - `test_cannot_close_shift_with_unfilled_closing_cash`: Verified closing with `null` cash is blocked with error message.
+    - `test_fill_expected_cash_populates_exact_expected_amount`: Verified "Match Expected" button populates exact drawer balance and closes shift.
+    - `test_closing_shift_with_discrepancy_requires_remarks`: Verified shortage/surplus without notes is blocked; supplying remarks closes shift cleanly.
+  - Executed tests on MySQL:
+    - [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php): **8 passed, 54 assertions, 0 failures**.
+    - [`CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php): **7 passed, 35 assertions, 0 failures**.
+    - [`CounterManagementTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterManagementTest.php): **4 passed, 23 assertions, 0 failures**.
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **11 passed, 91 assertions, 0 failures**.
+    - Total: **30 passed, 203 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
+

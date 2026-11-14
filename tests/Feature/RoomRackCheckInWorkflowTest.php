@@ -494,4 +494,30 @@ class RoomRackCheckInWorkflowTest extends TestCase
             ->assertSeeHtml('value="' . $room->id . '" selected')
             ->assertSee("Selected: {$room->name} ({$room->code})");
     }
+
+    public function test_room_card_displays_member_and_guest_occupant_names_and_badges_on_rack(): void
+    {
+        $reception = \App\Models\User::where('email', 'reception@malabarclub.local')->firstOrFail();
+        $room = \App\Domain\Tariff\Models\Facility::where('code', 'ROOM-104')->firstOrFail();
+        $member = \App\Domain\Membership\Models\Member::with('person')->where('membership_number', 'MC-001')->firstOrFail();
+
+        // 1. Confirm a booking for a club member
+        \Livewire\Livewire::actingAs($reception)
+            ->test(\App\Filament\Pages\RoomRackPage::class)
+            ->call('openNewBookingModal', $room->id)
+            ->set('newBooking.guest_type', 'member')
+            ->set('newBooking.member_id', $member->id)
+            ->set('newBooking.rate_per_night_rupees', 2500)
+            ->set('newBooking.paid_amount_rupees', 2500)
+            ->call('confirmNewBooking')
+            ->assertHasNoErrors()
+            ->assertSee($member->name)
+            ->assertSee("Member ({$member->membership_number})");
+
+        // 2. Verify database reservation correctly associates member
+        $res = \App\Domain\Facility\Models\RoomReservation::where('facility_id', $room->id)->latest()->firstOrFail();
+        $this->assertEquals($member->id, $res->sponsor_member_id);
+        $this->assertEquals($member->name, $res->occupant_name);
+        $this->assertEquals("Member ({$member->membership_number})", $res->occupant_badge);
+    }
 }
