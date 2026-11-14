@@ -21,7 +21,7 @@ class MembershipCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Membership & Guest Desk';
+    protected static string|\UnitEnum|null $navigationGroup = 'Club Master Setup';
 
     protected static ?int $navigationSort = 3;
 

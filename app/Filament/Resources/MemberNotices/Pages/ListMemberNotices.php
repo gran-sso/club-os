@@ -36,10 +36,12 @@ class ListMemberNotices extends ListRecords
 
                     Toggle::make('send_whatsapp')
                         ->label('Queue for WhatsApp Outbox')
+                        ->helperText('Future implementation • Direct mobile dispatch will activate once the club WhatsApp gateway is connected.')
                         ->default(false),
 
                     Toggle::make('send_sms')
                         ->label('Queue for SMS Outbox')
+                        ->helperText('Future implementation • Direct mobile dispatch will activate once the club SMS telecom gateway is connected.')
                         ->default(false),
                 ])
                 ->action(function (array $data, NoticeService $noticeService) {

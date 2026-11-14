@@ -81,7 +81,7 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
             [
                 'title' => '⚡ Counter POS Terminal (Live Billing & Fast Orders)',
                 'url' => route('pos'),
-                'details' => ['Section' => 'Commercial & Counters', 'Action' => 'Open Counter POS'],
+                'details' => ['Section' => 'Commercial & Billing', 'Action' => 'Open Counter POS'],
                 'keywords' => ['pos', 'counter', 'billing', 'sale', 'fast sale', 'quick sale', 'till', 'cashier', 'order', 'token'],
                 'visible' => fn (): bool => (bool) ($user = auth()->user())
                     && ! $user->isSuperAdmin()
@@ -111,7 +111,7 @@ class ClubGlobalSearchProvider implements GlobalSearchProvider
             [
                 'title' => '⚙️ Club System Settings (Bylaws, GSTIN & Identity)',
                 'url' => url('/admin/settings'),
-                'details' => ['Section' => 'Club Master Setup', 'Action' => 'Configure Club Profile & Policies'],
+                'details' => ['Section' => 'System & Access Control', 'Action' => 'Configure Club Profile & Policies'],
                 'keywords' => ['settings', 'config', 'system settings', 'bylaws', 'club profile', 'gstin', 'address', 'policies', 'rules'],
                 'visible' => fn (): bool => (bool) auth()->user()?->hasClubPermission('settings.manage'),
             ],

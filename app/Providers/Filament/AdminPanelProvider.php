@@ -60,7 +60,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 'Operations & Front Desk',
                 'Membership & Guest Desk',
-                'Commercial & Counters',
+                'Commercial & Billing',
                 'Procurement & Food Contractor',
                 'Finance & Audit Ledger',
                 'Club Master Setup',

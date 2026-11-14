@@ -20,11 +20,11 @@ class TariffResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyRupee;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Counters';
+    protected static string|\UnitEnum|null $navigationGroup = 'Club Master Setup';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Menu & Price List';
+    protected static ?string $navigationLabel = 'Tariffs & Price Lists';
 
     protected static ?string $recordTitleAttribute = 'name';
 

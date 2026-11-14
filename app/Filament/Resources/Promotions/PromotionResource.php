@@ -21,9 +21,9 @@ class PromotionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTicket;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Counters';
+    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Billing';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Promotions & Offers';
 

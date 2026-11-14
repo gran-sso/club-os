@@ -17,9 +17,9 @@ class InventoryItemResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Counters';
+    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Billing';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Inventory Items';
 

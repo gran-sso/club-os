@@ -202,6 +202,7 @@ class MemberNoticeTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(ListMemberNotices::class)
             ->assertSuccessful()
+            ->assertActionExists('broadcastDuesReminder')
             ->callAction('broadcastDuesReminder', [
                 'custom_notes' => 'Urgent audit reminder.',
                 'send_whatsapp' => false,

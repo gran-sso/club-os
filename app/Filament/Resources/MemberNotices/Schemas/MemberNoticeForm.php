@@ -140,19 +140,19 @@ class MemberNoticeForm
                         ]),
                     ]),
 
-                Section::make('External Outbox Channels (Phase 2 Preparation)')
-                    ->description('Queue outbound messages to transactional outbox for external dispatch.')
+                Section::make('External Outbox Channels (Future Implementation)')
+                    ->description('Queue outbound messages to transactional outbox for external dispatch once club messaging gateways are connected.')
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(2)->schema([
                             Toggle::make('send_whatsapp')
                                 ->label('Queue WhatsApp Notification')
-                                ->helperText('Enqueues outbound WhatsApp notification for targeted members into the integrations outbox.')
+                                ->helperText('Future implementation • Direct mobile delivery activates once the club WhatsApp gateway is configured.')
                                 ->default(false),
 
                             Toggle::make('send_sms')
                                 ->label('Queue SMS Notification')
-                                ->helperText('Enqueues outbound SMS notification for targeted members into the integrations outbox.')
+                                ->helperText('Future implementation • Direct mobile delivery activates once the club SMS gateway is configured.')
                                 ->default(false),
                         ]),
                     ]),

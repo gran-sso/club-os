@@ -16,9 +16,9 @@ class SystemSettingsPage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Club Master Setup';
+    protected static string|\UnitEnum|null $navigationGroup = 'System & Access Control';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationLabel = 'System Settings';
 

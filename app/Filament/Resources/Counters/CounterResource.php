@@ -19,9 +19,9 @@ class CounterResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Commercial & Counters';
+    protected static string|\UnitEnum|null $navigationGroup = 'Club Master Setup';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Billing Counters';
 

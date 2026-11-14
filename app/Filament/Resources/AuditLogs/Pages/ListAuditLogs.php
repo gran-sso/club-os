@@ -22,7 +22,7 @@ class ListAuditLogs extends ListRecords
                 ->label("Retention: {$retentionDays} Days")
                 ->icon('heroicon-o-clock')
                 ->color('gray')
-                ->tooltip('Configure retention period under Club Master Setup -> System Settings -> Audit Trail')
+                ->tooltip('Configure retention period under System & Access Control -> System Settings -> Audit Trail')
                 ->url(fn (): string => auth()->user()?->hasClubPermission('settings.manage') ? '/admin/settings' : '#')
                 ->openUrlInNewTab(false),
 

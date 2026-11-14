@@ -2702,4 +2702,71 @@ For environments where full browser automation is unavailable, operators should 
     - Total: **30 passed, 203 assertions, 0 failures**.
   - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
 
+## Club Master Setup Consolidation & Information Architecture Alignment (Completed 2026-11-14)
+
+- **Scope & Design Decisions:**
+  - Consolidated all administrative master definitions, club infrastructure, and pricing governance under a unified **Club Master Setup** navigation tier (`D85`).
+  - Addressed information architecture friction where administrative masters were scattered among high-frequency operational screens.
+  - Aligned navigation groups into clear functional boundaries:
+    - **Club Master Setup**:
+      1. `Facilities Master` (`FacilityResource`, sort 1): Club guest rooms, badminton courts, and event spaces.
+      2. `Billing Counters` (`CounterResource`, sort 2): Physical and logical till stations (moved from Commercial).
+      3. `Membership Categories` (`MembershipCategoryResource`, sort 3): Member classes, entrance fees, and recurring subscription dues (moved from Membership & Guest Desk).
+      4. `Tariffs & Price Lists` (`TariffResource`, sort 4): Master rate card, peg measures, room tariffs, court fees, and GST tax schedules (moved from Commercial).
+    - **Commercial & Billing** (renamed from `Commercial & Counters`):
+      1. `Bills & Invoices` (`BillResource`, sort 1): Historical counter sales invoices and receipts.
+      2. `Stock Inventory` (`InventoryItemResource`, sort 2): Bottle cellar inventory, pegs, retail beverages, and reorder levels.
+      3. `Promotions & Offers` (`PromotionResource`, sort 3): Buy X Get Y bar promotions and promotional quotas.
+    - **Membership & Guest Desk**:
+      - Streamlined strictly to active member profiles (`Members Directory`), visiting guest registrations (`Visiting Guests`), sports plan enrollments (`Sports Subscriptions`), and club bulletins (`Member Bulletins & Notices`).
+    - **System & Access Control**:
+      1. `Staff & User Access` (`UserResource`, sort 1): Employee logins, designations, and account deactivations.
+      2. `Roles & Form Access` (`RoleResource`, sort 2): RBAC permission matrices and built-in role blueprints.
+      3. `Audit Trail` (`AuditLogResource`, sort 3): Immutable administrative event history and security log pruning.
+      4. `System Settings` (`SystemSettingsPage`, sort 4): Clubhouse bylaws, gate access control, zero-stock sales toggles, thermal printer configuration, and Tally sync settings.
+- **Implementation:**
+  - Updated resource classes:
+    - [`CounterResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Counters/CounterResource.php): Moved `$navigationGroup` to `'Club Master Setup'`, `$navigationSort = 2`.
+    - [`MembershipCategoryResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MembershipCategories/MembershipCategoryResource.php): Moved `$navigationGroup` to `'Club Master Setup'`, `$navigationSort = 3`.
+    - [`TariffResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Tariffs/TariffResource.php): Moved `$navigationGroup` to `'Club Master Setup'`, `$navigationSort = 4`, updated `$navigationLabel = 'Tariffs & Price Lists'`.
+    - [`FacilityResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Facilities/FacilityResource.php): Maintained `$navigationSort = 1`.
+    - [`SystemSettingsPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/SystemSettingsPage.php): Moved `$navigationGroup` to `'System & Access Control'`, `$navigationSort = 4`.
+    - [`BillResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/BillResource.php): Updated `$navigationGroup` to `'Commercial & Billing'`.
+    - [`InventoryItemResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Inventory/InventoryItemResource.php): Updated `$navigationGroup` to `'Commercial & Billing'`, `$navigationSort = 2`.
+    - [`PromotionResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Promotions/PromotionResource.php): Updated `$navigationGroup` to `'Commercial & Billing'`, `$navigationSort = 3`.
+    - [`AdminPanelProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Providers/Filament/AdminPanelProvider.php): Synchronized `navigationGroups` array with `'Commercial & Billing'`.
+    - [`HelpPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php) & [`ClubGlobalSearchProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Services/ClubGlobalSearchProvider.php): Updated group text references to `'Commercial & Billing'`.
+- **Verification:**
+  - Added test `test_admin_sidebar_displays_consolidated_club_master_setup_and_commercial_billing_groups` in [`tests/Feature/AdminPanelTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminPanelTest.php).
+  - Executed tests on MySQL:
+    - [`AdminPanelTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminPanelTest.php): **8 passed, 84 assertions, 0 failures**.
+    - [`CounterManagementTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterManagementTest.php): **4 passed, 23 assertions, 0 failures**.
+    - [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php): **8 passed, 54 assertions, 0 failures**.
+    - [`FacilityAndBookingTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FacilityAndBookingTest.php): **8 passed, 48 assertions, 0 failures**.
+    - [`RoomRackCheckInWorkflowTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/RoomRackCheckInWorkflowTest.php): **11 passed, 91 assertions, 0 failures**.
+    - Total: **39 passed, 300 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
+## Future Gateway & Hardware Integration Transparency Labeling (Completed 2026-11-14)
+
+- **Scope & Design Decisions:**
+  - Standardized subtle, professional status labeling under features that queue to transactional outboxes or interface with external hardware but await third-party telecom gateway API credentials or physical equipment installation (`D86`).
+  - Solved operator ambiguity where staff might assume toggling WhatsApp or SMS checkboxes triggers immediate live cellular delivery to members' phones.
+  - Added subtle helper text clearly stating:
+    - *"Future implementation • Direct mobile dispatch will activate once the club WhatsApp gateway is connected."*
+    - *"Future implementation • Direct mobile dispatch will activate once the club SMS telecom gateway is connected."*
+- **Implementation:**
+  - **Broadcast Dues Reminder Modal ([`ListMemberNotices.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MemberNotices/Pages/ListMemberNotices.php)):**
+    - Added explicit `helperText()` under `send_whatsapp` and `send_sms` toggles.
+  - **Create / Edit Notice Schema ([`MemberNoticeForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/MemberNotices/Schemas/MemberNoticeForm.php)):**
+    - Updated section heading to `External Outbox Channels (Future Implementation)`.
+    - Added matching `helperText()` under both outbound communication toggles.
+- **Verification:**
+  - Verified automated test coverage in [`tests/Feature/MemberNoticeTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberNoticeTest.php): **6 passed, 30 assertions, 0 failures**.
+  - Executed full test suite with `BypassSandbox: true`:
+    - [`MemberNoticeTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberNoticeTest.php): **6 passed, 30 assertions, 0 failures**.
+    - [`AdminPanelTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminPanelTest.php): **8 passed, 88 assertions, 0 failures**.
+    - Total: **14 passed, 118 assertions, 0 failures**.
+  - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
+
 

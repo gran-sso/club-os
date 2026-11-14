@@ -262,7 +262,7 @@ class HelpPage extends Page
                 'field_sections' => [
                     [
                         'section_title' => 'Counter Shift Opening & Back-Office Shift Form Fields',
-                        'section_note' => 'Configured when opening a POS counter shift or auditing shift records under Commercial & Counters -> Cashier Shifts.',
+                        'section_note' => 'Configured when opening a POS counter shift or auditing shift records under Operations & Front Desk -> Cashier Shifts.',
                         'fields' => [
                             [
                                 'name' => 'Billing Counter Station',
@@ -427,7 +427,7 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Configure Approved Offers in Back Office',
-                        'instruction' => 'Authorized Managers navigate to Commercial & Counters -> Promotions & Offers, set Buy X Paid Units and Get Y Bonus Units, select eligible bar tariffs, set customer eligibility (Members Only by default), optional free-unit quota caps, and validity dates.',
+                        'instruction' => 'Authorized Managers navigate to Commercial & Billing -> Promotions & Offers, set Buy X Paid Units and Get Y Bonus Units, select eligible bar tariffs, set customer eligibility (Members Only by default), optional free-unit quota caps, and validity dates.',
                         'result' => 'Active offers publish automatically to Counter POS with tamper-proof server calculation; cashiers cannot manually discount items.',
                         'tip' => 'Protected Day Guest Entry Passes and ₹0.00 tariffs are strictly blocked from promotional discounting.',
                     ],
@@ -448,7 +448,7 @@ class HelpPage extends Page
                 ],
                 'field_sections' => [
                     [
-                        'section_title' => 'Promotions & Offers Form Fields (Commercial & Counters -> Promotions & Offers)',
+                        'section_title' => 'Promotions & Offers Form Fields (Commercial & Billing -> Promotions & Offers)',
                         'section_note' => 'Defines automated "Buy X Get Y" POS promotional rules that cashiers claim via the 1-click bonus button without manual discounting.',
                         'fields' => [
                             [
@@ -503,7 +503,7 @@ class HelpPage extends Page
                     ],
                 ],
                 'formula' => 'Net Payable = (Paid Units × Tariff Rate) + GST on Net Taxable Value • Stock Deducted = Paid ml + Free ml',
-                'policy_note' => 'All promotional discounts require active server configuration under Commercial & Counters -> Promotions & Offers. Manual cashier price overrides are disabled.',
+                'policy_note' => 'All promotional discounts require active server configuration under Commercial & Billing -> Promotions & Offers. Manual cashier price overrides are disabled.',
             ],
 
             'cashier-room-guest' => [
@@ -677,7 +677,7 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Default Strict Inventory Enforcement vs Zero-Stock Override',
-                        'instruction' => 'By default, POS blocks selling bar items whose recorded milliliter stock is insufficient. When physical stock has arrived before storekeepers post Supplier Receipts, Management can enable "Allow Selling Zero / Negative Stock Items on POS" under Club Master Setup -> System Settings (Tab 2).',
+                        'instruction' => 'By default, POS blocks selling bar items whose recorded milliliter stock is insufficient. When physical stock has arrived before storekeepers post Supplier Receipts, Management can enable "Allow Selling Zero / Negative Stock Items on POS" under System & Access Control -> System Settings (Tab 2).',
                         'result' => 'When enabled, cashiers can bill smoothly while inventory tracks temporarily into negative ml until the Supplier Receipt is entered.',
                         'tip' => 'Always reconcile negative inventory promptly by posting inward stock receipts under Procurement & Food Contractor.',
                     ],
@@ -1692,7 +1692,7 @@ class HelpPage extends Page
                         'title' => 'Counter POS 80mm Thermal Receipts (Shortcut: P)',
                         'instruction' => 'After tendering a sale or recharge at /pos, the Thermal Receipt dialog opens. Click "Print Receipt" or press P.',
                         'result' => 'Isolates only the 80mm receipt (with club GSTIN, itemized lines, promo savings, and wallet balance) and hides the POS grid and tabs bar.',
-                        'tip' => 'Set your thermal printer paper width to 80mm under Club Master Setup -> System Settings -> Receipt Printing.',
+                        'tip' => 'Set your thermal printer paper width to 80mm under System & Access Control -> System Settings -> Receipt Printing.',
                     ],
                     [
                         'number' => 2,
@@ -1879,7 +1879,7 @@ class HelpPage extends Page
                 ],
                 'field_sections' => [
                     [
-                        'section_title' => 'Inventory Stock Item Fields (Commercial & Counters -> Inventory Items)',
+                        'section_title' => 'Inventory Stock Item Fields (Commercial & Billing -> Inventory Items)',
                         'section_note' => 'Defines physical stock units held in stores/cellar and deducted automatically on bar sales and promo pours.',
                         'fields' => [
                             [
@@ -2070,7 +2070,7 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Configure Club Policies Across the 5 System Settings Tabs',
-                        'instruction' => 'Open Club Master Setup -> System Settings and review each of the 5 tabs: Club Info & GST, Cashier & Smartcard Limits, Facilities & Timings, Tally Connection, and Receipt Printing. Refer to the Field Reference below to see what every toggle and limit controls before saving.',
+                        'instruction' => 'Open System & Access Control -> System Settings and review each of the 5 tabs: Club Info & GST, Cashier & Smartcard Limits, Facilities & Timings, Tally Connection, and Receipt Printing. Refer to the Field Reference below to see what every toggle and limit controls before saving.',
                         'result' => 'Saved settings immediately govern receipt headers, counter top-up limits, POS zero-stock rules, room/court schedules, and Tally/printer behaviour club-wide.',
                         'tip' => 'Only users granted the settings.manage permission can edit System Settings. Keep GSTIN, PAN, and Tally Target Company Name aligned with your statutory books.',
                     ],

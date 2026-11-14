@@ -156,4 +156,31 @@ class AdminPanelTest extends TestCase
         $adminResponse->assertStatus(200);
         $adminResponse->assertSee('>Admin<', false);
     }
+
+    public function test_admin_sidebar_displays_consolidated_club_master_setup_and_commercial_billing_groups(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $response = $this->actingAs($admin)->get('/admin');
+        $response->assertStatus(200);
+
+        // Club Master Setup navigation group and items
+        $response->assertSee('Club Master Setup');
+        $response->assertSee('Facilities Master');
+        $response->assertSee('Billing Counters');
+        $response->assertSee('Membership Categories');
+        $response->assertSee('Tariffs &amp; Price Lists', false);
+
+        // Commercial & Billing navigation group and items
+        $response->assertSee('Commercial &amp; Billing', false);
+        $response->assertSee('Bills &amp; Invoices', false);
+        $response->assertSee('Inventory Items');
+        $response->assertSee('Promotions &amp; Offers', false);
+
+        // System & Access Control navigation group and items
+        $response->assertSee('System &amp; Access Control', false);
+        $response->assertSee('Staff &amp; User Access', false);
+        $response->assertSee('Roles &amp; Form Access', false);
+        $response->assertSee('Audit Trail');
+        $response->assertSee('System Settings');
+    }
 }
