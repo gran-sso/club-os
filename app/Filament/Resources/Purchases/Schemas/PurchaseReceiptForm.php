@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Purchases\Schemas;
 
 use App\Domain\Inventory\Models\InventoryItem;
 use App\Domain\Inventory\Models\Supplier;
+use App\Domain\Shared\Exceptions\UnauthorizedActionException;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
@@ -29,6 +31,7 @@ class PurchaseReceiptForm
                             Select::make('supplier_id')
                                 ->label('Wholesale Supplier / Distributor')
                                 ->required()
+                                ->default(fn () => request()->query('supplier_id') ?: null)
                                 ->options(fn () => Supplier::where('is_active', true)->pluck('name', 'id'))
                                 ->searchable()
                                 ->preload()
@@ -105,6 +108,89 @@ class PurchaseReceiptForm
                                         ->searchable()
                                         ->preload()
                                         ->live()
+                                        ->createOptionForm([
+                                            Grid::make(2)->schema([
+                                                TextInput::make('sku')
+                                                    ->label('Item Code (SKU)')
+                                                    ->required()
+                                                    ->maxLength(64)
+                                                    ->unique(InventoryItem::class, 'sku', ignoreRecord: false)
+                                                    ->placeholder('e.g. LIQ-SIG-750ML')
+                                                    ->dehydrateStateUsing(fn ($state) => strtoupper(trim((string) $state))),
+                                                TextInput::make('barcode')
+                                                    ->label('Bottle Barcode (Optional)')
+                                                    ->maxLength(64),
+                                            ]),
+                                            TextInput::make('name')
+                                                ->label('Stock Item Name / Brand')
+                                                ->required()
+                                                ->maxLength(150)
+                                                ->placeholder('e.g. Signature Rare Aged Whisky 750ml'),
+                                            Grid::make(3)->schema([
+                                                Select::make('department_code')
+                                                    ->label('Department')
+                                                    ->required()
+                                                    ->options([
+                                                        'bar' => 'Bar & Lounge',
+                                                        'food' => 'Food & Restaurant',
+                                                        'consumables' => 'Clubhouse Amenities',
+                                                    ])
+                                                    ->default('bar'),
+                                                Select::make('category')
+                                                    ->label('Category')
+                                                    ->required()
+                                                    ->options([
+                                                        'liquor' => 'IMFL / Spirits',
+                                                        'beer_wine' => 'Beer & Wine',
+                                                        'beverages' => 'Mixers & Soft Drinks',
+                                                        'tobacco' => 'Tobacco',
+                                                        'consumables' => 'Club Supplies',
+                                                    ])
+                                                    ->default('liquor'),
+                                                Select::make('base_unit')
+                                                    ->label('Tracking Unit')
+                                                    ->required()
+                                                    ->options([
+                                                        'ml' => 'Milliliters (ml)',
+                                                        'bottle' => 'Bottles',
+                                                        'can' => 'Cans',
+                                                        'pcs' => 'Pieces',
+                                                        'portion' => 'Portions',
+                                                    ])
+                                                    ->default('ml'),
+                                            ]),
+                                            TextInput::make('reorder_level')
+                                                ->label('Low Stock Alert Level')
+                                                ->numeric()
+                                                ->minValue(0)
+                                                ->default(1500)
+                                                ->required(),
+                                        ])
+                                        ->createOptionUsing(function (array $data): int {
+                                            $user = auth()->user();
+                                            if (! $user || ! $user->hasClubPermission('stock.manage')) {
+                                                throw new UnauthorizedActionException('You need inventory management permission (stock.manage) to create new stock items.');
+                                            }
+
+                                            $item = InventoryItem::create([
+                                                'sku' => strtoupper(trim((string) $data['sku'])),
+                                                'barcode' => isset($data['barcode']) && trim((string) $data['barcode']) !== '' ? trim((string) $data['barcode']) : null,
+                                                'name' => trim((string) $data['name']),
+                                                'department_code' => $data['department_code'] ?? 'bar',
+                                                'category' => $data['category'] ?? 'liquor',
+                                                'base_unit' => $data['base_unit'] ?? 'ml',
+                                                'reorder_level' => (float) ($data['reorder_level'] ?? 0),
+                                                'current_stock_qty' => 0,
+                                                'current_avg_cost_paise' => 0,
+                                                'is_active' => true,
+                                            ]);
+
+                                            return $item->id;
+                                        })
+                                        ->createOptionAction(fn (Action $action) => $action
+                                            ->label('Quick-Register New Item')
+                                            ->modalHeading('Register New Inventory Stock Item')
+                                            ->visible(fn (): bool => (bool) auth()->user()?->hasClubPermission('stock.manage')))
                                         ->columnSpan(2),
 
                                     TextInput::make('bottle_count')

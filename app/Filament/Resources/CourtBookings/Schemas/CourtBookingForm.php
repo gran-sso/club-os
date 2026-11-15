@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CourtBookings\Schemas;
 
+use App\Domain\Facility\Models\FacilitySubscription;
 use App\Domain\Membership\Models\Member;
 use App\Domain\Tariff\Models\Facility;
 use Filament\Forms\Components\DatePicker;
@@ -46,6 +47,22 @@ class CourtBookingForm
                                     ]))
                                 ->searchable()
                                 ->preload()
+                                ->live()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if (! $state) {
+                                        return;
+                                    }
+                                    $hasPlan = FacilitySubscription::where('member_id', $state)
+                                        ->where('facility_code', 'badminton')
+                                        ->where('status', 'active')
+                                        ->where(function ($q) {
+                                            $q->whereNull('ends_at')
+                                                ->orWhere('ends_at', '>=', now()->toDateString());
+                                        })
+                                        ->exists();
+
+                                    $set('is_plan_covered', $hasPlan);
+                                })
                                 ->helperText('Only active members in good standing can reserve court slots.'),
                         ]),
                     ]),
@@ -111,8 +128,25 @@ class CourtBookingForm
 
                         Toggle::make('is_plan_covered')
                             ->label('Covered by Member Sports Subscription Plan')
-                            ->default(true)
-                            ->helperText('Members with an active badminton plan play without an additional hourly court charge.'),
+                            ->default(false)
+                            ->helperText(function (callable $get) {
+                                $memberId = $get('member_id');
+                                if (! $memberId) {
+                                    return 'Select a member to check sports subscription coverage.';
+                                }
+                                $hasPlan = FacilitySubscription::where('member_id', $memberId)
+                                    ->where('facility_code', 'badminton')
+                                    ->where('status', 'active')
+                                    ->where(function ($q) {
+                                        $q->whereNull('ends_at')
+                                            ->orWhere('ends_at', '>=', now()->toDateString());
+                                    })
+                                    ->exists();
+
+                                return $hasPlan
+                                    ? '✓ Active Badminton Subscription detected for this member (₹0 hourly charge).'
+                                    : 'ℹ No active badminton subscription on file. Member will be billed standard court entry fee unless waived.';
+                            }),
 
                         Textarea::make('notes')
                             ->label('Booking Notes')

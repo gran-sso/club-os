@@ -2769,4 +2769,35 @@ For environments where full browser automation is unavailable, operators should 
     - Total: **14 passed, 118 assertions, 0 failures**.
   - Rebuilt production assets via Vite (`npm run build && php artisan view:clear`).
 
+## Cross-Module Administrative & Operational Form Workflow Integration (Completed 2026-11-15)
+
+- **Scope & Design Decisions:**
+  - Resolved 8 critical cross-module workflow friction gaps across administrative and counter forms to ensure smooth, closed-loop staff operations (`D87`).
+  - Eliminated "dead ends" where staff previously had to cancel out of forms, navigate across different menu modules, create prerequisites, and restart data entry from scratch.
+- **Implemented Workflows:**
+  1. **Stock Inventory Form → Add Selling Price Header Action ([`InventoryItemResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Inventory/InventoryItemResource.php)):**
+     - Added `Action::make('addSellingPrice')` to the `headerActions` of Section `Linked Menu & Price List Items` on the Edit form.
+     - Reuses `InventoryItemsTable::executeAddSellingPrice()` so managers can define counter selling rates and serving sizes (e.g. 30ml/60ml pegs) immediately without closing the stock modal.
+     - Updated [`inventory-serving-prices-list.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/inventory-serving-prices-list.blade.php) with guided helper text.
+  2. **Purchase Receipts (KSBC GRN) → Inline Inventory Item Creation ([`PurchaseReceiptForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Purchases/Schemas/PurchaseReceiptForm.php)):**
+     - Added `createOptionForm` to `inventory_item_id` in the wholesale purchase lines repeater, allowing store keepers to register new liquor/consumable items inline without discarding invoice progress.
+  3. **Room Reservations → Inline Guest Registration ([`RoomReservationForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/RoomReservations/Schemas/RoomReservationForm.php)):**
+     - Added `createOptionForm` to `guest_id`, enabling receptionists to register visiting guest KYC inline during room reservation.
+  4. **Guest Admissions → Immediate Pass Issue Option ([`GuestForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Guests/Schemas/GuestForm.php) & [`CreateGuest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Guests/Pages/CreateGuest.php)):**
+     - Added an optional `issue_pass_now` toggle on guest creation, allowing immediate entry fee billing (Bar, Badminton, Gym via Cash/Digital) and day pass generation upon saving a walk-in guest.
+  5. **Room Reservations Table → Quick Check In & Check Out Actions ([`RoomReservationsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/RoomReservations/Tables/RoomReservationsTable.php)):**
+     - Added one-click `Check In` and `Check Out` row actions that atomically transition room stays and set room housekeeping status to `dirty`.
+  6. **Member Profiles → Smartcard Visibility & Replacement ([`MemberForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Schemas/MemberForm.php) & [`EditMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/EditMember.php)):**
+     - Made the smartcard section visible on Edit, displaying current active card info, and allowing smartcard replacement with automatic blocking of the old card and preservation of the member wallet balance.
+     - Added direct `View 360° Profile` header action on `EditMember`.
+  7. **Suppliers Directory → Direct Inward GRN Action ([`SuppliersTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Suppliers/Tables/SuppliersTable.php)):**
+     - Added `createReceipt` row action that links directly to `PurchaseReceiptResource::getUrl('create', ['supplier_id' => $record->id])` with pre-selection of supplier.
+  8. **Court Scheduling → Subscription Auto-Detection ([`CourtBookingForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/CourtBookings/Schemas/CourtBookingForm.php)):**
+     - Added real-time subscription auto-detection when selecting `member_id`, automatically verifying active badminton plans and setting `is_plan_covered` with helpful status indicators.
+- **Verification:**
+  - Authored dedicated test suite [`tests/Feature/FormWorkflowGapsResolutionTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FormWorkflowGapsResolutionTest.php): **8 passed, 27 assertions, 0 failures**.
+  - Executed full test suite across the entire application on MySQL 8.4 with `BypassSandbox: true`:
+    - **471 passed, 3,136 assertions, 0 failures** across 61 test suites in 136.10s.
+  - Cleared compiled views and verified live server ready (`php artisan view:clear`).
+
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Members\Schemas;
 use App\Domain\Membership\Models\MembershipCategory;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -329,7 +330,7 @@ class MemberForm
                     ])
                     ->visibleOn('create'),
 
-                Section::make('Member Smartcard (Optional)')
+                Section::make('Member Smartcard & RFID Access')
                     ->description('Link a physical smartcard number so the member can tap & pay quickly at the counter.')
                     ->columnSpanFull()
                     ->schema([
@@ -337,9 +338,36 @@ class MemberForm
                             ->label('Smartcard Number (Tap or Type)')
                             ->maxLength(64)
                             ->placeholder('e.g. CARD-RAMESH-001 or tap card on USB reader')
-                            ->helperText('If entered, an active smartcard is linked immediately to this member.'),
-                    ])
-                    ->visibleOn('create'),
+                            ->helperText('If entered, an active smartcard is linked immediately to this member.')
+                            ->visibleOn('create'),
+
+                        Placeholder::make('current_smartcard_info')
+                            ->label('Active Smartcard Status')
+                            ->visibleOn('edit')
+                            ->content(function ($record) {
+                                if (! $record || ! $record->activeCard) {
+                                    return 'No physical RFID smartcard currently linked.';
+                                }
+
+                                return "Active Card: {$record->activeCard->card_number} (Status: " . strtoupper($record->activeCard->status->value) . ')';
+                            }),
+
+                        Grid::make(2)
+                            ->visibleOn('edit')
+                            ->schema([
+                                TextInput::make('new_rfid_card_number')
+                                    ->label('Assign / Replace Smartcard Number')
+                                    ->maxLength(64)
+                                    ->placeholder('Tap card on USB reader or enter code')
+                                    ->helperText('Assigns a new card number. If replacing, the old card is blocked and wallet balance is preserved.'),
+
+                                TextInput::make('card_change_reason')
+                                    ->label('Reason for Card Update')
+                                    ->default('Admin profile update')
+                                    ->maxLength(100)
+                                    ->placeholder('e.g. Lost card / Damaged chip / Initial issue'),
+                            ]),
+                    ]),
             ]);
     }
 }

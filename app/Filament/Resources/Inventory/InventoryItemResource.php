@@ -6,6 +6,7 @@ use App\Domain\Inventory\Models\InventoryItem;
 use App\Filament\Resources\Inventory\Pages\ListInventoryItems;
 use App\Filament\Resources\Inventory\Tables\InventoryItemsTable;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -195,6 +196,18 @@ class InventoryItemResource extends Resource
                     ->description('All Counter POS selling prices currently connected to this stock item.')
                     ->columnSpanFull()
                     ->visibleOn('edit')
+                    ->headerActions([
+                        Action::make('addSellingPrice')
+                            ->label('Add Selling Price')
+                            ->icon('heroicon-o-plus-circle')
+                            ->color('success')
+                            ->visible(fn (): bool => (bool) auth()->user()?->hasClubPermission('tariffs.manage'))
+                            ->modalHeading(fn (?InventoryItem $record): string => "Add Menu Selling Price for " . ($record?->name ?? 'Stock Item'))
+                            ->modalDescription('Creates an active Menu & Price List entry pre-linked to deduct this physical stock item at Counter POS.')
+                            ->modalSubmitActionLabel('Create Price & Link Stock')
+                            ->form(fn (?InventoryItem $record): array => $record ? InventoryItemsTable::addSellingPriceFormSchema($record) : [])
+                            ->action(fn (?InventoryItem $record, array $data, Action $action) => $record ? InventoryItemsTable::executeAddSellingPrice($record, $data, $action) : null),
+                    ])
                     ->schema([
                         \Filament\Forms\Components\Placeholder::make('linked_menu_prices')
                             ->hiddenLabel()

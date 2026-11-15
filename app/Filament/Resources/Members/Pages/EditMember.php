@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Members\Pages;
 
+use App\Domain\Membership\Services\CardService;
 use App\Domain\Membership\Services\MemberService;
 use App\Filament\Resources\Members\MemberResource;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 
 class EditMember extends EditRecord
@@ -16,6 +19,12 @@ class EditMember extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('viewProfile')
+                ->label('View 360° Profile')
+                ->icon(Heroicon::OutlinedUser)
+                ->color('primary')
+                ->url(fn ($record) => MemberResource::getUrl('view', ['record' => $record])),
+
             DeleteAction::make()
                 ->label('Delete Unused Profile')
                 ->visible(fn ($record) => 
@@ -97,6 +106,20 @@ class EditMember extends EditRecord
             'joined_at' => $data['joined_at'],
             'valid_until' => $data['valid_until'] ?? null,
         ]);
+
+        if (! empty($data['new_rfid_card_number'])) {
+            $newCardNumber = trim((string) $data['new_rfid_card_number']);
+            $reason = ! empty($data['card_change_reason']) ? trim((string) $data['card_change_reason']) : 'Admin profile update';
+            $cardService = app(CardService::class);
+
+            if ($record->activeCard) {
+                if ($record->activeCard->card_number !== $newCardNumber) {
+                    $cardService->replaceCard($record->activeCard, $newCardNumber, $reason);
+                }
+            } else {
+                $cardService->issueCard($record, $newCardNumber, $reason);
+            }
+        }
 
         $action = ($oldStatus !== (string) $data['status']) ? 'status_changed' : 'updated';
         app(\App\Domain\Shared\Services\AuditLogService::class)->logMemberChange(

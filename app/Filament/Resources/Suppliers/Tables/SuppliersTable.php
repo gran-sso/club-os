@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Suppliers\Tables;
 
+use App\Filament\Resources\Purchases\PurchaseReceiptResource;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -75,6 +77,12 @@ class SuppliersTable
                     ->falseLabel('Inactive / Blocked Suppliers'),
             ])
             ->actions([
+                Action::make('createReceipt')
+                    ->label('Inward GRN')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->visible(fn () => (bool) auth()->user()?->hasClubPermission('purchases.create'))
+                    ->url(fn ($record) => PurchaseReceiptResource::getUrl('create', ['supplier_id' => $record->id])),
                 EditAction::make(),
                 DeleteAction::make()
                     ->modalHeading('Delete Supplier Record')

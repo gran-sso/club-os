@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\RoomReservations\Schemas;
 
 use App\Domain\Access\Models\Guest;
+use App\Domain\Access\Services\GuestService;
 use App\Domain\Membership\Models\Member;
 use App\Domain\Tariff\Models\Facility;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -56,6 +58,79 @@ class RoomReservationForm
                                 ))
                                 ->searchable()
                                 ->preload()
+                                ->createOptionForm([
+                                    Grid::make(2)->schema([
+                                        TextInput::make('first_name')
+                                            ->label('Guest First Name')
+                                            ->required()
+                                            ->maxLength(100)
+                                            ->placeholder('e.g. Suresh'),
+                                        TextInput::make('last_name')
+                                            ->label('Last Name / Surname')
+                                            ->maxLength(100)
+                                            ->placeholder('e.g. Varma'),
+                                    ]),
+                                    Grid::make(2)->schema([
+                                        TextInput::make('phone')
+                                            ->label('Mobile Number (+91)')
+                                            ->tel()
+                                            ->required()
+                                            ->maxLength(25)
+                                            ->placeholder('e.g. +91 94471 23456'),
+                                        TextInput::make('email')
+                                            ->label('Email Address (Optional)')
+                                            ->email()
+                                            ->maxLength(150),
+                                    ]),
+                                    Grid::make(2)->schema([
+                                        Select::make('id_proof_type')
+                                            ->label('Government ID Proof')
+                                            ->options([
+                                                'Aadhaar Card' => 'Aadhaar Card',
+                                                'Passport' => 'Passport',
+                                                'Driving Licence' => 'Driving Licence',
+                                                'Voter ID Card' => 'Voter ID Card',
+                                                'PAN Card' => 'PAN Card',
+                                            ])
+                                            ->default('Aadhaar Card')
+                                            ->required(),
+                                        TextInput::make('id_proof_number')
+                                            ->label('ID Proof Number')
+                                            ->required()
+                                            ->maxLength(100)
+                                            ->placeholder('e.g. 9876 5432 1098'),
+                                    ]),
+                                    Select::make('sponsor_id')
+                                        ->label('Sponsoring Club Member')
+                                        ->required()
+                                        ->options(fn () => Member::with('person')->where('status', 'active')->get()->mapWithKeys(
+                                            fn ($m) => [$m->id => "{$m->membership_number} — " . ($m->person?->first_name ?? '') . ' ' . ($m->person?->last_name ?? '')]
+                                        ))
+                                        ->searchable()
+                                        ->preload(),
+                                ])
+                                ->createOptionUsing(function (array $data): int {
+                                    $personData = [
+                                        'first_name' => $data['first_name'],
+                                        'last_name' => $data['last_name'] ?? null,
+                                        'phone' => $data['phone'] ?? null,
+                                        'email' => $data['email'] ?? null,
+                                        'id_proof_type' => $data['id_proof_type'] ?? null,
+                                        'id_proof_number' => $data['id_proof_number'] ?? null,
+                                    ];
+
+                                    $guest = app(GuestService::class)->registerGuest(
+                                        $personData,
+                                        Member::class,
+                                        (int) $data['sponsor_id'],
+                                        now()->toDateString()
+                                    );
+
+                                    return $guest->id;
+                                })
+                                ->createOptionAction(fn (Action $action) => $action
+                                    ->label('Register New Guest')
+                                    ->modalHeading('Register Visiting Guest Details'))
                                 ->helperText('Required if occupant is a registered guest.'),
 
                             TextInput::make('notes')

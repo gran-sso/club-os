@@ -8,6 +8,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -137,9 +138,44 @@ class GuestForm
                                     'registered' => 'Registered (Pass Pending / At Reception)',
                                     'checked_in' => 'Checked In (Active on Club Premises)',
                                     'departed' => 'Departed (Concluded Visit)',
-                                ])
+                                    ])
                                 ->default('registered'),
                         ]),
+                    ]),
+
+                Section::make('Guest Entry Pass & Immediate Billing (Optional)')
+                    ->description('Optionally issue an access pass and collect the admission fee at reception upon registration.')
+                    ->columnSpanFull()
+                    ->visibleOn('create')
+                    ->schema([
+                        Toggle::make('issue_pass_now')
+                            ->label('Collect Entry Fee & Issue Day Pass Now')
+                            ->default(false)
+                            ->live()
+                            ->helperText('Creates a confirmed tax invoice and activates the guest day pass immediately.'),
+
+                        Grid::make(2)
+                            ->visible(fn ($get): bool => (bool) $get('issue_pass_now'))
+                            ->schema([
+                                Select::make('pass_facility_code')
+                                    ->label('Facility Access Pass')
+                                    ->required(fn ($get): bool => (bool) $get('issue_pass_now'))
+                                    ->options([
+                                        'bar_card_room' => 'Bar & Card Room Entry (₹200 + 18% GST = ₹236)',
+                                        'badminton' => 'Badminton Court Daily Access (₹100 + 18% GST = ₹118)',
+                                        'gym' => 'Gym Daily Access (₹150 + 18% GST = ₹177)',
+                                    ])
+                                    ->default('bar_card_room'),
+
+                                Select::make('pass_tender_type')
+                                    ->label('Payment Method')
+                                    ->required(fn ($get): bool => (bool) $get('issue_pass_now'))
+                                    ->options([
+                                        'cash' => 'Cash at Reception',
+                                        'digital' => 'UPI / Card Machine',
+                                    ])
+                                    ->default('cash'),
+                            ]),
                     ]),
             ]);
     }

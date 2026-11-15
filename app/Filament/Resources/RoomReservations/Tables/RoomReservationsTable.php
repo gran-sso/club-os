@@ -2,6 +2,11 @@
 
 namespace App\Filament\Resources\RoomReservations\Tables;
 
+use App\Domain\Facility\Services\RoomReservationService;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -59,7 +64,57 @@ class RoomReservationsTable
                     }),
             ])
             ->recordActions([
-                \Filament\Actions\EditAction::make(),
+                Action::make('checkIn')
+                    ->label('Check In')
+                    ->icon(Heroicon::OutlinedArrowRightEndOnRectangle)
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'reserved' && (bool) auth()->user()?->hasClubPermission('facilities.manage'))
+                    ->requiresConfirmation()
+                    ->modalHeading(fn ($record) => "Confirm Check-In: {$record->reservation_number}")
+                    ->modalDescription(fn ($record) => "Check in guest for Room {$record->facility?->name}. Requires full payment and a clean room.")
+                    ->action(function ($record) {
+                        try {
+                            app(RoomReservationService::class)->checkIn($record, auth()->user());
+                            Notification::make()
+                                ->title('Check-In Successful')
+                                ->body("Room {$record->facility?->name} is now occupied by {$record->occupant_name}.")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Check-In Blocked')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                Action::make('checkOut')
+                    ->label('Check Out')
+                    ->icon(Heroicon::OutlinedArrowLeftStartOnRectangle)
+                    ->color('danger')
+                    ->visible(fn ($record) => $record->status === 'checked_in' && (bool) auth()->user()?->hasClubPermission('facilities.manage'))
+                    ->requiresConfirmation()
+                    ->modalHeading(fn ($record) => "Confirm Check-Out: {$record->reservation_number}")
+                    ->modalDescription(fn ($record) => "Conclude stay for Room {$record->facility?->name}. Room will be automatically flagged as Dirty for housekeeping.")
+                    ->action(function ($record) {
+                        try {
+                            app(RoomReservationService::class)->checkOut($record, auth()->user());
+                            Notification::make()
+                                ->title('Check-Out Completed')
+                                ->body("Room {$record->facility?->name} checked out and marked dirty.")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Check-Out Failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                EditAction::make(),
             ]);
     }
 }

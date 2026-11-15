@@ -127,42 +127,48 @@ class InventoryItemsTable
                     ->modalDescription('Creates an active Menu & Price List entry pre-linked to deduct this physical stock item at Counter POS.')
                     ->modalSubmitActionLabel('Create Price & Link Stock')
                     ->form(fn (InventoryItem $record): array => self::addSellingPriceFormSchema($record))
-                    ->action(function (InventoryItem $record, array $data, Action $action): void {
-                        try {
-                            $tariff = app(InventoryService::class)->createTariffWithServingMapping(
-                                tariffData: $data,
-                                mappingData: [
-                                    'inventory_item_id' => $record->id,
-                                    'serving_name' => $data['serving_name'] ?? null,
-                                    'serving_qty' => $data['serving_qty'] ?? null,
-                                ],
-                                actor: auth()->user(),
-                            );
-
-                            app(\App\Domain\Shared\Services\AuditLogService::class)->logTariffChange(
-                                tariff: $tariff,
-                                action: 'created',
-                                new: $data
-                            );
-
-                            Notification::make()
-                                ->title('Selling Price Created & Linked')
-                                ->body("Added {$tariff->name} ({$tariff->code}) linked to deduct {$data['serving_qty']} {$record->base_unit} per sale.")
-                                ->success()
-                                ->send();
-                        } catch (InvalidArgumentException|UnauthorizedActionException $e) {
-                            Notification::make()
-                                ->title('Could Not Create Selling Price')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-
-                            $action->halt();
-                        }
-                    }),
+                    ->action(fn (InventoryItem $record, array $data, Action $action) => self::executeAddSellingPrice($record, $data, $action)),
 
                 EditAction::make(),
             ]);
+    }
+
+    /**
+     * Execute the creation and audit logging of a new tariff linked to this inventory item.
+     */
+    public static function executeAddSellingPrice(InventoryItem $record, array $data, Action $action): void
+    {
+        try {
+            $tariff = app(InventoryService::class)->createTariffWithServingMapping(
+                tariffData: $data,
+                mappingData: [
+                    'inventory_item_id' => $record->id,
+                    'serving_name' => $data['serving_name'] ?? null,
+                    'serving_qty' => $data['serving_qty'] ?? null,
+                ],
+                actor: auth()->user(),
+            );
+
+            app(\App\Domain\Shared\Services\AuditLogService::class)->logTariffChange(
+                tariff: $tariff,
+                action: 'created',
+                new: $data
+            );
+
+            Notification::make()
+                ->title('Selling Price Created & Linked')
+                ->body("Added {$tariff->name} ({$tariff->code}) linked to deduct {$data['serving_qty']} {$record->base_unit} per sale.")
+                ->success()
+                ->send();
+        } catch (InvalidArgumentException|UnauthorizedActionException $e) {
+            Notification::make()
+                ->title('Could Not Create Selling Price')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $action->halt();
+        }
     }
 
     /**
@@ -170,7 +176,7 @@ class InventoryItemsTable
      *
      * @return array<int, \Filament\Schemas\Components\Component|\Filament\Forms\Components\Field>
      */
-    protected static function addSellingPriceFormSchema(InventoryItem $record): array
+    public static function addSellingPriceFormSchema(InventoryItem $record): array
     {
         $defaultPreset = match ($record->base_unit) {
             'ml' => '30ml',
