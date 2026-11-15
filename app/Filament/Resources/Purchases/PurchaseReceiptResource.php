@@ -23,7 +23,7 @@ class PurchaseReceiptResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationLabel = 'Supplier Receipts';
+    protected static ?string $navigationLabel = 'Purchase Receipts';
 
     protected static ?string $recordTitleAttribute = 'receipt_number';
 

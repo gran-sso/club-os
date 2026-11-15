@@ -2798,6 +2798,7 @@ For environments where full browser automation is unavailable, operators should 
   - Authored dedicated test suite [`tests/Feature/FormWorkflowGapsResolutionTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/FormWorkflowGapsResolutionTest.php): **8 passed, 27 assertions, 0 failures**.
   - Executed full test suite across the entire application on MySQL 8.4 with `BypassSandbox: true`:
     - **471 passed, 3,136 assertions, 0 failures** across 61 test suites in 136.10s.
+  - Aligned navigation menu label in [`PurchaseReceiptResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Purchases/PurchaseReceiptResource.php) from `'Supplier Receipts'` to `'Purchase Receipts'` matching form title and updated references in [`HelpPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php).
   - Cleared compiled views and verified live server ready (`php artisan view:clear`).
 
 

@@ -677,8 +677,8 @@ class HelpPage extends Page
                     [
                         'number' => 1,
                         'title' => 'Default Strict Inventory Enforcement vs Zero-Stock Override',
-                        'instruction' => 'By default, POS blocks selling bar items whose recorded milliliter stock is insufficient. When physical stock has arrived before storekeepers post Supplier Receipts, Management can enable "Allow Selling Zero / Negative Stock Items on POS" under System & Access Control -> System Settings (Tab 2).',
-                        'result' => 'When enabled, cashiers can bill smoothly while inventory tracks temporarily into negative ml until the Supplier Receipt is entered.',
+                        'instruction' => 'By default, POS blocks selling bar items whose recorded milliliter stock is insufficient. When physical stock has arrived before storekeepers post Purchase Receipts, Management can enable "Allow Selling Zero / Negative Stock Items on POS" under System & Access Control -> System Settings (Tab 2).',
+                        'result' => 'When enabled, cashiers can bill smoothly while inventory tracks temporarily into negative ml until the Purchase Receipt is entered.',
                         'tip' => 'Always reconcile negative inventory promptly by posting inward stock receipts under Procurement & Food Contractor.',
                     ],
                     [
@@ -1697,7 +1697,7 @@ class HelpPage extends Page
                     [
                         'number' => 2,
                         'title' => 'Back-Office Printable Modals (Invoices, Vouchers, Passes, Passbooks)',
-                        'instruction' => 'Open any View/Print modal in Admin — Bills & Invoices, General Ledger Journals, Supplier Receipts, Operating Expenses, Guests Day Passes, Member Statements, Bank Passbooks, or Member Profile Invoices & Intro Letters — and click its Print button.',
+                        'instruction' => 'Open any View/Print modal in Admin — Bills & Invoices, General Ledger Journals, Purchase Receipts, Operating Expenses, Guests Day Passes, Member Statements, Bank Passbooks, or Member Profile Invoices & Intro Letters — and click its Print button.',
                         'result' => 'Background tables, sidebars, and modal close buttons automatically hide so only the crisp light-mode document prints.',
                         'tip' => 'Member Wallet Ledger statements include an automatic Club Statement Letterhead and full remark wrapping.',
                     ],
@@ -1721,15 +1721,15 @@ class HelpPage extends Page
                 'tab_label' => 'Procurement & Stores',
                 'icon' => '📦',
                 'title' => 'Inward Stock Purchases, Bulk Discounts & Wholesale Suppliers',
-                'summary' => 'Posting incoming liquor consignments under Procurement & Food Contractor -> Supplier Receipts, registering GSTIN suppliers in-line, and applying wholesale bulk discounts cleanly.',
+                'summary' => 'Posting incoming liquor consignments under Procurement & Food Contractor -> Purchase Receipts, registering GSTIN suppliers in-line, and applying wholesale bulk discounts cleanly.',
                 'target_role' => 'Store Custodian & Beverage Manager',
                 'estimated_time' => '3 mins read',
-                'tags' => ['purchase receipt', 'supplier receipts', 'ksbc', 'supplier', 'gstin', 'discount', 'scheme', 'weighted average', 'mac', 'inventory'],
+                'tags' => ['purchase receipt', 'purchase receipts', 'ksbc', 'supplier', 'gstin', 'discount', 'scheme', 'weighted average', 'mac', 'inventory'],
                 'steps' => [
                     [
                         'number' => 1,
-                        'title' => 'Open Supplier Receipts Form',
-                        'instruction' => 'Navigate to Procurement & Food Contractor -> Supplier Receipts and click "Add Stock Purchase".',
+                        'title' => 'Open Purchase Receipts Form',
+                        'instruction' => 'Navigate to Procurement & Food Contractor -> Purchase Receipts and click "Add Stock Purchase".',
                         'result' => 'Opens the supplier consignment intake form.',
                         'tip' => 'Keep the KSBC FL-4 or distributor tax invoice and transport permit beside you.',
                     ],
@@ -1757,7 +1757,7 @@ class HelpPage extends Page
                 ],
                 'field_sections' => [
                     [
-                        'section_title' => 'Supplier Receipts Form Header (Procurement & Food Contractor -> Supplier Receipts)',
+                        'section_title' => 'Purchase Receipts Form Header (Procurement & Food Contractor -> Purchase Receipts)',
                         'section_note' => 'Captures wholesale excise invoices / delivery bills into Inventory Stores (1030) and Vendor Payables.',
                         'fields' => [
                             [
@@ -1835,7 +1835,7 @@ class HelpPage extends Page
                             [
                                 'name' => 'Depot / Billing Address & Active Supplier Status',
                                 'type' => 'Address & Active Toggle',
-                                'meaning' => 'Physical warehouse address and switch controlling whether the vendor appears in Supplier Receipts dropdowns.',
+                                'meaning' => 'Physical warehouse address and switch controlling whether the vendor appears in Purchase Receipts dropdowns.',
                                 'effect' => 'Turn Active OFF to retire an old vendor cleanly while keeping historical bills intact.',
                             ],
                         ],
