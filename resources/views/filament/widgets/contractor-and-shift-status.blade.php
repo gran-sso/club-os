@@ -20,7 +20,7 @@
         </div>
 
         <!-- Section 1: Food Catering Contractor Daily Accumulator -->
-        <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/80 space-y-2">
+        <a href="{{ url('/admin/contractor-settlements/contractor-settlement-batches') }}" class="block p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-900/80 rounded-xl border border-slate-100 hover:border-slate-300 dark:border-slate-800/80 dark:hover:border-slate-700 transition space-y-2.5 no-underline group">
             <div class="flex items-center justify-between">
                 <div>
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today's Qualified Food Sales</span>
@@ -51,7 +51,14 @@
             <p class="text-[11px] text-slate-500 leading-tight">
                 Cash, digital, and member wallet food orders automatically pool for next morning contractor settlement. Unused wallet balances are excluded.
             </p>
-        </div>
+            <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                <span class="text-[11px] text-slate-500">Settlement Ledger &bull; Next morning batch</span>
+                <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline flex items-center gap-0.5">
+                    <span>Manage Settlements</span>
+                    <span>&rarr;</span>
+                </span>
+            </div>
+        </a>
     </div>
 </x-filament-widgets::widget>
 

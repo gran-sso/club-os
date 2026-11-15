@@ -68,18 +68,35 @@ class FrontDeskPulseWidget extends Widget
 
             $status = 'available';
             $occupantName = null;
+            $reservationId = null;
 
             if ($inMaintenance) {
                 $status = 'maintenance';
             } elseif ($occupiedRes) {
                 $status = 'occupied';
                 $occupantName = $occupiedRes->occupant_name;
+                $reservationId = $occupiedRes->id;
             } elseif ($reservedToday) {
                 $status = 'reserved_today';
                 $occupantName = 'Arriving: ' . $reservedToday->occupant_name;
+                $reservationId = $reservedToday->id;
             } elseif (($room->housekeeping_status ?? 'clean') === 'dirty' || $latestCheckedOut?->housekeeping_status === 'dirty') {
                 $status = 'cleaning';
             }
+
+            $actionUrl = match ($status) {
+                'available' => url('/admin/room-reservations/create?facility_id=' . $room->id),
+                'occupied', 'reserved_today' => $reservationId ? url('/admin/room-reservations/' . $reservationId . '/edit') : url('/admin/room-rack'),
+                default => url('/admin/room-rack'),
+            };
+
+            $actionLabel = match ($status) {
+                'available' => '+ Book Room',
+                'occupied' => 'Folio',
+                'reserved_today' => 'Check-In',
+                'cleaning' => 'Housekeeping',
+                default => 'Room Rack',
+            };
 
             return [
                 'id' => $room->id,
@@ -87,6 +104,9 @@ class FrontDeskPulseWidget extends Widget
                 'name' => $room->name,
                 'status' => $status,
                 'occupant' => $occupantName,
+                'reservation_id' => $reservationId,
+                'action_url' => $actionUrl,
+                'action_label' => $actionLabel,
             ];
         });
 
@@ -112,6 +132,8 @@ class FrontDeskPulseWidget extends Widget
             'bookedSlots' => $bookedSlots,
             'utilizationPct' => $utilizationPct,
             'nextBooking' => $nextBooking,
+            'canManageRooms' => (bool) (auth()->user()?->hasAnyClubPermission(['rooms.view_rack', 'rooms.manage_reservations'])),
+            'canManageCourts' => (bool) (auth()->user()?->hasAnyClubPermission(['courts.view_schedule', 'courts.manage_bookings'])),
         ];
     }
 }

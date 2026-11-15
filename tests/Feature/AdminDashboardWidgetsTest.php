@@ -372,4 +372,79 @@ class AdminDashboardWidgetsTest extends TestCase
         $this->assertArrayHasKey('isGlBalanced', $data);
         $this->assertTrue($data['isGlBalanced']); // Double-entry ledger must always balance
     }
+
+    public function test_dashboard_header_actions_render_relevant_operations(): void
+    {
+        // Admin sees all quick action buttons
+        $adminResponse = $this->actingAs($this->admin)->get('/admin');
+        $adminResponse->assertStatus(200);
+        $adminResponse->assertSee('Counter POS');
+        $adminResponse->assertSee('Register Guest');
+        $adminResponse->assertSee('Room Rack');
+        $adminResponse->assertSee('Book Court');
+        $adminResponse->assertSee('Member Top-Up');
+        $adminResponse->assertSee('Shift Cash');
+        $adminResponse->assertSee('Reporting Hub');
+        $adminResponse->assertSee('More');
+
+        // Reception user sees Front-Desk operations (Guest, Room, Court) but not administrative Reporting Hub
+        $receptionResponse = $this->actingAs($this->reception)->get('/admin');
+        $receptionResponse->assertStatus(200);
+        $receptionResponse->assertSee('Register Guest');
+        $receptionResponse->assertSee('Room Rack');
+        $receptionResponse->assertSee('Book Court');
+        $receptionResponse->assertDontSee('Reporting Hub');
+    }
+
+    public function test_executive_stats_overview_cards_have_clickable_action_urls(): void
+    {
+        $this->actingAs($this->admin);
+
+        $widget = new ExecutiveStatsOverviewWidget();
+        $stats = invade($widget)->getStats();
+
+        $this->assertCount(4, $stats);
+        $this->assertSame(url('/admin/bills'), $stats[0]->getUrl());
+        $this->assertSame(url('/admin/shifts'), $stats[1]->getUrl());
+        $this->assertSame(url('/admin/members'), $stats[2]->getUrl());
+        $this->assertSame(url('/admin/guests'), $stats[3]->getUrl());
+    }
+
+    public function test_front_desk_pulse_cards_have_action_urls_and_direct_buttons(): void
+    {
+        $this->actingAs($this->admin);
+
+        $widget = new FrontDeskPulseWidget();
+        $data = $widget->getViewData();
+
+        $this->assertNotEmpty($data['roomStatuses']);
+        $vacantRoom = collect($data['roomStatuses'])->firstWhere('status', 'available');
+        $this->assertNotNull($vacantRoom);
+        $this->assertStringContainsString('/admin/room-reservations/create?facility_id=', $vacantRoom['action_url']);
+        $this->assertSame('+ Book Room', $vacantRoom['action_label']);
+
+        // Check widget rendered output includes action buttons & badminton booking button
+        $response = $this->get('/admin');
+        $response->assertStatus(200);
+        $response->assertSee('+ Book Room');
+        $response->assertSee('+ Book Slot');
+        $response->assertSee('Schedule');
+    }
+
+    public function test_counter_stations_pulse_renders_launch_pos_button(): void
+    {
+        $counter1 = Counter::where('code', 'COUNTER-1')->firstOrFail();
+        $shiftService = app(ShiftService::class);
+        $shift = $shiftService->openShift(
+            counterId: $counter1->id,
+            userId: $this->admin->id,
+            openingFloatPaise: 100000,
+            businessDate: today()->toDateString()
+        );
+
+        \Livewire\Livewire::actingAs($this->admin)
+            ->test(CounterStationsPulseWidget::class)
+            ->assertSee('Launch POS')
+            ->assertSee(route('pos', ['counter_id' => $counter1->id]));
+    }
 }

@@ -30,6 +30,7 @@ use App\Domain\Tariff\Models\Tariff;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class BillingService
@@ -425,8 +426,9 @@ class BillingService
         int $amountPaise,
         string $reason,
         User $approver,
-        string $idempotencyKey,
-        bool $returnStock = false
+        ?string $idempotencyKey = null,
+        bool $returnStock = false,
+        ?bool $refundToWallet = null
     ): Refund {
         if (!$bill->isPaid()) {
             throw new InvalidArgumentException("Only fully paid bills can be refunded.");
@@ -441,7 +443,14 @@ class BillingService
             throw new UnauthorizedActionException("Only a Manager or Administrator can approve refunds.");
         }
 
-        return DB::transaction(function () use ($bill, $amountPaise, $reason, $approver, $idempotencyKey, $returnStock) {
+        $idempotencyKey = $idempotencyKey ?: ('refund_' . $bill->id . '_' . (string) Str::uuid());
+
+        return DB::transaction(function () use ($bill, $amountPaise, $reason, $approver, $idempotencyKey, $returnStock, $refundToWallet) {
+            $existing = Refund::where('idempotency_key', $idempotencyKey)->first();
+            if ($existing) {
+                return $existing;
+            }
+
             $priorRefunds = (int) Refund::where('bill_id', $bill->id)->sum('amount_paise');
             if (($priorRefunds + $amountPaise) > $bill->paid_amount_paise) {
                 throw new InvalidArgumentException("Refund amount exceeds net refundable balance.");
@@ -449,6 +458,14 @@ class BillingService
 
             $primaryReceipt = PaymentReceipt::where('bill_id', $bill->id)->first();
             $tenderType = $primaryReceipt ? $primaryReceipt->tender_type : TenderType::CASH;
+
+            if ($refundToWallet !== null) {
+                if ($refundToWallet && $bill->customer instanceof Member) {
+                    $tenderType = TenderType::PREPAID;
+                } elseif (! $refundToWallet) {
+                    $tenderType = TenderType::CASH;
+                }
+            }
 
             $yearMonth = now()->format('Ym');
             $count = Refund::where('refund_number', 'LIKE', "REF-{$yearMonth}-%")->count() + 1;

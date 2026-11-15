@@ -107,8 +107,13 @@ class EditBill extends EditRecord
                         ->placeholder('e.g. Customer returned unopened beverage / disputed service'),
                     \Filament\Forms\Components\Toggle::make('refund_to_wallet')
                         ->label('Credit Customer Prepaid Wallet')
-                        ->default(true)
+                        ->default(fn () => $bill->customer instanceof \App\Domain\Membership\Models\Member)
+                        ->visible(fn () => $bill->customer instanceof \App\Domain\Membership\Models\Member)
                         ->helperText('If enabled, restores customer prepaid balance. If disabled, settles via physical cash payout.'),
+                    \Filament\Forms\Components\Toggle::make('return_stock')
+                        ->label('Restock Returned Items')
+                        ->default(false)
+                        ->helperText('Enable only if physical unopened items were returned back to inventory.'),
                 ])
                 ->action(function (array $data) use ($bill) {
                     $service = app(BillingService::class);
@@ -117,7 +122,9 @@ class EditBill extends EditRecord
                         amountPaise: $bill->net_amount_paise,
                         reason: $data['reason'],
                         approver: auth()->user(),
-                        refundToWallet: $data['refund_to_wallet']
+                        idempotencyKey: 'bill_refund_' . $bill->id . '_' . now()->timestamp,
+                        returnStock: (bool) ($data['return_stock'] ?? false),
+                        refundToWallet: isset($data['refund_to_wallet']) ? (bool) $data['refund_to_wallet'] : null
                     );
 
                     Notification::make()

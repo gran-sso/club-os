@@ -30,11 +30,11 @@
                 @foreach ($roomStatuses as $room)
                     @php
                         $badgeStyle = match ($room['status']) {
-                            'occupied' => 'bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400',
-                            'reserved_today' => 'bg-purple-500/10 border-purple-500/30 text-purple-700 dark:text-purple-400',
-                            'cleaning' => 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400',
-                            'maintenance' => 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400',
-                            default => 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400',
+                            'occupied' => 'bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400 hover:border-blue-500 hover:shadow-sm',
+                            'reserved_today' => 'bg-purple-500/10 border-purple-500/30 text-purple-700 dark:text-purple-400 hover:border-purple-500 hover:shadow-sm',
+                            'cleaning' => 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 hover:border-amber-500 hover:shadow-sm',
+                            'maintenance' => 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400 hover:border-rose-500 hover:shadow-sm',
+                            default => 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:border-emerald-500 hover:shadow-sm',
                         };
 
                         $statusLabel = match ($room['status']) {
@@ -44,19 +44,37 @@
                             'maintenance' => 'Maint.',
                             default => 'Vacant',
                         };
+
+                        $actionBtnStyle = match ($room['status']) {
+                            'occupied' => 'bg-blue-600 hover:bg-blue-500 text-white',
+                            'reserved_today' => 'bg-purple-600 hover:bg-purple-500 text-white',
+                            'cleaning' => 'bg-amber-600 hover:bg-amber-500 text-white',
+                            'maintenance' => 'bg-rose-600 hover:bg-rose-500 text-white',
+                            default => 'bg-emerald-600 hover:bg-emerald-500 text-white',
+                        };
                     @endphp
 
-                    <div class="p-3 rounded-xl border {{ $badgeStyle }} flex flex-col justify-between text-left min-h-[72px]">
-                        <div class="flex items-center justify-between gap-1">
-                            <span class="text-sm font-extrabold tracking-tight">{{ $room['code'] }}</span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/50 dark:bg-slate-900/50 shadow-xs">
-                                {{ $statusLabel }}
+                    <a href="{{ $room['action_url'] }}" class="p-3 rounded-xl border {{ $badgeStyle }} flex flex-col justify-between text-left min-h-[96px] transition group no-underline">
+                        <div>
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="text-sm font-extrabold tracking-tight">{{ $room['code'] }}</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 dark:bg-slate-900/70 shadow-xs">
+                                    {{ $statusLabel }}
+                                </span>
+                            </div>
+                            <div class="mt-1.5 truncate text-[11px] text-slate-700 dark:text-slate-300 font-medium" title="{{ $room['occupant'] ?? 'Ready for guest check-in' }}">
+                                {{ $room['occupant'] ?? 'Ready for check-in' }}
+                            </div>
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+                            <span class="text-[10px] font-semibold text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition">
+                                {{ $room['name'] }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold shadow-xs transition {{ $actionBtnStyle }}">
+                                {{ $room['action_label'] }} &rarr;
                             </span>
                         </div>
-                        <div class="mt-2 truncate text-xs text-slate-700 dark:text-slate-300 font-medium" title="{{ $room['occupant'] ?? 'Ready for guest check-in' }}">
-                            {{ $room['occupant'] ?? 'Ready for check-in' }}
-                        </div>
-                    </div>
+                    </a>
                 @endforeach
             </div>
         </div>
@@ -68,9 +86,15 @@
                     <span>🏸</span>
                     <span class="font-bold text-slate-800 dark:text-slate-200">Indoor Badminton Court &bull; {{ $court?->name ?? 'Wooden Court' }}</span>
                 </div>
-                <a href="{{ url('/admin/court-schedule') }}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline">
-                    Schedule &rarr;
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ url('/admin/court-bookings/create') }}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-600 hover:bg-amber-500 text-white transition shadow-xs">
+                        + Book Slot
+                    </a>
+                    <a href="{{ url('/admin/court-schedule') }}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5">
+                        <span>Schedule</span>
+                        <span>&rarr;</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Capacity Bar & Next Booking in 2 columns on wide screens -->
@@ -86,25 +110,25 @@
                     </div>
                 </div>
 
-                <div class="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/70 text-xs flex items-center justify-between">
+                <a href="{{ $nextBooking ? url('/admin/court-bookings/' . $nextBooking->id . '/edit') : url('/admin/court-bookings/create') }}" class="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-900/80 rounded-xl border border-slate-100 hover:border-slate-300 dark:border-slate-800/70 dark:hover:border-slate-700 text-xs flex items-center justify-between transition no-underline group">
                     @if ($nextBooking)
                         <div class="truncate">
                             <span class="text-slate-500 text-[11px]">Next Slot:</span>
                             <span class="font-mono font-bold text-slate-900 dark:text-white ml-1">{{ date('g:i A', strtotime($nextBooking->start_time)) }}</span>
                             <span class="text-slate-500 dark:text-slate-400 text-[11px] ml-1">({{ $nextBooking->member?->name ?? 'Member' }})</span>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                            Booked
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0 group-hover:bg-amber-500 group-hover:text-white transition">
+                            View Slot &rarr;
                         </span>
                     @else
                         <div class="text-slate-500 text-[11px]">
                             No remaining reservations scheduled for today.
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                            Court Open
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition">
+                            + Book Now
                         </span>
                     @endif
-                </div>
+                </a>
             </div>
         </div>
     </div>

@@ -2801,4 +2801,69 @@ For environments where full browser automation is unavailable, operators should 
   - Aligned navigation menu label in [`PurchaseReceiptResource.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Purchases/PurchaseReceiptResource.php) from `'Supplier Receipts'` to `'Purchase Receipts'` matching form title and updated references in [`HelpPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/HelpPage.php).
   - Cleared compiled views and verified live server ready (`php artisan view:clear`).
 
+## Interactive Dashboard Operations Command Centre & Quick Launch Bar (Completed 2026-11-15)
+
+- **Scope & Design Decisions:**
+  - Upgraded the Filament Admin Dashboard from a passive read-only monitoring screen into an interactive operations command centre (`D88`).
+  - Implemented Approach 2: Integrated quick action shortcuts directly into the native Dashboard page header beside the "Dashboard" title, saving ~80px of vertical height and keeping all executive metrics and facility cards above the fold.
+- **Implemented Enhancements:**
+  1. **Page Header Quick Actions (`Dashboard::getHeaderActions()` in `Dashboard.php`):**
+     - Sits directly in the page title bar aligned to the right.
+     - Displays the top 4 high-frequency operations as clean buttons:
+       - **`⚡ Counter POS`** (amber primary button, links to `route('pos')`)
+       - **`Register Guest`** (links to `/admin/guests/create`)
+       - **`Room Rack`** (links to `/admin/room-rack`)
+       - **`Book Court`** (links to `/admin/court-bookings/create`)
+     - Groups secondary administrative shortcuts into a sleek **`More`** dropdown menu (`ActionGroup`):
+       - `Member Top-Up` (`/admin/members`)
+       - `Shift Cash` (`/admin/shifts`)
+       - `Reporting Hub` (`/admin/financial-reports`)
+     - Completely eliminated the standalone `DashboardQuickActionsWidget` card container to reclaim vertical space.
+  2. **Clickable Financial & Attendance Stat Cards (`ExecutiveStatsOverviewWidget.php`):**
+     - Configured native Filament `->url(...)` routing on all 4 executive metrics:
+       - `Today's Billed Sales` &rarr; `/admin/bills`
+       - `Collections Today` &rarr; `/admin/shifts`
+       - `Prepaid Member Deposits` &rarr; `/admin/members`
+       - `Today's Club Footfall` &rarr; `/admin/guests`
+  3. **Actionable Accommodation & Sports Pulse (`FrontDeskPulseWidget.php` & `front-desk-pulse.blade.php`):**
+     - Transformed static room cards into interactive cards with smooth hover elevation and dedicated action badges:
+       - Vacant Deluxe Rooms link directly to `/admin/room-reservations/create?facility_id={id}` with the specific room pre-selected and a prominent `+ Book Room` button.
+       - Occupied rooms link to active reservation details with `Folio` button.
+       - Arriving/Reserved rooms display `Check-In` button.
+       - Cleaning rooms link to Housekeeping in `Room Rack`.
+     - Badminton Court section enhanced with direct `+ Book Slot` action button (`/admin/court-bookings/create`) and clickable next booking card leading to reservation review.
+  4. **Direct POS Station Launchers (`CounterStationsPulseWidget.php` & `counter-stations-pulse.blade.php`):**
+     - Added an instant `⚡ Launch POS` button to all open counter station cards, directly launching `/pos?counter_id={id}` for cashier and manager convenience.
+     - Preserved `Inspect Shift →`, `Close & Reconcile` modal reconciliation, and `+ Open Shift` for idle counters.
+  5. **Actionable Contractor & System Integrity Widgets (`contractor-and-shift-status.blade.php` & `system-integrity.blade.php`):**
+     - Linked Qualified Food Sales accumulator directly to `/admin/contractor-settlements/contractor-settlement-batches` with `Manage Settlements →`.
+     - Made Tally outbox tiles (`Synced Today`, `Waiting to Send`, `Retries`) link to `/admin/integration-status`.
+     - Linked General Ledger and MTD GST liability to `/admin/financial-reports`, and Fiscal Period to `/admin/financial-periods`.
+- **Verification:**
+  - Expanded `tests/Feature/AdminDashboardWidgetsTest.php` with 4 new dedicated test methods:
+    - `test_dashboard_quick_actions_widget_renders_relevant_actions()`
+    - `test_executive_stats_overview_cards_have_clickable_action_urls()`
+    - `test_front_desk_pulse_cards_have_action_urls_and_direct_buttons()`
+    - `test_counter_stations_pulse_renders_launch_pos_button()`
+  - Verified widget test suite: **14 passed, 131 assertions, 0 failures** in [`AdminDashboardWidgetsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminDashboardWidgetsTest.php).
+  - Executed full application test suite across all 61 suites against MySQL 8.4 InnoDB with `BypassSandbox: true`:
+    - **475 passed, 3,166 assertions, 0 failures** in 136.72s.
+  - Cleared compiled views and verified live server ready (`php artisan view:clear`).
+
+## Authorize Refund Parameter & Idempotency Resolution (Completed 2026-11-15)
+
+- **Root Cause & Fix:**
+  - In [`EditBill.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Pages/EditBill.php) and [`BillsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Bills/Tables/BillsTable.php), the "Authorize Refund" action passed named parameter `refundToWallet: $data['refund_to_wallet']` and omitted `idempotencyKey`, while [`BillingService::refund()`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Services/BillingService.php) expected positional/named parameters `($bill, $amountPaise, $reason, $approver, $idempotencyKey, $returnStock)` without `$refundToWallet`. This triggered `Fatal error: Unknown named parameter $refundToWallet` on PHP 8.4.
+  - Updated `BillingService::refund()` signature to accept `?string $idempotencyKey = null, bool $returnStock = false, ?bool $refundToWallet = null`.
+  - Added auto-generation of unique idempotency keys when omitted (`'refund_' . $bill->id . '_' . Str::uuid()`).
+  - Added support for `$refundToWallet`: when true and customer is a Member, refund disburses to prepaid wallet (account 2010); when false or customer is a Guest, it settles via Cash (1010).
+  - Added optional `return_stock` toggle on both `EditBill` and `BillsTable` actions to allow restocking unopened items back into inventory.
+- **Verification:**
+  - Added 2 dedicated test cases in [`BillResourceTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/BillResourceTest.php):
+    - `test_manager_can_authorize_full_refund_from_edit_bill_page()`
+    - `test_manager_can_authorize_refund_from_bills_table_action()`
+  - Verified test suite: **10 passed, 81 assertions, 0 failures** in `BillResourceTest.php`.
+  - Verified related domain suites: **18 passed, 169 assertions, 0 failures** in `RoleAndFormAccessControlTest`, `InventoryAndBarTest`, and `ContractorSettlementTest`.
+  - Cleared compiled views (`php artisan view:clear`).
+
 

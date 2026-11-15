@@ -34,18 +34,18 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <a href="{{ url('/admin/integration-status') }}" class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/15 transition no-underline block">
                     <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">{{ $outboxAcknowledged }}</span>
-                    <span class="text-[10px] block text-slate-500">Synced Today</span>
-                </div>
-                <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <span class="text-[10px] block text-slate-500">Synced Today &rarr;</span>
+                </a>
+                <a href="{{ url('/admin/integration-status') }}" class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/15 transition no-underline block">
                     <span class="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">{{ $outboxPending }}</span>
-                    <span class="text-[10px] block text-slate-500">Waiting to Send</span>
-                </div>
-                <div class="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                    <span class="text-[10px] block text-slate-500">Waiting &rarr;</span>
+                </a>
+                <a href="{{ url('/admin/integration-status') }}" class="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/50 hover:bg-rose-500/15 transition no-underline block">
                     <span class="text-xs font-extrabold text-rose-600 dark:text-rose-400 font-mono">{{ $outboxFailed }}</span>
-                    <span class="text-[10px] block text-slate-500">Failed / Retries</span>
-                </div>
+                    <span class="text-[10px] block text-slate-500">Retries &rarr;</span>
+                </a>
             </div>
         </div>
 
@@ -60,16 +60,16 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <!-- GL Balance Check -->
-                <div class="p-2.5 rounded-xl border {{ $isGlBalanced ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400' }} flex items-center justify-between">
+                <a href="{{ url('/admin/financial-reports') }}" class="p-2.5 rounded-xl border {{ $isGlBalanced ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:border-emerald-500/50' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400 hover:border-rose-500/50' }} flex items-center justify-between transition no-underline">
                     <div>
                         <span class="text-[10px] font-bold uppercase block text-slate-500">General Ledger</span>
                         <span class="text-xs font-extrabold">{{ $isGlBalanced ? '✓ Balanced (100%)' : '⚠ Discrepancy' }}</span>
                     </div>
                     <span class="text-base">{{ $isGlBalanced ? '⚖️' : '🚨' }}</span>
-                </div>
+                </a>
 
                 <!-- Fiscal Period Lock -->
-                <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <a href="{{ url('/admin/financial-periods') }}" class="p-2.5 rounded-xl border bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/40 dark:hover:bg-slate-900 border-slate-200 hover:border-slate-300 dark:border-slate-800 flex items-center justify-between transition no-underline">
                     <div>
                         <span class="text-[10px] font-bold uppercase block text-slate-500">Fiscal Period</span>
                         <span class="text-xs font-extrabold font-mono text-slate-900 dark:text-white">
@@ -77,12 +77,12 @@
                         </span>
                     </div>
                     <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                        Open
+                        Open &rarr;
                     </span>
-                </div>
+                </a>
 
                 <!-- Unposted Payment Captures (Scenario F07) -->
-                <div class="p-2.5 rounded-xl border {{ $unpostedCapturesCount === 0 ? 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400' }} flex items-center justify-between">
+                <a href="{{ url('/admin/bills') }}" class="p-2.5 rounded-xl border {{ $unpostedCapturesCount === 0 ? 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/40 dark:hover:bg-slate-900 border-slate-200 hover:border-slate-300 dark:border-slate-800' : 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-400 hover:border-rose-500/50' }} flex items-center justify-between transition no-underline">
                     <div>
                         <span class="text-[10px] font-bold uppercase block text-slate-500">Unrecorded Online Payments</span>
                         <span class="text-xs font-extrabold font-mono {{ $unpostedCapturesCount === 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600' }}">
@@ -90,18 +90,18 @@
                         </span>
                     </div>
                     <span class="text-base">{{ $unpostedCapturesCount === 0 ? '✅' : '⚠️' }}</span>
-                </div>
+                </a>
 
                 <!-- MTD GST Liability -->
-                <div class="p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <a href="{{ url('/admin/financial-reports') }}" class="p-2.5 rounded-xl border bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/40 dark:hover:bg-slate-900 border-slate-200 hover:border-slate-300 dark:border-slate-800 flex items-center justify-between transition no-underline">
                     <div>
                         <span class="text-[10px] font-bold uppercase block text-slate-500">MTD GST Collected</span>
                         <span class="text-xs font-extrabold font-mono text-slate-900 dark:text-white">
                             ₹{{ $monthGstRupees }}
                         </span>
                     </div>
-                    <span class="text-[10px] text-slate-400 font-mono">{{ config('club.gstin', 'GST Registered') }}</span>
-                </div>
+                    <span class="text-[10px] text-slate-400 font-mono">{{ config('club.gstin', 'GST Registered') }} &rarr;</span>
+                </a>
             </div>
         </div>
     </div>

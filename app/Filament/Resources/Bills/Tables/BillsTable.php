@@ -102,8 +102,13 @@ class BillsTable
                             ->placeholder('e.g. Returned unopened bottle / Disputed service charge'),
                         \Filament\Forms\Components\Toggle::make('refund_to_wallet')
                             ->label('Credit to Customer Prepaid Wallet')
-                            ->default(true)
+                            ->default(fn ($record) => $record->customer instanceof \App\Domain\Membership\Models\Member)
+                            ->visible(fn ($record) => $record->customer instanceof \App\Domain\Membership\Models\Member)
                             ->helperText('If enabled, restores customer prepaid balance. If disabled, settles via physical cash payout.'),
+                        \Filament\Forms\Components\Toggle::make('return_stock')
+                            ->label('Restock Returned Items')
+                            ->default(false)
+                            ->helperText('Enable only if physical unopened items were returned back to inventory.'),
                     ])
                     ->action(function ($record, array $data) {
                         $service = app(\App\Domain\Billing\Services\BillingService::class);
@@ -112,7 +117,9 @@ class BillsTable
                             amountPaise: $record->net_amount_paise,
                             reason: $data['reason'],
                             approver: auth()->user(),
-                            refundToWallet: $data['refund_to_wallet']
+                            idempotencyKey: 'bill_refund_' . $record->id . '_' . now()->timestamp,
+                            returnStock: (bool) ($data['return_stock'] ?? false),
+                            refundToWallet: isset($data['refund_to_wallet']) ? (bool) $data['refund_to_wallet'] : null
                         );
 
                         \Filament\Notifications\Notification::make()

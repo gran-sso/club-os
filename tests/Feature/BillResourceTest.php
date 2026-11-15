@@ -355,4 +355,73 @@ class BillResourceTest extends TestCase
             ])
             ->assertMountedActionModalDontSee('Walk-In / Counter');
     }
+
+    public function test_manager_can_authorize_full_refund_from_edit_bill_page(): void
+    {
+        $billingService = app(BillingService::class);
+        $bill = $billingService->createDraftBill(
+            shift: $this->shift,
+            customer: $this->member,
+            departmentCode: 'bar',
+            items: [
+                [
+                    'item_name' => 'Premium Whiskey',
+                    'quantity' => 1,
+                    'unit_price_paise' => 50000,
+                    'tax_percent' => 0,
+                ],
+            ],
+            idempotencyKey: 'TEST-REFUND-EDIT-' . Str::uuid()
+        );
+        $billingService->checkout($bill, [
+            ['tender_type' => 'prepaid', 'amount_paise' => 50000],
+        ]);
+
+        $initialBalance = $this->member->fresh()->wallet_balance_paise;
+
+        Livewire::actingAs($this->manager)
+            ->test(EditBill::class, ['record' => $bill->id])
+            ->callAction('refund', [
+                'reason' => 'Customer returned unopened beverage',
+                'refund_to_wallet' => true,
+                'return_stock' => false,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(BillStatus::REFUNDED, $bill->fresh()->status);
+        $this->assertEquals($initialBalance + 50000, $this->member->fresh()->wallet_balance_paise);
+    }
+
+    public function test_manager_can_authorize_refund_from_bills_table_action(): void
+    {
+        $billingService = app(BillingService::class);
+        $bill = $billingService->createDraftBill(
+            shift: $this->shift,
+            customer: $this->guest,
+            departmentCode: 'food',
+            items: [
+                [
+                    'item_name' => 'Meals',
+                    'quantity' => 2,
+                    'unit_price_paise' => 15000,
+                    'tax_percent' => 5,
+                ],
+            ],
+            idempotencyKey: 'TEST-REFUND-TBL-' . Str::uuid()
+        );
+        $billingService->checkout($bill, [
+            ['tender_type' => 'cash', 'amount_paise' => $bill->net_amount_paise],
+        ]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ListBills::class)
+            ->callTableAction('refund', $bill->fresh(), [
+                'reason' => 'Service dispute resolved by manager',
+                'refund_to_wallet' => false,
+                'return_stock' => false,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(BillStatus::REFUNDED, $bill->fresh()->status);
+    }
 }

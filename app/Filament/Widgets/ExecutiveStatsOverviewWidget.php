@@ -78,23 +78,27 @@ class ExecutiveStatsOverviewWidget extends StatsOverviewWidget
                 ->description('Net revenue posted across departments')
                 ->descriptionIcon(Heroicon::OutlinedBanknotes)
                 ->color('success')
-                ->chart($salesHistory),
+                ->chart($salesHistory)
+                ->url(url('/admin/bills')),
 
             Stat::make('Collections Today', "₹{$todayCollectionsRupees}")
                 ->description('Fresh cash till & UPI/card receipts')
                 ->descriptionIcon(Heroicon::OutlinedArrowDownTray)
                 ->color('warning')
-                ->chart($collectionsHistory),
+                ->chart($collectionsHistory)
+                ->url(url('/admin/shifts')),
 
             Stat::make('Prepaid Member Deposits', "₹{$totalPrepaidRupees}")
                 ->description("Liability A/C 2010 ({$activeWalletsCount} funded accounts)")
                 ->descriptionIcon(Heroicon::OutlinedCreditCard)
-                ->color('info'),
+                ->color('info')
+                ->url(url('/admin/members')),
 
             Stat::make("Today's Club Footfall", "{$totalFootfall} Persons")
                 ->description("{$activeMembersCount} active members • {$guestsAdmittedToday} paid guests")
                 ->descriptionIcon(Heroicon::OutlinedUserGroup)
-                ->color('primary'),
+                ->color('primary')
+                ->url(url('/admin/guests')),
         ];
     }
 }

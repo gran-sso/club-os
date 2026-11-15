@@ -151,10 +151,16 @@
                             </div>
 
                             <!-- Card Footer Actions -->
-                            <div class="pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                                <a href="{{ url('/admin/shifts/' . $openShift->id . '/edit') }}" class="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:underline">
-                                    Inspect Shift &rarr;
-                                </a>
+                            <div class="pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('pos', ['counter_id' => $counter->id]) }}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-600 hover:bg-amber-500 text-white transition shadow-xs flex items-center gap-1">
+                                        <span>⚡</span>
+                                        <span>Launch POS</span>
+                                    </a>
+                                    <a href="{{ url('/admin/shifts/' . $openShift->id . '/edit') }}" class="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:underline">
+                                        Inspect &rarr;
+                                    </a>
+                                </div>
 
                                 @if ($canManageShifts)
                                     <button
