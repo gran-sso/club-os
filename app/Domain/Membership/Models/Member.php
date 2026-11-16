@@ -37,6 +37,11 @@ class Member extends Model implements AuthenticatableContract
         'last_login_at',
         'joined_at',
         'valid_until',
+        'proposer_member_id',
+        'seconder_member_id',
+        'wedding_anniversary',
+        'vehicle_numbers',
+        'committee_role',
     ];
 
     protected $hidden = [
@@ -48,6 +53,7 @@ class Member extends Model implements AuthenticatableContract
         'status' => MemberStatus::class,
         'joined_at' => 'date',
         'valid_until' => 'date',
+        'wedding_anniversary' => 'date',
         'last_login_at' => 'datetime',
         'last_fee_paid_at' => 'datetime',
         'admission_fee_paise' => 'integer',
@@ -126,6 +132,51 @@ class Member extends Model implements AuthenticatableContract
     public function category(): BelongsTo
     {
         return $this->belongsTo(MembershipCategory::class, 'membership_category_id');
+    }
+
+    public function proposerMember(): BelongsTo
+    {
+        return $this->belongsTo(Member::class, 'proposer_member_id');
+    }
+
+    public function seconderMember(): BelongsTo
+    {
+        return $this->belongsTo(Member::class, 'seconder_member_id');
+    }
+
+    public function getDisplayNameWithTitleAttribute(): string
+    {
+        return $this->person?->full_name_with_title ?? $this->name;
+    }
+
+    public function getTitleAttribute(): ?string
+    {
+        return $this->person?->title;
+    }
+
+    public function getProfessionAttribute(): ?string
+    {
+        return $this->person?->profession;
+    }
+
+    public function getDesignationAttribute(): ?string
+    {
+        return $this->person?->designation;
+    }
+
+    public function getOrganizationAttribute(): ?string
+    {
+        return $this->person?->organization;
+    }
+
+    public function getBloodGroupAttribute(): ?string
+    {
+        return $this->person?->blood_group;
+    }
+
+    public function getFormattedAddressAttribute(): string
+    {
+        return $this->person?->formatted_address ?? '';
     }
 
     public function dependents(): HasMany

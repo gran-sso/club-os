@@ -75,11 +75,30 @@
                                     <span>Fee Pending</span>
                                 </span>
                             @endif
+
+                            @if ($member->committee_role)
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 inline-flex items-center gap-1 shadow-2xs">
+                                    <span class="text-amber-500 text-[11px]">★</span>
+                                    <span>{{ $member->committee_role }}</span>
+                                </span>
+                            @endif
                         </div>
 
-                        <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-                            {{ $member->name }}
+                        <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center flex-wrap gap-1.5">
+                            @if ($member->title)
+                                <span class="text-amber-600 dark:text-amber-400 font-semibold">{{ $member->title }}</span>
+                            @endif
+                            <span>{{ $member->person?->first_name ?? $member->name }} {{ $member->person?->last_name ?? '' }}</span>
                         </h1>
+
+                        @if ($member->person?->professional_headline)
+                            <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span>{{ $member->person->professional_headline }}</span>
+                            </div>
+                        @endif
 
                         <!-- Contact & Chips -->
                         <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500 dark:text-slate-400">
@@ -114,6 +133,22 @@
                                 </svg>
                                 <span>Card: <strong class="font-mono text-slate-900 dark:text-white">{{ $member->activeCard?->card_number ?? 'No active card' }}</strong></span>
                             </div>
+
+                            @if ($member->person?->blood_group)
+                                <div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[11px] font-bold text-rose-700 dark:text-rose-400">
+                                    <span class="text-rose-500 text-[10px]">🩸</span>
+                                    <span>{{ $member->person->blood_group }}</span>
+                                </div>
+                            @endif
+
+                            @if ($member->person?->age)
+                                <div class="inline-flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    <span>Age: <strong class="text-slate-700 dark:text-slate-300">{{ $member->person->age }} yrs</strong></span>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -559,10 +594,233 @@
                     </div>
                 </div>
 
-                <!-- Two-Column Cards: KYC & Governance Details -->
+                <!-- Comprehensive 6-Card Grid: Profile, Demographics, Governance & KYC Details -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     
-                    <!-- Card 1: ID Proof & Identity Details -->
+                    <!-- Card 1: Professional & Social Standing -->
+                    <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Professional &amp; Social Standing</span>
+                            </h3>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                Vocation Record
+                            </span>
+                        </div>
+
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Profession / Industry</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->profession ?: 'Not Recorded' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Designation / Office</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->designation ?: 'Not Recorded' }}</dd>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Organization / Firm / Chambers</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->organization ?: 'Not Recorded' }}</dd>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Professional Standing Summary</dt>
+                                <dd class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 font-medium">
+                                    {{ $member->person?->professional_headline ?: 'General Member Standing in good standing at Malabar Club.' }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Card 2: Registered Residential & Postal Address -->
+                    <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                <span>Registered Residential &amp; Postal Address</span>
+                            </h3>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                Official Address
+                            </span>
+                        </div>
+
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">House / Villa / Door No.</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->address_line1 ?: '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Street / Locality</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->address_line2 ?: '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">City / Town</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">{{ $member->person?->city ?: 'Vadakkencherry' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">State &amp; Postal PIN</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    {{ $member->person?->state ?: 'Kerala' }}{{ $member->person?->postal_code ? ' - ' . $member->person->postal_code : '' }}
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Complete Formatted Address</dt>
+                                <dd class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                                    {{ $member->person?->formatted_address ?: ($member->person?->notes ?: 'Address on file at Clubhouse Secretariat, Vadakkencherry, Palakkad.') }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Card 3: Demographics & Emergency Protocol -->
+                    <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-5 h-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                                <span>Demographics &amp; Emergency Contacts</span>
+                            </h3>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                Vital Records
+                            </span>
+                        </div>
+
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Date of Birth &amp; Age</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    @if ($member->person?->date_of_birth)
+                                        {{ $member->person->date_of_birth->format('d M Y') }}
+                                        <span class="text-xs font-normal text-slate-500">({{ $member->person->age }} yrs)</span>
+                                    @else
+                                        Not Recorded
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Gender</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    {{ $member->person?->gender ? ucfirst($member->person->gender) : 'Not Specified' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Blood Group</dt>
+                                <dd class="mt-0.5">
+                                    @if ($member->person?->blood_group)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                                            <span>🩸</span>
+                                            <span>{{ $member->person->blood_group }}</span>
+                                        </span>
+                                    @else
+                                        <span class="text-sm font-bold text-slate-900 dark:text-white">Not Recorded</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Wedding Anniversary</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    {{ $member->wedding_anniversary ? $member->wedding_anniversary->format('d M Y') : 'Not Recorded' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Emergency Contact Person</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    {{ $member->person?->emergency_contact_name ?: 'Not Recorded' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Emergency Phone</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5 font-mono">
+                                    @if ($member->person?->emergency_contact_phone)
+                                        <a href="tel:{{ $member->person->emergency_contact_phone }}" class="text-rose-600 dark:text-rose-400 hover:underline">
+                                            {{ $member->person->emergency_contact_phone }}
+                                        </a>
+                                    @else
+                                        Not Recorded
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Card 4: Club Heritage, Sponsors & Vehicle Assets -->
+                    <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <span>Club Heritage, Sponsors &amp; Assets</span>
+                            </h3>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                Club Register
+                            </span>
+                        </div>
+
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div class="sm:col-span-2">
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Managing Committee Portfolio</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5">
+                                    @if ($member->committee_role)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 font-bold">
+                                            <span>★</span>
+                                            <span>{{ $member->committee_role }}</span>
+                                        </span>
+                                    @else
+                                        <span>General Club Member (No Committee Office)</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Proposing Member</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    @if ($member->proposerMember)
+                                        <a href="{{ \App\Filament\Resources\Members\MemberResource::getUrl('view', ['record' => $member->proposer_member_id]) }}" class="text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1">
+                                            <span>#{{ $member->proposerMember->membership_number }}</span>
+                                            <span>&bull; {{ $member->proposerMember->name }}</span>
+                                        </a>
+                                    @else
+                                        <span class="text-slate-500">Charter / Founding Admission</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Seconding Member</dt>
+                                <dd class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                                    @if ($member->seconderMember)
+                                        <a href="{{ \App\Filament\Resources\Members\MemberResource::getUrl('view', ['record' => $member->seconder_member_id]) }}" class="text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1">
+                                            <span>#{{ $member->seconderMember->membership_number }}</span>
+                                            <span>&bull; {{ $member->seconderMember->name }}</span>
+                                        </a>
+                                    @else
+                                        <span class="text-slate-500">Charter / Founding Admission</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <dt class="text-[11px] font-bold uppercase text-slate-400 mb-1">Registered Vehicle Passes &amp; Plates</dt>
+                                <dd class="flex flex-wrap items-center gap-1.5">
+                                    @if ($member->vehicle_numbers)
+                                        @foreach (explode(',', $member->vehicle_numbers) as $veh)
+                                            @if (trim($veh))
+                                                <span class="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs">
+                                                    🚗 {{ trim($veh) }}
+                                                </span>
+                                            @endif
+                                        @endforeach
+                                    @else
+                                        <span class="text-xs text-slate-400 italic">No vehicle numbers registered for parking gate permits.</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    <!-- Card 5: Statutory ID Proof & Identity Details -->
                     <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -606,9 +864,9 @@
                                 </dd>
                             </div>
                             <div class="sm:col-span-2">
-                                <dt class="text-[11px] font-bold uppercase text-slate-400">Residential Address / Notation</dt>
+                                <dt class="text-[11px] font-bold uppercase text-slate-400">Secretariat &amp; Committee Notes</dt>
                                 <dd class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                                    {{ $member->person?->notes ?: 'Address on file at Clubhouse Secretariat, Vadakkencherry, Palakkad.' }}
+                                    {{ $member->person?->notes ?: 'No special administrative notes on file.' }}
                                 </dd>
                             </div>
 
@@ -714,7 +972,7 @@
                         </dl>
                     </div>
 
-                    <!-- Card 2: Club Governance, Cards & Classification -->
+                    <!-- Card 6: Club Governance, Cards & Classification -->
                     <div class="p-5 sm:p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                             <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">

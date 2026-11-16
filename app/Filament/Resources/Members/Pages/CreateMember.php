@@ -21,10 +21,24 @@ class CreateMember extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         $personData = [
+            'title' => $data['title'] ?? null,
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'] ?? null,
             'phone' => $data['phone'] ?? null,
             'email' => $data['email'] ?? null,
+            'date_of_birth' => $data['date_of_birth'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'blood_group' => $data['blood_group'] ?? null,
+            'profession' => $data['profession'] ?? null,
+            'designation' => $data['designation'] ?? null,
+            'organization' => $data['organization'] ?? null,
+            'address_line1' => $data['address_line1'] ?? null,
+            'address_line2' => $data['address_line2'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? 'Kerala',
+            'postal_code' => $data['postal_code'] ?? null,
+            'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+            'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
             'id_proof_type' => $data['id_proof_type'] ?? null,
             'id_proof_number' => $data['id_proof_number'] ?? null,
             'id_proof_path' => $data['id_proof_path'] ?? null,
@@ -33,12 +47,21 @@ class CreateMember extends CreateRecord
             'notes' => $data['notes'] ?? null,
         ];
 
+        $memberAttributes = [
+            'proposer_member_id' => ! empty($data['proposer_member_id']) ? (int) $data['proposer_member_id'] : null,
+            'seconder_member_id' => ! empty($data['seconder_member_id']) ? (int) $data['seconder_member_id'] : null,
+            'wedding_anniversary' => $data['wedding_anniversary'] ?? null,
+            'vehicle_numbers' => $data['vehicle_numbers'] ?? null,
+            'committee_role' => $data['committee_role'] ?? null,
+        ];
+
         $member = app(MemberService::class)->registerMember(
             $personData,
             (int) $data['membership_category_id'],
             $data['membership_number'],
             $data['joined_at'] ?? null,
-            $data['valid_until'] ?? null
+            $data['valid_until'] ?? null,
+            $memberAttributes
         );
 
         if (!empty($data['status']) && $data['status'] !== 'active') {

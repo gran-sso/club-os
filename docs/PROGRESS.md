@@ -2866,4 +2866,46 @@ For environments where full browser automation is unavailable, operators should 
   - Verified related domain suites: **18 passed, 169 assertions, 0 failures** in `RoleAndFormAccessControlTest`, `InventoryAndBarTest`, and `ContractorSettlementTest`.
   - Cleared compiled views (`php artisan view:clear`).
 
+## Comprehensive Member Profile Expansion (Completed 2026-11-16)
+
+- **Requirement & Objectives:**
+  - Transform member records from basic transactional prepaid accounts into comprehensive, prestigious private club profiles capturing professional pedigree, residential address, personal milestones, demographics, and club heritage.
+- **Architectural Implementation:**
+  1. **Database Migration (`2026_11_16_100000_add_professional_and_profile_fields_to_persons_and_members_tables.php`):**
+     - `persons` table: Added `title` (Dr., Adv., Justice, Er., Col., Prof., Capt., Shri., Smt., etc.), `date_of_birth`, `gender`, `blood_group` (A+, B+, O+, AB+, etc.), `profession`, `designation`, `organization`, `address_line1`, `address_line2`, `city`, `state` (default 'Kerala'), `postal_code`, `emergency_contact_name`, `emergency_contact_phone`.
+     - `members` table: Added `proposer_member_id` (foreign key to `members`), `seconder_member_id` (foreign key to `members`), `wedding_anniversary`, `vehicle_numbers`, and `committee_role`.
+  2. **Domain Models & Accessors:**
+     - Updated [`Person.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Membership/Models/Person.php): Added all new attributes to `$fillable`, cast `date_of_birth` to `date`, and added accessors `full_name_with_title`, `formatted_address`, `age`, and `professional_headline`.
+     - Updated [`Member.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Membership/Models/Member.php): Added new attributes to `$fillable`, cast `wedding_anniversary` to `date`, established `proposerMember` and `seconderMember` relationships, and added delegation accessors `display_name_with_title`, `title`, `profession`, `designation`, `organization`, `blood_group`, and `formatted_address`.
+  3. **Domain Service & Master Forms:**
+     - Updated [`MemberService::registerMember()`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Membership/Services/MemberService.php) to atomically persist all expanded person and member attributes.
+     - Re-architected [`MemberForm.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Schemas/MemberForm.php) into structured sections:
+       - *Personal Details & ID Proof* (Title prefix, First/Last name, Mobile, Email, DOB, Gender, Blood Group, Photo)
+       - *Professional & Occupational Profile* (Profession, Designation, Organization)
+       - *Registered Residential & Postal Address* (House Name/Door No., Street/Locality, City, State, Postal PIN)
+       - *Personal Milestones & Emergency Contact* (Wedding Anniversary, Emergency Contact Name, Emergency Phone)
+       - *Club Governance, Sponsors & Vehicle Passes* (Committee Portfolio, Proposer Member, Seconder Member, Vehicle License Plates)
+       - *Statutory ID Proof & Application Form*
+       - *Club Membership Classification*
+       - *Joining & Annual Membership Fees*
+       - *Member Smartcard & RFID Access*
+     - Updated [`CreateMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/CreateMember.php) and [`EditMember.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/EditMember.php) to seamlessly map, hydrate, and update all new fields.
+  4. **Member 360° Profile View (`view-member.blade.php` & `ViewMember.php`):**
+     - **Hero Header:** Displays honorific title with name, prestigious Managing Committee badge (e.g. `★ President`, `★ Hon. Secretary`), professional headline badge, blood group badge (`🩸 B+`), and age chip (`Age: 46 yrs`).
+     - **Overview Tab:** Implemented a clean, responsive 6-card grid:
+       - *Card 1: Professional & Social Standing* (Profession, Designation, Organization, Professional Standing Summary)
+       - *Card 2: Registered Residential & Postal Address* (House/Villa Name, Street, City, State & PIN, Formatted Address box)
+       - *Card 3: Demographics & Emergency Contacts* (DOB & Age, Gender, Blood Group, Wedding Anniversary, Emergency Contact Person & click-to-call Phone)
+       - *Card 4: Club Heritage, Sponsors & Assets* (Committee Portfolio, Proposer link with member # & name, Seconder link, Vehicle plate tags)
+       - *Card 5: Statutory ID Proof & Identity Details* (ID type, ID number, Secretariat notes, Encrypted Statutory Vault)
+       - *Card 6: Membership Classification & Access* (Category, Monthly Dues, Voting Rights, Validity, Registered RFID Cards)
+     - Eagerly loads `proposerMember.person` and `seconderMember.person` in [`ViewMember::getViewData()`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Members/Pages/ViewMember.php).
+- **Verification:**
+  - Created [`MemberProfileExpansionTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberProfileExpansionTest.php) testing model accessors, Filament form creation, editing, and complete 360° profile rendering.
+  - Test suite status: **4 passed, 79 assertions, 0 failures** in `MemberProfileExpansionTest.php`.
+  - Executed full application test suite across all 62 suites against MySQL 8.4 InnoDB with `BypassSandbox: true`:
+    - **481 passed, 3,257 assertions, 0 failures** in 140.28s.
+  - Cleared compiled views and verified live server ready (`php artisan view:clear`).
+
+
 

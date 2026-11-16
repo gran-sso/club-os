@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Members\Schemas;
 
+use App\Domain\Membership\Models\Member;
 use App\Domain\Membership\Models\MembershipCategory;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -9,6 +10,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -20,8 +22,9 @@ class MemberForm
         return $schema
             ->columns(1)
             ->components([
+                // 1. PERSONAL PROFILE & HONORIFICS
                 Section::make('Personal Details & ID Proof')
-                    ->description('Member name, contact numbers, optional photo, and government ID details.')
+                    ->description('Member name, honorific title, contact details, date of birth, and optional photo.')
                     ->columnSpanFull()
                     ->schema([
                         FileUpload::make('photo_path')
@@ -36,10 +39,30 @@ class MemberForm
                             ->nullable()
                             ->downloadable()
                             ->openable()
-                            ->helperText('Optional passport/portrait photo for Counter POS and front-desk cardholder verification (JPG, PNG, WebP up to 2MB).')
+                            ->helperText('Passport / portrait photo for Counter POS and front-desk verification (JPG, PNG, WebP up to 2MB).')
                             ->columnSpanFull(),
 
-                        Grid::make(2)->schema([
+                        Grid::make(3)->schema([
+                            Select::make('title')
+                                ->label('Title / Prefix')
+                                ->options([
+                                    'Dr.' => 'Dr. (Doctor)',
+                                    'Adv.' => 'Adv. (Advocate)',
+                                    'Justice' => 'Justice (Hon’ble Judge)',
+                                    'Er.' => 'Er. (Engineer)',
+                                    'Col.' => 'Col. (Colonel)',
+                                    'Prof.' => 'Prof. (Professor)',
+                                    'Capt.' => 'Capt. (Captain)',
+                                    'Shri.' => 'Shri. (Mr.)',
+                                    'Smt.' => 'Smt. (Mrs.)',
+                                    'Ms.' => 'Ms.',
+                                    'Mr.' => 'Mr.',
+                                ])
+                                ->nullable()
+                                ->searchable()
+                                ->placeholder('Prefix')
+                                ->helperText('Honorific for formal address.'),
+
                             TextInput::make('first_name')
                                 ->label('First Name')
                                 ->required()
@@ -59,16 +82,202 @@ class MemberForm
                                 ->required()
                                 ->maxLength(25)
                                 ->placeholder('e.g. +91 98470 12345')
-                                ->helperText('Used for receipts and finding the member at the counter.'),
+                                ->helperText('Primary contact used for billing SMS, WhatsApp statements, and counter lookup.'),
 
                             TextInput::make('email')
                                 ->label('Email Address')
                                 ->email()
                                 ->maxLength(150)
                                 ->placeholder('e.g. ramesh.menon@example.com')
-                                ->helperText('Used for monthly statements and receipts.'),
+                                ->helperText('Used for digital billing statements, receipts, and AGM circulars.'),
                         ]),
 
+                        Grid::make(3)->schema([
+                            DatePicker::make('date_of_birth')
+                                ->label('Date of Birth')
+                                ->nullable()
+                                ->maxDate(now())
+                                ->helperText('Used for club age records and senior member privileges.'),
+
+                            Select::make('gender')
+                                ->label('Gender')
+                                ->options([
+                                    'male' => 'Male',
+                                    'female' => 'Female',
+                                    'other' => 'Other',
+                                ])
+                                ->nullable()
+                                ->placeholder('Select gender'),
+
+                            Select::make('blood_group')
+                                ->label('Blood Group')
+                                ->options([
+                                    'A+' => 'A+',
+                                    'A-' => 'A-',
+                                    'B+' => 'B+',
+                                    'B-' => 'B-',
+                                    'O+' => 'O+',
+                                    'O-' => 'O-',
+                                    'AB+' => 'AB+',
+                                    'AB-' => 'AB-',
+                                ])
+                                ->nullable()
+                                ->searchable()
+                                ->placeholder('Blood group')
+                                ->helperText('Vital for sports court or poolside medical emergencies.'),
+                        ]),
+                    ]),
+
+                // 2. PROFESSIONAL & SOCIAL STANDING
+                Section::make('Professional & Occupational Profile')
+                    ->description('Honorary standing, vocation, enterprise, or public service background.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            TextInput::make('profession')
+                                ->label('Profession / Industry')
+                                ->maxLength(100)
+                                ->placeholder('e.g. Senior Advocate / Cardiologist / Industrialist / Planter')
+                                ->helperText('Vocation or industry classification.'),
+
+                            TextInput::make('designation')
+                                ->label('Designation / Office')
+                                ->maxLength(100)
+                                ->placeholder('e.g. Managing Director / Partner / Chief Surgeon'),
+
+                            TextInput::make('organization')
+                                ->label('Organization / Firm / Chambers')
+                                ->maxLength(150)
+                                ->placeholder('e.g. High Court of Kerala / Aster Medcity / Malabar Group'),
+                        ]),
+                    ]),
+
+                // 3. REGISTERED RESIDENTIAL & POSTAL ADDRESS
+                Section::make('Registered Residential & Postal Address')
+                    ->description('Official residential address for formal club circulars, AGM notices, and postal communication.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextInput::make('address_line1')
+                                ->label('House / Villa / Flat Name & Door No.')
+                                ->maxLength(255)
+                                ->placeholder('e.g. "Sreevalsam", Door No. 12/450'),
+
+                            TextInput::make('address_line2')
+                                ->label('Street / Locality / Landmark')
+                                ->maxLength(255)
+                                ->placeholder('e.g. Club Road, near Town Hall'),
+                        ]),
+
+                        Grid::make(3)->schema([
+                            TextInput::make('city')
+                                ->label('City / Town')
+                                ->maxLength(100)
+                                ->placeholder('e.g. Vadakkencherry / Palakkad / Kozhikode'),
+
+                            TextInput::make('state')
+                                ->label('State')
+                                ->maxLength(100)
+                                ->default('Kerala')
+                                ->placeholder('Kerala'),
+
+                            TextInput::make('postal_code')
+                                ->label('Postal PIN Code')
+                                ->maxLength(20)
+                                ->placeholder('e.g. 678683'),
+                        ]),
+                    ]),
+
+                // 4. PERSONAL MILESTONES & EMERGENCY CONTACT
+                Section::make('Personal Milestones & Emergency Contact')
+                    ->description('Important personal dates for club greetings and designated emergency contacts.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            DatePicker::make('wedding_anniversary')
+                                ->label('Wedding Anniversary (Optional)')
+                                ->nullable()
+                                ->helperText('Used for club anniversary greetings and dining courtesies.'),
+
+                            TextInput::make('emergency_contact_name')
+                                ->label('Emergency Contact Person')
+                                ->maxLength(100)
+                                ->placeholder('e.g. Dr. Priya Menon (Spouse)'),
+
+                            TextInput::make('emergency_contact_phone')
+                                ->label('Emergency Contact Phone (+91)')
+                                ->tel()
+                                ->maxLength(30)
+                                ->placeholder('e.g. +91 98470 54321'),
+                        ]),
+                    ]),
+
+                // 5. CLUB GOVERNANCE, SPONSORS & ASSETS
+                Section::make('Club Governance, Sponsors & Vehicle Passes')
+                    ->description('Managing committee portfolio, sponsoring members, and registered vehicles for club parking.')
+                    ->columnSpanFull()
+                    ->schema([
+                        Grid::make(3)->schema([
+                            Select::make('committee_role')
+                                ->label('Managing Committee Portfolio')
+                                ->options([
+                                    'President' => 'President',
+                                    'Vice President' => 'Vice President',
+                                    'Hon. Secretary' => 'Honorary Secretary',
+                                    'Treasurer' => 'Treasurer',
+                                    'Managing Committee Member' => 'Managing Committee Member',
+                                    'Sports Committee Convenor' => 'Sports Committee Convenor',
+                                    'Bar Committee Convenor' => 'Bar Committee Convenor',
+                                    'Entertainment Committee Convenor' => 'Entertainment Committee Convenor',
+                                    'Past President' => 'Past President',
+                                ])
+                                ->nullable()
+                                ->searchable()
+                                ->placeholder('None (General Member)')
+                                ->helperText('Club administrative or governance role.'),
+
+                            Select::make('proposer_member_id')
+                                ->label('Proposer (Senior Member)')
+                                ->options(function ($record) {
+                                    return Member::query()
+                                        ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                        ->with('person')
+                                        ->get()
+                                        ->mapWithKeys(fn (Member $m) => [$m->id => "#{$m->membership_number} — {$m->name}"]);
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->nullable()
+                                ->helperText('Senior member who proposed admission under bylaws.'),
+
+                            Select::make('seconder_member_id')
+                                ->label('Seconder (Member)')
+                                ->options(function ($record) {
+                                    return Member::query()
+                                        ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                        ->with('person')
+                                        ->get()
+                                        ->mapWithKeys(fn (Member $m) => [$m->id => "#{$m->membership_number} — {$m->name}"]);
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->nullable()
+                                ->helperText('Member who seconded admission under bylaws.'),
+                        ]),
+
+                        TextInput::make('vehicle_numbers')
+                            ->label('Registered Vehicle License Plates')
+                            ->maxLength(255)
+                            ->placeholder('e.g. KL-09-AB-1234, KL-49-E-5678')
+                            ->helperText('Used for gate security verification and club parking sticker issuance.')
+                            ->columnSpanFull(),
+                    ]),
+
+                // 6. ID PROOF & STATUTORY DOCUMENTS
+                Section::make('Statutory ID Proof & Application Form')
+                    ->description('Government-issued identity proof and signed application paper records.')
+                    ->columnSpanFull()
+                    ->schema([
                         Grid::make(2)->schema([
                             Select::make('id_proof_type')
                                 ->label('Government ID Proof')
@@ -116,12 +325,13 @@ class MemberForm
                         ]),
 
                         Textarea::make('notes')
-                            ->label('Residential Address & Club Notes')
+                            ->label('Secretariat & Committee Notes')
                             ->rows(3)
-                            ->placeholder('Permanent residential address in Kerala, emergency contact details, or committee notes.')
+                            ->placeholder('Special committee remarks, table preferences, or administrative notes.')
                             ->columnSpanFull(),
                     ]),
 
+                // 7. MEMBERSHIP CLASSIFICATION
                 Section::make('Club Membership Classification')
                     ->description('Membership quota category, membership sequence number, and entitlement validity.')
                     ->columnSpanFull()
@@ -185,7 +395,7 @@ class MemberForm
                                             ->helperText('Recurring yearly maintenance dues (₹0 for Life/Hon).'),
                                     ]),
 
-                                    \Filament\Forms\Components\Toggle::make('has_voting_rights')
+                                    Toggle::make('has_voting_rights')
                                         ->label('Club Voting Rights')
                                         ->default(true),
                                 ])
@@ -240,11 +450,12 @@ class MemberForm
                         ]),
                     ]),
 
+                // 8. JOINING & ANNUAL MEMBERSHIP FEES (CREATE ONLY)
                 Section::make('Joining & Annual Membership Fees')
                     ->description('For new admissions, collect fees and issue a receipt immediately. For existing members, mark fees as already paid earlier.')
                     ->columnSpanFull()
                     ->schema([
-                        \Filament\Forms\Components\Toggle::make('historical_fees_already_paid')
+                        Toggle::make('historical_fees_already_paid')
                             ->label('Existing Member — Fees Already Paid Earlier (Do Not Ask for Payment)')
                             ->helperText('Turn ON when adding an existing member who already paid their joining & current dues before software rollout. Records them as paid without creating a cash receipt today.')
                             ->default(false)
@@ -269,7 +480,7 @@ class MemberForm
                                     ->placeholder('e.g. OLD-RCP-1042 or Register Vol 2'),
                             ]),
 
-                        \Filament\Forms\Components\Toggle::make('collect_initial_fee')
+                        Toggle::make('collect_initial_fee')
                             ->label('Collect Membership Fees Now (New Admission)')
                             ->helperText('When turned ON, joining and annual fees are collected right away, a receipt is issued, and validity starts immediately.')
                             ->default(false)
@@ -330,6 +541,7 @@ class MemberForm
                     ])
                     ->visibleOn('create'),
 
+                // 9. SMARTCARD & RFID ACCESS
                 Section::make('Member Smartcard & RFID Access')
                     ->description('Link a physical smartcard number so the member can tap & pay quickly at the counter.')
                     ->columnSpanFull()

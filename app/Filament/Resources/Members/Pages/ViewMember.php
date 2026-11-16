@@ -1188,6 +1188,8 @@ class ViewMember extends ViewRecord
             'cards',
             'wallet',
             'lockers',
+            'proposerMember.person',
+            'seconderMember.person',
             'dependents.person',
             'sponsoredGuests.person',
         ]);

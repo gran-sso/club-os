@@ -45,10 +45,24 @@ class EditMember extends EditRecord
         $record = $this->getRecord();
 
         if ($record->person) {
+            $data['title'] = $record->person->title;
             $data['first_name'] = $record->person->first_name;
             $data['last_name'] = $record->person->last_name;
             $data['phone'] = $record->person->phone;
             $data['email'] = $record->person->email;
+            $data['date_of_birth'] = $record->person->date_of_birth?->toDateString();
+            $data['gender'] = $record->person->gender;
+            $data['blood_group'] = $record->person->blood_group;
+            $data['profession'] = $record->person->profession;
+            $data['designation'] = $record->person->designation;
+            $data['organization'] = $record->person->organization;
+            $data['address_line1'] = $record->person->address_line1;
+            $data['address_line2'] = $record->person->address_line2;
+            $data['city'] = $record->person->city;
+            $data['state'] = $record->person->state ?? 'Kerala';
+            $data['postal_code'] = $record->person->postal_code;
+            $data['emergency_contact_name'] = $record->person->emergency_contact_name;
+            $data['emergency_contact_phone'] = $record->person->emergency_contact_phone;
             $data['id_proof_type'] = $record->person->id_proof_type;
             $data['id_proof_number'] = $record->person->id_proof_number;
             $data['id_proof_path'] = $record->person->id_proof_path;
@@ -56,6 +70,12 @@ class EditMember extends EditRecord
             $data['photo_path'] = $record->person->photo_path;
             $data['notes'] = $record->person->notes;
         }
+
+        $data['proposer_member_id'] = $record->proposer_member_id;
+        $data['seconder_member_id'] = $record->seconder_member_id;
+        $data['wedding_anniversary'] = $record->wedding_anniversary?->toDateString();
+        $data['vehicle_numbers'] = $record->vehicle_numbers;
+        $data['committee_role'] = $record->committee_role;
 
         if ($record->status instanceof BackedEnum) {
             $data['status'] = $record->status->value;
@@ -81,10 +101,24 @@ class EditMember extends EditRecord
             $newPhotoPath = $data['photo_path'] ?? null;
 
             $record->person->update([
+                'title' => $data['title'] ?? null,
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'email' => $data['email'] ?? null,
+                'date_of_birth' => $data['date_of_birth'] ?? null,
+                'gender' => $data['gender'] ?? null,
+                'blood_group' => $data['blood_group'] ?? null,
+                'profession' => $data['profession'] ?? null,
+                'designation' => $data['designation'] ?? null,
+                'organization' => $data['organization'] ?? null,
+                'address_line1' => $data['address_line1'] ?? null,
+                'address_line2' => $data['address_line2'] ?? null,
+                'city' => $data['city'] ?? null,
+                'state' => $data['state'] ?? 'Kerala',
+                'postal_code' => $data['postal_code'] ?? null,
+                'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+                'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
                 'id_proof_type' => $data['id_proof_type'] ?? null,
                 'id_proof_number' => $data['id_proof_number'] ?? null,
                 'id_proof_path' => $data['id_proof_path'] ?? null,
@@ -105,6 +139,11 @@ class EditMember extends EditRecord
             'fee_status' => $data['fee_status'] ?? $record->fee_status,
             'joined_at' => $data['joined_at'],
             'valid_until' => $data['valid_until'] ?? null,
+            'proposer_member_id' => ! empty($data['proposer_member_id']) ? (int) $data['proposer_member_id'] : null,
+            'seconder_member_id' => ! empty($data['seconder_member_id']) ? (int) $data['seconder_member_id'] : null,
+            'wedding_anniversary' => $data['wedding_anniversary'] ?? null,
+            'vehicle_numbers' => $data['vehicle_numbers'] ?? null,
+            'committee_role' => $data['committee_role'] ?? null,
         ]);
 
         if (! empty($data['new_rfid_card_number'])) {
