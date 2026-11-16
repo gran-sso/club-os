@@ -2907,5 +2907,32 @@ For environments where full browser automation is unavailable, operators should 
     - **481 passed, 3,257 assertions, 0 failures** in 140.28s.
   - Cleared compiled views and verified live server ready (`php artisan view:clear`).
 
+### 16 November 2026 — Member Directory Dual-View: Table View ⇄ Directory Photo Cards (Decision D90)
+
+- **Requirement & Objectives:**
+  - Provide an intuitive dual-view switcher for the Member List (`/admin/members`) allowing staff and committee members to switch between the high-density **Table View** and a photo-forward **Directory Card View** displaying member portraits, professional standing, committee badges, and quick contact actions.
+- **Architectural Implementation:**
+  1. **Dual-View Switcher on `ListMembers.php`:**
+     - Added `$viewMode` attribute bound to query string `?view=table|cards` with session persistence (`session('members_view_mode')`).
+     - Added top segmented switcher toolbar (`Table View` ⇄ `Directory Cards`) with live member statistics (Total Members, Active Count, Managing Committee Count).
+     - Added dedicated card search (`cardSearch`), category filter (`cardCategory`), status filter (`cardStatus`), and committee-only toggle (`cardCommitteeOnly`) with deterministic pagination (`cardPage`, 12 members per page) via `getCardMembersProperty()`.
+     - Preserved bidirectional search term transfer when switching between table and card view modes.
+  2. **Responsive Directory Cards Grid (`resources/views/filament/resources/members/pages/list-members.blade.php`):**
+     - Structured 3-column responsive card layout (1 col mobile, 2 col tablet, 3 col desktop) with hover elevation.
+     - Each card features:
+       - **Photo Avatar:** Stored portrait photo with automatic 2-letter uppercase initials fallback on error or missing photo.
+       - **Badges:** Membership number, category pill, active status chip, and gold managing committee role badge (e.g. `★ President`, `★ Hon. Secretary`).
+       - **Identity & Standing:** Honorific prefix (`Dr.`, `Adv.`, `Justice`, `Er.`), full name, and professional headline (`Designation, Organization` with briefcase icon).
+       - **Quick Contact Strip:** Click-to-call mobile (`tel:...`), click-to-email (`mailto:...`), click-to-WhatsApp (`https://wa.me/...`), and registered city/locality.
+       - **Card Actions:** 1-click **View Profile** (360° overview) and **Edit** buttons.
+     - Reactive cards filter bar with active filter pill chips, 1-click "Clear All Filters", and clean empty-state fallback.
+     - Custom pagination controls (`Previous`, page numbers, `Next`) isolated from Filament table pagination.
+  3. **Zero-Regression Design:**
+     - Retains Filament's native `{{ $this->table }}` in the DOM (hidden via CSS when in cards mode) ensuring table bulk actions, CSV export (`Download Member List`), and CSV import (`Import Members`) remain 100% functional.
+- **Verification:**
+  - Expanded [`MemberProfileExpansionTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberProfileExpansionTest.php) with `test_member_directory_dual_view_and_cards_rendering` verifying table mode rendering, cards mode rendering, photo/name/headline attributes, and Livewire reactive search & empty state handling (all 5 tests, 95 assertions passing).
+  - Executed all 90 tests in `tests/Feature/Member*` suite (`b4953ff6-11ef-42c8-92d2-0c9af85b5dfb/task-18056`): **90 passed, 637 assertions, 0 failures**.
+  - Ran `php artisan view:clear`, `config:clear`, `route:clear`, `cache:clear`.
+
 
 

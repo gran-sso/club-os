@@ -322,4 +322,61 @@ class MemberProfileExpansionTest extends TestCase
 
         $response->assertSee('Membership Classification &amp; Access', false);
     }
+
+    public function test_member_directory_dual_view_and_cards_rendering(): void
+    {
+        $admin = User::firstOrFail();
+        $category = MembershipCategory::firstOrFail();
+
+        $member = app(MemberService::class)->registerMember(
+            [
+                'title' => 'Dr.',
+                'first_name' => 'Aravind',
+                'last_name' => 'Swaminathan',
+                'phone' => '+91 98471 23456',
+                'email' => 'dr.aravind@example.com',
+                'profession' => 'Senior Cardiologist',
+                'designation' => 'Head of Cardiology',
+                'organization' => 'Apollo Medical Centre',
+                'city' => 'Kozhikode',
+            ],
+            $category->id,
+            'MC-DIR-101',
+            '2021-06-01',
+            null,
+            [
+                'committee_role' => 'Vice President',
+                'vehicle_numbers' => 'KL-11-BH-2020',
+            ]
+        );
+
+        // 1. Default view renders table
+        $tableResponse = $this->actingAs($admin)->get('/admin/members');
+        $tableResponse->assertStatus(200);
+        $tableResponse->assertSee('View Layout:');
+        $tableResponse->assertSee('Table View');
+        $tableResponse->assertSee('Directory Cards');
+        $tableResponse->assertSee('MC-DIR-101');
+
+        // 2. Cards view renders directory cards with photo avatar, headline, committee badge
+        $cardsResponse = $this->actingAs($admin)->get('/admin/members?view=cards');
+        $cardsResponse->assertStatus(200);
+        $cardsResponse->assertSee('Directory Cards');
+        $cardsResponse->assertSee('Dr.');
+        $cardsResponse->assertSee('Aravind Swaminathan');
+        $cardsResponse->assertSee('Head of Cardiology, Apollo Medical Centre');
+        $cardsResponse->assertSee('Vice President');
+        $cardsResponse->assertSee('MC-DIR-101');
+        $cardsResponse->assertSee('Kozhikode');
+
+        // 3. Livewire component reactive card search & filter
+        Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Members\Pages\ListMembers::class)
+            ->set('viewMode', 'cards')
+            ->assertSee('Aravind Swaminathan')
+            ->set('cardSearch', 'Apollo')
+            ->assertSee('Aravind Swaminathan')
+            ->set('cardSearch', 'NonExistentPersonName12345')
+            ->assertSee('No members found');
+    }
 }
