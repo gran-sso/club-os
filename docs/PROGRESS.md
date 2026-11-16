@@ -2934,5 +2934,17 @@ For environments where full browser automation is unavailable, operators should 
   - Executed all 90 tests in `tests/Feature/Member*` suite (`b4953ff6-11ef-42c8-92d2-0c9af85b5dfb/task-18056`): **90 passed, 637 assertions, 0 failures**.
   - Ran `php artisan view:clear`, `config:clear`, `route:clear`, `cache:clear`.
 
+### 16 November 2026 — Bug Fix: Guest Pass Issuance Namespace and Named Parameter (`GuestsTable.php`)
+
+- **Defect Identified on Production:**
+  - When staff clicked **Issue Pass** on a registered guest in the Guests table (`/admin/guests`), the transaction failed with `Class "App\Domain\Billing\Enums\TenderType" not found` at `GuestsTable.php:134`.
+- **Root Cause & Fix:**
+  1. `TenderType` enum was mistakenly imported from non-existent namespace `App\Domain\Billing\Enums\TenderType` instead of `App\Domain\Shared\Enums\TenderType` in [`GuestsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Guests/Tables/GuestsTable.php) and [`IntegrationStatusPage.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Pages/IntegrationStatusPage.php). Corrected to `App\Domain\Shared\Enums\TenderType`.
+  2. In [`GuestsTable.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Filament/Resources/Guests/Tables/GuestsTable.php), the `BillingService::checkout()` invocation passed named parameter `allocations:` instead of `tenders:` (matching method signature `checkout(Bill $bill, array $tenders, ?int $userId = null)`). Corrected to `tenders:`.
+- **Verification:**
+  - Added test `test_admin_can_issue_guest_pass_from_guests_table` in [`AdminPhase2MembershipAndGuestTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/AdminPhase2MembershipAndGuestTest.php) executing `issuePass` table action through an open cashier shift and asserting pass activation and status transition to `admitted` (7/7 passed, 50 assertions).
+  - Ran `TallyConfigurationTest.php` and `TallyRealWorldUpgradeTest.php` verifying `IntegrationStatusPage` (10/10 passed, 112 assertions).
+  - Cleared compiled views and route caches.
+
 
 

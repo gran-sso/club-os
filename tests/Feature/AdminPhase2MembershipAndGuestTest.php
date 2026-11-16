@@ -163,4 +163,42 @@ class AdminPhase2MembershipAndGuestTest extends TestCase
         $this->assertEquals('1122 3344 5566', $guest->person->id_proof_number);
         $this->assertEquals('registered', $guest->status);
     }
+
+    public function test_admin_can_issue_guest_pass_from_guests_table(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+        $sponsor = Member::where('membership_number', 'MC-001')->firstOrFail();
+
+        $guest = Guest::create([
+            'person_id' => \App\Domain\Membership\Models\Person::create([
+                'first_name' => 'Suresh',
+                'last_name' => 'Gopi',
+                'phone' => '+91 98470 55443',
+            ])->id,
+            'sponsor_type' => Member::class,
+            'sponsor_id' => $sponsor->id,
+            'visit_date' => now()->toDateString(),
+            'status' => 'registered',
+        ]);
+
+        $counter = \App\Domain\Billing\Models\Counter::where('code', 'COUNTER-1')->firstOrFail();
+
+        $shift = app(\App\Domain\Billing\Services\ShiftService::class)->openShift(
+            counterId: $counter->id,
+            userId: $admin->id,
+            openingFloatPaise: 100000
+        );
+
+        \Livewire\Livewire::actingAs($admin)
+            ->test(\App\Filament\Resources\Guests\Pages\ListGuests::class)
+            ->callTableAction('issuePass', $guest, [
+                'facility_code' => 'bar_card_room',
+                'tender_type' => 'cash',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $guest->refresh();
+        $this->assertEquals('admitted', $guest->status);
+        $this->assertTrue($guest->passes()->where('status', 'active')->exists());
+    }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Domain\Billing\Enums\TenderType;
 use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Integrations\Adapters\TallyPrimeHttpConnector;
 use App\Domain\Integrations\Contracts\AccessControlProviderInterface;
@@ -10,6 +9,7 @@ use App\Domain\Integrations\Contracts\AccountingConnectorInterface;
 use App\Domain\Integrations\Contracts\ReceiptPrinterInterface;
 use App\Domain\Integrations\Models\OutboxMessage;
 use App\Domain\Integrations\TallySyncService;
+use App\Domain\Shared\Enums\TenderType;
 use App\Domain\Shared\Models\SystemSetting;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;

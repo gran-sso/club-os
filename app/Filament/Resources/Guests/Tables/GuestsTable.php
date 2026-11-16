@@ -4,9 +4,9 @@ namespace App\Filament\Resources\Guests\Tables;
 
 use App\Domain\Access\Models\Guest;
 use App\Domain\Access\Services\GuestService;
-use App\Domain\Billing\Enums\TenderType;
 use App\Domain\Billing\Models\Shift;
 use App\Domain\Billing\Services\BillingService;
+use App\Domain\Shared\Enums\TenderType;
 use App\Domain\Tariff\Models\Tariff;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -136,7 +136,7 @@ class GuestsTable
 
                         $billingService->checkout(
                             bill: $bill,
-                            allocations: [
+                            tenders: [
                                 ['tender_type' => $tender, 'amount_paise' => $bill->net_amount_paise]
                             ],
                             userId: auth()->id()
