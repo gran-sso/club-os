@@ -210,6 +210,15 @@ class InventoryService
             return null;
         }
 
+        // Idempotency: Prevent duplicate stock issuance for the same bill line
+        $alreadyIssued = InventoryMovement::where('reference_type', 'bill_line')
+            ->where('reference_id', $line->id)
+            ->where('type', 'sale_issue')
+            ->exists();
+        if ($alreadyIssued) {
+            return null;
+        }
+
         return DB::transaction(function () use ($line, $mapping, $shiftId, $userId) {
             /** @var InventoryItem $item */
             $item = InventoryItem::where('id', $mapping->inventory_item_id)->lockForUpdate()->firstOrFail();

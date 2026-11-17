@@ -28,12 +28,15 @@ class PosHeldTab extends Model
         'customer_name',
         'customer_identifier',
         'table_identifier',
+        'accompanying_guest_name',
+        'waiter_id',
         'notes',
         'cart_items',
         'gross_amount_paise',
         'discount_amount_paise',
         'tax_amount_paise',
         'net_amount_paise',
+        'tip_amount_paise',
         'status',
         'settled_at',
         'settled_bill_id',
@@ -46,6 +49,7 @@ class PosHeldTab extends Model
         'discount_amount_paise' => 'integer',
         'tax_amount_paise' => 'integer',
         'net_amount_paise' => 'integer',
+        'tip_amount_paise' => 'integer',
         'settled_at' => 'datetime',
     ];
 
@@ -77,6 +81,11 @@ class PosHeldTab extends Model
     public function settledBill(): BelongsTo
     {
         return $this->belongsTo(Bill::class, 'settled_bill_id');
+    }
+
+    public function waiter(): BelongsTo
+    {
+        return $this->belongsTo(Waiter::class, 'waiter_id');
     }
 
     public function createdBy(): BelongsTo

@@ -64,7 +64,24 @@
         @endif
 
         <!-- Settings Navigation Tabs -->
-        <div class="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto select-none">
+        @php
+            $secondarySettings = [
+                'hardware' => [
+                    'icon' => '🖨️',
+                    'title' => 'Hardware & Gate Control',
+                    'desc' => 'POS thermal printers, bar receipt formats & turnstile gate relays',
+                ],
+                'audit' => [
+                    'icon' => '🛡️',
+                    'title' => 'Audit Trail & Retention',
+                    'desc' => 'Staff activity logs, financial snapshots & tamper protection',
+                ],
+            ];
+            $isMoreSettingActive = array_key_exists($activeTab, $secondarySettings);
+            $activeMoreSetting = $isMoreSettingActive ? $secondarySettings[$activeTab] : null;
+        @endphp
+
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2 select-none">
             <button type="button"
                 wire:click="setTab('identity')"
                 class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'identity' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
@@ -93,19 +110,53 @@
                 <span>Tally Connection</span>
             </button>
 
-            <button type="button"
-                wire:click="setTab('hardware')"
-                class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'hardware' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                <span>🖨️</span>
-                <span>Hardware &amp; Gate Control</span>
-            </button>
+            <!-- More Settings Dropdown (Accessible to Desktop Mouse Users Without Horizontal Scrolling) -->
+            <div class="relative shrink-0" x-data="{ open: false }">
+                <button type="button" @click="open = !open"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border {{ $isMoreSettingActive ? 'bg-slate-900 text-amber-400 border-slate-900 shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300' }}">
+                    @if ($isMoreSettingActive && $activeMoreSetting)
+                        <span>{{ $activeMoreSetting['icon'] }}</span>
+                        <span>More: {{ $activeMoreSetting['title'] }}</span>
+                    @else
+                        <span>⚙️</span>
+                        <span>More Settings (2)</span>
+                    @endif
+                    <svg class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
 
-            <button type="button"
-                wire:click="setTab('audit')"
-                class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 {{ $activeTab === 'audit' ? 'bg-slate-900 text-amber-400 shadow-xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                <span>🛡️</span>
-                <span>Audit Trail &amp; Retention</span>
-            </button>
+                <div x-show="open" x-cloak
+                    @click.outside="open = false"
+                    @keydown.escape.window="open = false"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                    class="absolute left-0 sm:left-auto sm:right-0 mt-2 z-50 w-72 sm:w-80 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 space-y-1">
+                    <div class="px-2.5 py-1.5 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Advanced System &amp; Hardware Configurations
+                    </div>
+                    @foreach ($secondarySettings as $tabKey => $setDef)
+                        <button type="button"
+                            @click="open = false; $wire.setTab('{{ $tabKey }}')"
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === $tabKey ? 'bg-slate-900 text-amber-400 font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100' }}">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="text-base shrink-0">{{ $setDef['icon'] }}</span>
+                                <div class="min-w-0">
+                                    <div class="truncate">{{ $setDef['title'] }}</div>
+                                    <div class="text-[10px] font-normal truncate {{ $activeTab === $tabKey ? 'text-amber-200/80' : 'text-slate-400' }}">{{ $setDef['desc'] }}</div>
+                                </div>
+                            </div>
+                            @if ($activeTab === $tabKey)
+                                <span class="text-xs font-black shrink-0 text-amber-400">✓</span>
+                            @endif
+                        </button>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <!-- ================================================================= -->
@@ -270,6 +321,30 @@
                                 </p>
                             </div>
                         </label>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">POS Running Bar &amp; Lounge Tabs Capacity</h3>
+                        <p class="text-xs text-slate-500">Configure the maximum concurrent open parked bills allowed on a cashier shift during gatherings and rush hours.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label for="setting-pos-max-held-tabs" class="block text-xs font-bold text-slate-700 mb-1">
+                                Maximum Concurrent Open Tabs per Shift
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 font-mono text-slate-400 font-bold text-xs">🍸</span>
+                                <input type="text" id="setting-pos-max-held-tabs" wire:model="posMaxHeldTabs" inputmode="numeric"
+                                    class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                    placeholder="e.g. 250">
+                            </div>
+                            <span class="text-[10px] text-slate-400 mt-1 block">
+                                Enter the number of tabs allowed simultaneously (Max limit: 500 tabs). Default: 50.
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

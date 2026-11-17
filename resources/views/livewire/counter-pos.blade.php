@@ -10,6 +10,10 @@
         getProp(name) {
             const w = this.getWire();
             if (!w) return null;
+            if (typeof w.get === 'function') {
+                const val = w.get(name);
+                if (val !== undefined) return val;
+            }
             return w[name];
         },
         navigateItems(direction) {
@@ -190,12 +194,20 @@
                 return;
             }
 
-            // 1. RECEIPT PREVIEW MODAL (P to Print, Enter / Esc to Close and Reset)
+            // 1. RECEIPT PREVIEW MODAL (P to Print, H to Park Tab, Enter / Esc to Close)
             if (this.getProp('showReceiptModal')) {
                 if (e.key === 'p' || e.key === 'P') {
                     e.preventDefault();
                     window.print();
                     return;
+                }
+                if (e.key === 'h' || e.key === 'H') {
+                    if (this.getProp('isTableCheckReceipt')) {
+                        e.preventDefault();
+                        wire.holdCurrentCart();
+                        wire.closeReceiptModal();
+                        return;
+                    }
                 }
                 if (e.key === 'Enter' || e.key === 'Escape') {
                     e.preventDefault();
@@ -244,6 +256,41 @@
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     wire.closeHeldTabsListModal();
+                    return;
+                }
+                return;
+            }
+
+            // UNSETTLED WALK-OUT RECORDING MODAL (Esc to cancel)
+            if (this.getProp('showUnsettledWalkoutModal')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.closeUnsettledWalkoutModal();
+                    return;
+                }
+                return;
+            }
+
+            // OUTSTANDING WALK-OUT DUES SETTLEMENT MODAL (Esc to dismiss)
+            if (this.getProp('showOutstandingDuesModal')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.closeOutstandingDuesModal();
+                    return;
+                }
+                return;
+            }
+
+            // EXISTING ACTIVE RUNNING TAB DETECTED PROMPT MODAL (Enter to resume, Esc to dismiss/start fresh)
+            if (this.getProp('showExistingTabPromptModal')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    wire.resumePromptTab();
+                    return;
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.dismissExistingTabPrompt();
                     return;
                 }
                 return;
@@ -357,6 +404,19 @@
                     const itemInput = this.$refs.itemSearchInput || document.getElementById('item-search-input');
                     itemInput?.focus();
                     return;
+                }
+
+                // If customer search input is active or focused, clear customer search first
+                const isCustFocused = document.activeElement === this.$refs.customerSearchInput || document.activeElement?.id === 'customer-search-input';
+                if (isCustFocused) {
+                    const custQuery = this.getProp('searchQuery');
+                    if ((custResults && custResults.length > 0) || (custQuery && custQuery.length > 0)) {
+                        wire.set('customerSearchResults', []);
+                        wire.set('searchQuery', '');
+                        this.highlightedCustIdx = 0;
+                        document.activeElement?.blur();
+                        return;
+                    }
                 }
 
                 // If item search autocomplete or search query has text, clear it
@@ -496,7 +556,9 @@
     <!-- ========================================== -->
     @if ($errorMessage)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
-            role="alertdialog" aria-modal="true" aria-labelledby="error-modal-title">
+            role="alertdialog" aria-modal="true" aria-labelledby="error-modal-title"
+            @click.self="$wire.set('errorMessage', null)"
+            @keydown.escape.window="$wire.set('errorMessage', null)">
             <div
                 class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-rose-200 p-6 space-y-4 text-center transform transition-all scale-100 animate-scale-up">
                 <!-- Glowing Alert Icon -->
@@ -620,28 +682,108 @@
                     </div>
                 </div>
 
-                <!-- Center: Active Tabs Chips (Scrollable) -->
-                <div class="flex items-center gap-2 overflow-x-auto py-1 max-w-full flex-1">
-                    @forelse ($heldTabs as $tab)
-                        <button type="button" wire:click="loadHeldTab({{ $tab->id }})"
-                            class="px-3 py-1.5 rounded-xl text-xs shrink-0 transition-all flex items-center gap-2 border cursor-pointer {{ $activeHeldTabId === $tab->id ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm font-bold scale-[1.02]' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300 font-semibold' }}">
-                            <span class="truncate max-w-[120px]">{{ $tab->customer_display_name }}</span>
-                            @if ($tab->table_identifier)
+                <!-- Center: Active Tabs Chips & Responsive More Tabs Dropdown (Accessible for Desktop Mouse Users) -->
+                @php
+                    $primaryTopTabs = $heldTabs->take(4);
+                    if ($activeHeldTabId && ! $primaryTopTabs->contains('id', $activeHeldTabId)) {
+                        $activeModel = $heldTabs->firstWhere('id', $activeHeldTabId);
+                        if ($activeModel) {
+                            $primaryTopTabs = $primaryTopTabs->prepend($activeModel)->unique('id')->take(4);
+                        }
+                    }
+                    $secondaryHeldTabs = $heldTabs->filter(fn($t) => ! $primaryTopTabs->contains('id', $t->id));
+                    $overflowHeldTabsCount = $secondaryHeldTabs->count();
+                @endphp
+                <div class="flex items-center gap-2 flex-wrap py-1 max-w-full flex-1">
+                    @forelse ($primaryTopTabs as $tab)
+                        <div class="inline-flex items-center gap-0.5 shrink-0">
+                            <button type="button" wire:click="loadHeldTab({{ $tab->id }})"
+                                class="px-3 py-1.5 rounded-l-xl text-xs transition-all flex items-center gap-2 border border-r-0 cursor-pointer {{ $activeHeldTabId === $tab->id ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm font-bold scale-[1.01]' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300 font-semibold' }}">
+                                <span class="truncate max-w-[110px]">{{ $tab->customer_display_name }}</span>
+                                @if ($tab->table_identifier)
+                                    <span
+                                        class="px-1.5 py-0.2 rounded text-[10px] font-mono {{ $activeHeldTabId === $tab->id ? 'bg-amber-600 text-white font-bold' : 'bg-slate-200 text-slate-600' }}">
+                                        {{ $tab->table_identifier }}
+                                    </span>
+                                @endif
                                 <span
-                                    class="px-1.5 py-0.2 rounded text-[10px] font-mono {{ $activeHeldTabId === $tab->id ? 'bg-amber-600 text-white font-bold' : 'bg-slate-200 text-slate-600' }}">
-                                    {{ $tab->table_identifier }}
+                                    class="font-mono text-[11px] {{ $activeHeldTabId === $tab->id ? 'text-slate-950 font-extrabold' : 'text-amber-800 font-bold' }}">
+                                    ₹{{ number_format($tab->total_amount, 2) }}
                                 </span>
-                            @endif
-                            <span
-                                class="font-mono text-[11px] {{ $activeHeldTabId === $tab->id ? 'text-slate-950 font-extrabold' : 'text-amber-800 font-bold' }}">
-                                ₹{{ number_format($tab->total_amount, 2) }}
-                            </span>
-                        </button>
+                            </button>
+                            <button type="button" wire:click="printHeldTabTableCheck({{ $tab->id }})"
+                                class="px-2 py-1.5 rounded-r-xl text-xs border border-l transition-all cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-indigo-200 hover:border-indigo-300"
+                                title="Print Table Check for floor bearer to take to the table">
+                                <span>📄</span>
+                            </button>
+                        </div>
                     @empty
                         <span class="text-xs text-slate-400 italic">No open tabs parked. Add drinks for a member and press <kbd
                                 class="px-1 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono border border-slate-200">F6</kbd>
                             to hold.</span>
                     @endforelse
+
+                    @if ($overflowHeldTabsCount > 0)
+                        <!-- More Tabs Dropdown for Desktop Mouse Users -->
+                        <div class="relative shrink-0" x-data="{ open: false }">
+                            <button type="button" @click="open = !open"
+                                class="px-2.5 py-1.5 rounded-xl bg-slate-200/90 hover:bg-slate-300 text-slate-800 text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs border border-slate-300/80"
+                                title="View more open running tabs">
+                                <span>📂 More Tabs (+{{ $overflowHeldTabsCount }})</span>
+                                <svg class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+
+                            <div x-show="open" x-cloak
+                                @click.outside="open = false"
+                                @keydown.escape.window="open = false"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                                class="absolute left-0 mt-2 z-50 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 space-y-1.5">
+                                <div class="flex items-center justify-between px-2.5 py-1 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span>Other Open Tabs ({{ $overflowHeldTabsCount }})</span>
+                                    <span>Amount</span>
+                                </div>
+                                <div class="max-h-60 overflow-y-auto space-y-1 pr-1">
+                                    @foreach ($secondaryHeldTabs as $oTab)
+                                        <div class="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition">
+                                            <button type="button" @click="open = false; $wire.loadHeldTab({{ $oTab->id }})"
+                                                class="flex-1 text-left min-w-0 pr-2 cursor-pointer">
+                                                <div class="font-bold text-xs text-slate-800 truncate">{{ $oTab->customer_display_name }}</div>
+                                                <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                                                    @if ($oTab->table_identifier)
+                                                        <span class="px-1 py-0.2 rounded bg-slate-100 text-slate-700 font-mono">{{ $oTab->table_identifier }}</span>
+                                                    @endif
+                                                    @if ($oTab->accompanying_guest_name)
+                                                        <span class="text-amber-700 truncate">👤 {{ $oTab->accompanying_guest_name }}</span>
+                                                    @endif
+                                                </div>
+                                            </button>
+                                            <div class="flex items-center gap-1.5 shrink-0">
+                                                <span class="font-mono text-xs font-bold text-amber-900">₹{{ number_format($oTab->total_amount, 2) }}</span>
+                                                <button type="button" wire:click="printHeldTabTableCheck({{ $oTab->id }})"
+                                                    class="p-1 rounded-lg text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 cursor-pointer"
+                                                    title="Print Table Check">
+                                                    📄
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="pt-1.5 border-t border-slate-100">
+                                    <button type="button" @click="open = false; $wire.openHeldTabsListModal()"
+                                        class="w-full py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <span>🔍 Open Searchable Tabs Manager (All {{ $heldTabs->count() }})</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Right: Controls -->
@@ -670,6 +812,60 @@
                 </div>
             </div>
         </div>
+
+        <!-- Outstanding Unsettled Walk-Out Dues Warning Alert Banner -->
+        @if ($hasOutstandingUnsettledBills)
+            <div class="mb-5 p-4 rounded-3xl bg-rose-50 border-2 border-rose-500 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg animate-fade-in">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 font-bold text-lg shadow-sm">
+                        ⚠️
+                    </div>
+                    <div>
+                        <h4 class="font-black text-sm uppercase tracking-wide text-rose-900 flex items-center gap-2">
+                            <span>ORDERING LOCKED: Outstanding Walk-Out Dues</span>
+                            <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-mono text-xs font-bold">
+                                ₹{{ number_format($outstandingTotalPaise / 100, 2) }}
+                            </span>
+                        </h4>
+                        <p class="text-xs text-rose-800 mt-1">
+                            <strong>{{ $selectedMember?->person?->full_name ?? ($selectedGuest?->name ?? 'Customer') }}</strong> has {{ count($outstandingBillsList) }} unpaid walk-out bill(s) on record. Under Club By-Laws, this balance must be cleared before placing any new order.
+                        </p>
+                    </div>
+                </div>
+                <button type="button" wire:click="openOutstandingDuesModal"
+                    class="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-600/30 cursor-pointer shrink-0 transition flex items-center gap-2 active:scale-95">
+                    <span>Review & Settle Dues Now</span>
+                    <span>→</span>
+                </button>
+            </div>
+        @endif
+
+        <!-- Outstanding Unsettled Walk-Out Dues Warning Alert Banner -->
+        @if ($hasOutstandingUnsettledBills)
+            <div class="mb-5 p-4 rounded-3xl bg-rose-50 border-2 border-rose-500 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg animate-fade-in">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 font-bold text-lg shadow-sm">
+                        ⚠️
+                    </div>
+                    <div>
+                        <h4 class="font-black text-sm uppercase tracking-wide text-rose-900 flex items-center gap-2">
+                            <span>ORDERING LOCKED: Outstanding Walk-Out Dues</span>
+                            <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-mono text-xs font-bold">
+                                ₹{{ number_format($outstandingTotalPaise / 100, 2) }}
+                            </span>
+                        </h4>
+                        <p class="text-xs text-rose-800 mt-1">
+                            <strong>{{ $selectedMember?->person?->full_name ?? ($selectedGuest?->name ?? 'Customer') }}</strong> has {{ count($outstandingBillsList) }} unpaid walk-out bill(s) on record. Under Club By-Laws, this balance must be cleared before placing any new order.
+                        </p>
+                    </div>
+                </div>
+                <button type="button" wire:click="openOutstandingDuesModal"
+                    class="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-600/30 cursor-pointer shrink-0 transition flex items-center gap-2 active:scale-95">
+                    <span>Review & Settle Dues Now</span>
+                    <span>→</span>
+                </button>
+            </div>
+        @endif
 
         <!-- MAIN TWO-COLUMN POS WORKSPACE -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start {{ $showReceiptModal ? 'print:hidden' : '' }}">
@@ -1165,35 +1361,68 @@
 
                 <!-- Active Cart & Financial Checkout Section (Prominent Order Board) -->
                 <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center space-x-2.5">
-                            <span class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <!-- Header Strip: Title, Item Count & Quick Actions -->
+                    <div class="flex items-center justify-between mb-3.5 pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2 whitespace-nowrap">
                                 <span>🧾</span>
-                                <span>Current Order / Bill</span>
+                                <span>Current Order</span>
                             </span>
                             <span
-                                class="text-xs px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-mono font-bold">
+                                class="text-xs px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80 font-mono font-bold whitespace-nowrap">
                                 {{ count($cart) }} {{ count($cart) === 1 ? 'item' : 'items' }}
                             </span>
-                            <kbd
-                                class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] border border-slate-300">F4
-                                Focus Qty</kbd>
                         </div>
                         <div class="flex items-center gap-2">
                             @if (count($cart) > 0 && ($selectedMember || $selectedRoomReservation))
-                                <button wire:click="openHoldTabModal" type="button"
-                                    class="text-xs text-amber-900 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 font-bold transition-all focus:outline-none cursor-pointer flex items-center gap-1 shadow-2xs">
-                                    <span>🍸 Hold Tab</span>
-                                    <kbd
-                                        class="px-1 text-[10px] font-mono bg-white border border-amber-300 rounded text-amber-900">F6</kbd>
+                                <button wire:click="openUnsettledWalkoutModal" type="button"
+                                    class="text-xs text-rose-700 hover:text-rose-900 hover:bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200/90 font-semibold transition-all focus:outline-none cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                    title="Record order as an unsettled walk-out if member left without paying">
+                                    <span>🚶</span>
+                                    <span class="hidden sm:inline">Walk-Out Dues</span>
                                 </button>
                             @endif
                             @if (count($cart) > 0)
                                 <button wire:click="clearCart" type="button"
-                                    class="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-transparent hover:border-rose-200 font-semibold transition-all focus:outline-none cursor-pointer">
-                                    Clear Order [Del All]
+                                    class="text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50/60 px-2.5 py-1 rounded-xl border border-transparent hover:border-rose-200 font-medium transition-all focus:outline-none cursor-pointer inline-flex items-center gap-1">
+                                    <span>Clear Bill</span>
+                                    <kbd class="px-1 text-[9px] font-mono bg-slate-100 border border-slate-200 rounded text-slate-500">Del</kbd>
                                 </button>
                             @endif
+                        </div>
+                    </div>
+
+                    <!-- Floor Staff Bearer & Table Selector Strip -->
+                    <div class="mb-4 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                        <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                            <label for="pos-waiter-select" class="text-[11px] font-bold uppercase text-slate-500 whitespace-nowrap flex items-center gap-1">
+                                <span>🤵</span>
+                                <span>Serving Bearer:</span>
+                            </label>
+                            <select id="pos-waiter-select" wire:model.live="selectedWaiterId"
+                                class="flex-1 py-1 px-2.5 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                <option value="">-- Direct Counter / Unassigned --</option>
+                                @foreach ($this->waiters as $w)
+                                    <option value="{{ $w->id }}">{{ $w->code }} • {{ $w->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2 min-w-[140px]">
+                            <label for="pos-table-input" class="text-[11px] font-bold uppercase text-slate-500 whitespace-nowrap">
+                                <span>Table / Spot:</span>
+                            </label>
+                            <input type="text" id="pos-table-input" wire:model.live.debounce.300ms="tableNumber" placeholder="e.g. Table 4 / Bar"
+                                class="w-28 py-1 px-2.5 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500">
+                        </div>
+
+                        <div class="flex items-center gap-2 min-w-[170px] flex-1 sm:flex-initial">
+                            <label for="pos-guest-input" class="text-[11px] font-bold uppercase text-slate-500 whitespace-nowrap flex items-center gap-1">
+                                <span>👤</span>
+                                <span>Accompanying Guest:</span>
+                            </label>
+                            <input type="text" id="pos-guest-input" wire:model.live.debounce.300ms="accompanyingGuestName" placeholder="e.g. Suresh (Optional)"
+                                class="w-36 py-1 px-2.5 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500">
                         </div>
                     </div>
 
@@ -1450,6 +1679,23 @@
                             </div>
                         </div>
 
+                        <!-- Floor Table Service Slip Trigger -->
+                        @if ($selectedMember || $selectedRoomReservation)
+                            <div class="mb-3 p-2.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 flex items-center justify-between gap-3 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">🍽️</span>
+                                    <div>
+                                        <div class="font-bold text-indigo-950">Table Service Check</div>
+                                        <div class="text-[10px] text-indigo-700">Need member to verify bill or add tip at their table before payment?</div>
+                                    </div>
+                                </div>
+                                <button type="button" wire:click="printCurrentCartTableCheck"
+                                    class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0">
+                                    <span>📄 Print Table Check</span>
+                                </button>
+                            </div>
+                        @endif
+
                         <!-- Tender Selection & Checkout Action Bar -->
                         <div>
                             <div
@@ -1461,7 +1707,7 @@
 
                                 <!-- Option 1: Prepaid Wallet [F8] -->
                                 @php
-                                    $totalPaise = (int) round($cartNet * 100);
+                                    $totalPaise = (int) round(($cartNet + $tipAmount) * 100);
                                     $hasSufficientPrepaid = $selectedMember && ($memberWalletBalancePaise >= $totalPaise);
                                 @endphp
                                 <button type="button" wire:click="initiateCheckout('prepaid')" wire:loading.attr="disabled" @if (!$hasSufficientPrepaid) disabled @endif
@@ -1523,7 +1769,9 @@
         <!-- ========================================== -->
         @if ($showServingModal)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
-                role="dialog" aria-modal="true" aria-labelledby="serving-modal-title">
+                role="dialog" aria-modal="true" aria-labelledby="serving-modal-title"
+                @click.self="$wire.closeServingModal()"
+                @keydown.escape.window="$wire.closeServingModal()">
                 <div id="serving-modal-dialog" tabindex="-1"
                     class="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative focus:outline-none"
                     x-init="$nextTick(() => $el.focus())" @keydown.arrow-down.prevent.stop="navigateServings('down')"
@@ -1615,7 +1863,9 @@
                 };
             @endphp
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
-                role="dialog" aria-modal="true" aria-labelledby="payment-confirm-title">
+                role="dialog" aria-modal="true" aria-labelledby="payment-confirm-title"
+                @click.self="$wire.closePaymentConfirmModal()"
+                @keydown.escape.window="$wire.closePaymentConfirmModal()">
                 <div
                     class="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl relative text-slate-900">
 
@@ -1647,6 +1897,53 @@
                             </div>
                         </div>
 
+                        <!-- Floor Staff Bearer, Spot & Accompanying Guest Info -->
+                        @if ($selectedWaiterId || $tableNumber || $accompanyingGuestName)
+                            <div class="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-slate-600">
+                                @if ($selectedWaiterId)
+                                    @php $b = $this->waiters->firstWhere('id', $selectedWaiterId); @endphp
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Bearer:</span>
+                                        <span class="font-bold text-slate-800 ml-1">{{ $b?->name ?? 'Unassigned' }} ({{ $b?->code }})</span>
+                                    </div>
+                                @endif
+                                @if ($tableNumber)
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Spot:</span>
+                                        <span class="font-bold text-slate-800 ml-1">{{ $tableNumber }}</span>
+                                    </div>
+                                @endif
+                                @if ($accompanyingGuestName)
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Guest:</span>
+                                        <span class="font-bold text-indigo-900 ml-1">👤 {{ $accompanyingGuestName }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        <!-- Optional Tip / Gratuity Section -->
+                        <div class="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                                    <span>🎁</span>
+                                    <span>Staff Tip / Gratuity (Optional)</span>
+                                </span>
+                                <span class="text-xs font-mono font-bold text-amber-700">+₹{{ number_format($tipAmount, 2) }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" wire:click="setTip(0)" class="px-2.5 py-1 text-xs rounded-xl border cursor-pointer font-bold {{ $tipAmount == 0 ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}">₹0</button>
+                                <button type="button" wire:click="setTip(20)" class="px-2.5 py-1 text-xs rounded-xl border cursor-pointer font-bold {{ $tipAmount == 20 ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}">₹20</button>
+                                <button type="button" wire:click="setTip(50)" class="px-2.5 py-1 text-xs rounded-xl border cursor-pointer font-bold {{ $tipAmount == 50 ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}">₹50</button>
+                                <button type="button" wire:click="setTip(100)" class="px-2.5 py-1 text-xs rounded-xl border cursor-pointer font-bold {{ $tipAmount == 100 ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}">₹100</button>
+                                <div class="relative flex-1">
+                                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-xs font-bold">₹</span>
+                                    <input type="number" step="1" min="0" wire:model.live.debounce.300ms="tipAmount" placeholder="Custom"
+                                        class="w-full pl-6 pr-2 py-1 text-xs rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Tender Details & Amount -->
                         <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-300">
                             <div class="flex justify-between items-center text-slate-600 mb-1">
@@ -1659,10 +1956,16 @@
                                     <span class="font-mono">-₹{{ number_format($cartDiscount, 2) }}</span>
                                 </div>
                             @endif
+                            @if ($tipAmount > 0)
+                                <div class="flex justify-between items-center text-amber-800 font-semibold mb-1.5">
+                                    <span>Staff Tip Added</span>
+                                    <span class="font-mono">+₹{{ number_format($tipAmount, 2) }}</span>
+                                </div>
+                            @endif
                             <div class="flex justify-between items-center pt-2 border-t border-amber-200">
                                 <span class="font-bold text-slate-900 text-sm">Total Amount Payable</span>
                                 <span
-                                    class="text-2xl font-extrabold font-mono text-amber-700">₹{{ number_format($cartNet, 2) }}</span>
+                                    class="text-2xl font-extrabold font-mono text-amber-700">₹{{ number_format($cartNet + $tipAmount, 2) }}</span>
                             </div>
                         </div>
 
@@ -1712,14 +2015,22 @@
         <!-- ========================================== -->
         @if ($showReceiptModal)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in print:p-0 print:static print:bg-transparent print:backdrop-blur-none"
-                role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title">
+                role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title"
+                @click.self="$wire.closeReceiptModal()"
+                @keydown.escape.window="$wire.closeReceiptModal()">
                 <div
                     class="bg-white text-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 print:hidden no-print">
                         <div>
                             <span id="receipt-modal-title"
-                                class="text-xs font-bold text-slate-500 uppercase tracking-wider">80mm Thermal Receipt</span>
-                            @if ($lastReceiptNumber)
+                                class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                {{ $isTableCheckReceipt ? '🍽️ Table Check / Pre-Bill' : '80mm Thermal Receipt' }}
+                            </span>
+                            @if ($isTableCheckReceipt)
+                                <div class="text-[11px] text-indigo-700 font-semibold mt-0.5">
+                                    Deliver slip to table. Settle payment upon bearer's return.
+                                </div>
+                            @elseif ($lastReceiptNumber)
                                 <div class="text-[11px] font-mono text-slate-800 font-semibold mt-0.5">Bill:
                                     {{ $lastReceiptNumber }}
                                 </div>
@@ -1734,18 +2045,27 @@
                     <pre id="printable-pos-receipt" data-print-document="modal"
                         class="m-0 bg-amber-50/40 p-4 rounded-xl border border-dashed border-slate-300 font-mono text-[11px] leading-relaxed whitespace-pre overflow-x-auto shadow-inner text-slate-800 max-h-96 print:max-h-none print:overflow-visible print:border-none print:bg-white print:text-black print:p-0 print:w-fit print:max-w-full print:mx-auto print:text-[9.5pt] print:leading-snug">{{ $receiptContent }}</pre>
 
-                    <div class="mt-5 flex items-center justify-between gap-3 print:hidden no-print">
+                    <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-2.5 print:hidden no-print">
                         <button onclick="window.print()" type="button"
-                            class="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer print:hidden no-print">
+                            class="w-full sm:flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer print:hidden no-print">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
-                            Print Receipt [P]
+                            <span>{{ $isTableCheckReceipt ? 'Print Table Check [P]' : 'Print Receipt [P]' }}</span>
                         </button>
+                        
+                        @if ($isTableCheckReceipt && !empty($cart) && !$activeHeldTabId)
+                            <button wire:click="holdCurrentCart" type="button"
+                                class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer print:hidden no-print"
+                                title="Park this order as a running tab while bearer is at the table">
+                                <span>🍸 Park Tab</span>
+                            </button>
+                        @endif
+
                         <button wire:click="closeReceiptModal" type="button"
-                            class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer print:hidden no-print">
-                            Done / Next [Esc]
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer print:hidden no-print">
+                            {{ $isTableCheckReceipt ? 'Back to POS [Esc]' : 'Done / Next [Esc]' }}
                         </button>
                     </div>
                 </div>
@@ -1757,6 +2077,8 @@
         <!-- ========================================== -->
         <div x-show="showCloseShiftModal" x-cloak
             @shift-closed.window="showCloseShiftModal = false"
+            @click.self="showCloseShiftModal = false"
+            @keydown.escape.window="showCloseShiftModal = false"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
             role="dialog" aria-modal="true" aria-labelledby="close-counter-dialog-title" style="display: none;">
             <div @click.away="showCloseShiftModal = false"
@@ -1867,7 +2189,9 @@
     <!-- ========================================== -->
     @if ($showHoldTabModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in"
-            role="dialog" aria-modal="true" aria-labelledby="hold-tab-dialog-title">
+            role="dialog" aria-modal="true" aria-labelledby="hold-tab-dialog-title"
+            @click.self="$wire.closeHoldTabModal()"
+            @keydown.escape.window="$wire.closeHoldTabModal()">
             <div
                 class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative text-slate-900">
                 <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4">
@@ -1924,6 +2248,17 @@
                             class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors">
                     </div>
 
+                    <!-- Accompanying Guest Name -->
+                    <div>
+                        <label for="tab-guest-name-input"
+                            class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Accompanying Guest Name <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input type="text" id="tab-guest-name-input" wire:model="accompanyingGuestName"
+                            placeholder="e.g. Suresh Menon"
+                            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition-colors">
+                    </div>
+
                     <!-- Notes -->
                     <div>
                         <label for="tab-notes-input"
@@ -1964,7 +2299,9 @@
     <!-- ========================================== -->
     @if ($showHeldTabsListModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fade-in"
-            role="dialog" aria-modal="true" aria-labelledby="held-tabs-manager-dialog-title">
+            role="dialog" aria-modal="true" aria-labelledby="held-tabs-manager-dialog-title"
+            @click.self="$wire.closeHeldTabsListModal()"
+            @keydown.escape.window="$wire.closeHeldTabsListModal()">
             <div
                 class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 max-w-3xl w-full shadow-2xl relative text-slate-900 max-h-[85vh] flex flex-col">
                 <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4 shrink-0">
@@ -2011,6 +2348,12 @@
                                             📍 {{ $tab->table_identifier }}
                                         </span>
                                     @endif
+                                    @if ($tab->accompanying_guest_name)
+                                        <span
+                                            class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-sans text-[10px] font-bold">
+                                            👤 Guest: {{ $tab->accompanying_guest_name }}
+                                        </span>
+                                    @endif
                                     @if ($activeHeldTabId === $tab->id)
                                         <span
                                             class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase tracking-wide">
@@ -2036,6 +2379,11 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1.5">
+                                    <button type="button" wire:click="printHeldTabTableCheck({{ $tab->id }})"
+                                        class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold text-xs shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+                                        title="Print Table Check slip for bearer">
+                                        <span>📄 Check</span>
+                                    </button>
                                     <button type="button" wire:click="loadHeldTab({{ $tab->id }})"
                                         class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-xs transition-all cursor-pointer">
                                         Open Tab ↵
@@ -2058,11 +2406,329 @@
 
                 <div class="pt-4 border-t border-slate-200 mt-4 flex items-center justify-between shrink-0">
                     <span class="text-xs text-slate-500">
-                        Max capacity: {{ config('club.pos.max_held_tabs', 50) }} concurrent tabs
+                        Max capacity: {{ $maxHeldTabs }} concurrent tabs
                     </span>
                     <button type="button" wire:click="closeHeldTabsListModal"
                         class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer">
                         Close [Esc]
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- MODAL 7: Unsettled Walk-Out Recording Dialog -->
+    <!-- ========================================== -->
+    @if ($showUnsettledWalkoutModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog" aria-modal="true" aria-labelledby="unsettled-modal-title"
+            @click.self="$wire.closeUnsettledWalkoutModal()"
+            @keydown.escape.window="$wire.closeUnsettledWalkoutModal()">
+            <div class="bg-white border-2 border-rose-500 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative text-slate-900">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-9 h-9 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-lg font-bold">
+                            🚶
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-rose-700">Immediate Action Required</span>
+                            <h3 id="unsettled-modal-title" class="text-lg font-black text-slate-900 mt-0.5">Record Unsettled Walk-Out Bill</h3>
+                        </div>
+                    </div>
+                    <button wire:click="closeUnsettledWalkoutModal" type="button"
+                        class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer">×</button>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <!-- Member Summary -->
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Member Account</span>
+                            <span class="font-bold text-sm text-slate-900">
+                                {{ $selectedMember?->person?->first_name }} {{ $selectedMember?->person?->last_name }}
+                                ({{ $selectedMember?->membership_number }})
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Bill Amount</span>
+                            <span class="text-lg font-extrabold font-mono text-rose-700">₹{{ number_format($cartNet, 2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Serving Bearer & Table Confirmation -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="walkout-waiter-select" class="block text-[11px] font-bold uppercase text-slate-700 mb-1">
+                                Serving Bearer / Waiter
+                            </label>
+                            <select id="walkout-waiter-select" wire:model.live="selectedWaiterId"
+                                class="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-rose-500">
+                                <option value="">-- Direct Counter / Unassigned --</option>
+                                @foreach ($this->waiters as $w)
+                                    <option value="{{ $w->id }}">{{ $w->code }} - {{ $w->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="walkout-table-input" class="block text-[11px] font-bold uppercase text-slate-700 mb-1">
+                                Table / Area Spot
+                            </label>
+                            <input type="text" id="walkout-table-input" wire:model.live="tableNumber" placeholder="e.g. Table 4 / Bar Stool"
+                                class="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-rose-500">
+                        </div>
+                    </div>
+
+                    <!-- Reason Description -->
+                    <div>
+                        <label for="walkout-reason-input" class="block text-[11px] font-bold uppercase text-slate-700 mb-1">
+                            Walk-Out Circumstances / Remarks
+                        </label>
+                        <textarea id="walkout-reason-input" wire:model="unsettledWalkoutReason" rows="2"
+                            placeholder="e.g. Member consumed peg at counter and left premises before paying..."
+                            class="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-1 focus:ring-rose-500"></textarea>
+                    </div>
+
+                    <!-- Crucial Accounting & Inventory Notice -->
+                    <div class="p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-[11px] space-y-1.5 leading-relaxed">
+                        <div class="font-bold flex items-center gap-1 text-amber-900">
+                            <span>🔒</span>
+                            <span>Inventory & Enforced Settlement Protocol</span>
+                        </div>
+                        <div>
+                            1. <strong>Cellar Stock Deducted Now:</strong> Physical alcohol and food inventory will be immediately deducted so cellar books have zero stock discrepancy.
+                        </div>
+                        <div>
+                            2. <strong>Account Ordering Lockout:</strong> This member will be immediately blocked from placing future orders at any counter until this bill is settled.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between gap-3 pt-3 border-t border-slate-200">
+                    <button wire:click="closeUnsettledWalkoutModal" type="button"
+                        class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer">
+                        Cancel
+                    </button>
+                    <button wire:click="recordUnsettledWalkout" type="button"
+                        class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-600/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                        <span>Confirm & Record Unsettled Walk-Out</span>
+                        <span>✓</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- MODAL 8: Outstanding Walk-Out Dues Settlement -->
+    <!-- ========================================== -->
+    @if ($showOutstandingDuesModal && !empty($outstandingBillsList))
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog" aria-modal="true" aria-labelledby="outstanding-dues-title"
+            @click.self="$wire.closeOutstandingDuesModal()"
+            @keydown.escape.window="$wire.closeOutstandingDuesModal()">
+            <div class="bg-white border-2 border-rose-500 rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl relative text-slate-900 max-h-[90vh] flex flex-col">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4 shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl font-bold shadow-sm">
+                            ⚠️
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-rose-700">Enforced By-Law Policy</span>
+                            <h3 id="outstanding-dues-title" class="text-lg font-black text-slate-900 mt-0.5">
+                                Outstanding Walk-Out Dues ({{ count($outstandingBillsList) }})
+                            </h3>
+                        </div>
+                    </div>
+                    <button wire:click="closeOutstandingDuesModal" type="button"
+                        class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer">×</button>
+                </div>
+
+                <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs mb-4 shrink-0 leading-relaxed">
+                    <strong>{{ $selectedMember?->person?->first_name }} {{ $selectedMember?->person?->last_name }} ({{ $selectedMember?->membership_number }})</strong> has unpaid walk-out bill(s) from a previous visit. Under Club Rules, outstanding dues must be settled in full before placing any new order.
+                </div>
+
+                <!-- Scrollable Bills List -->
+                <div class="space-y-3 overflow-y-auto pr-1 flex-1 mb-4 text-xs">
+                    @foreach ($outstandingBillsList as $b)
+                        <div class="p-4 rounded-2xl border transition-all cursor-pointer {{ $settlingBillId === $b['id'] ? 'bg-amber-50/70 border-amber-500 ring-2 ring-amber-400' : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70' }}"
+                            wire:click="$set('settlingBillId', {{ $b['id'] }})">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-slate-900">{{ $b['bill_number'] }}</span>
+                                        <span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-bold uppercase">Unsettled</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                        {{ $b['created_at'] }} • {{ $b['table_number'] }}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-base font-extrabold font-mono text-slate-900">₹{{ number_format($b['net_amount'], 2) }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-2.5 pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between text-[11px] text-slate-600 gap-1">
+                                <div>
+                                    <span class="font-semibold text-slate-500">Items:</span>
+                                    <span>{{ $b['lines'] }}</span>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-slate-500">Bearer:</span>
+                                    <span class="font-bold text-amber-800">{{ $b['waiter_name'] }}</span>
+                                </div>
+                            </div>
+                            <div class="mt-1 text-[10px] text-slate-400 italic">
+                                Reason: {{ $b['unsettled_reason'] }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Settlement Tender & Tip Box for Selected Bill -->
+                @php
+                    $activeSettlingBill = collect($outstandingBillsList)->firstWhere('id', $settlingBillId);
+                    $billAmount = (float) ($activeSettlingBill['net_amount'] ?? 0);
+                    $totalSettlingPayable = $billAmount + $settlingBillTipAmount;
+                    $hasSufficientPrepaid = ($selectedMember && $memberWalletBalancePaise >= (int) round($totalSettlingPayable * 100));
+                @endphp
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 shrink-0 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-700">Settling: {{ $activeSettlingBill['bill_number'] ?? 'Bill' }}</span>
+                        <span class="font-mono text-base font-extrabold text-amber-700">
+                            Total: ₹{{ number_format($totalSettlingPayable, 2) }}
+                        </span>
+                    </div>
+
+                    <!-- Optional Gratuity / Tip for Serving Bearer -->
+                    <div class="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                        <div class="flex justify-between items-center text-[11px]">
+                            <span class="font-semibold text-slate-600">Bearer Tip / Gratuity (Optional)</span>
+                            <span class="font-mono font-bold text-amber-700">+₹{{ number_format($settlingBillTipAmount, 2) }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" wire:click="$set('settlingBillTipAmount', 0)" class="px-2 py-0.5 text-xs rounded-lg border cursor-pointer font-bold {{ $settlingBillTipAmount == 0 ? 'bg-amber-500 text-slate-950 border-amber-600' : 'bg-slate-50 text-slate-600 border-slate-200' }}">₹0</button>
+                            <button type="button" wire:click="$set('settlingBillTipAmount', 20)" class="px-2 py-0.5 text-xs rounded-lg border cursor-pointer font-bold {{ $settlingBillTipAmount == 20 ? 'bg-amber-500 text-slate-950 border-amber-600' : 'bg-slate-50 text-slate-600 border-slate-200' }}">₹20</button>
+                            <button type="button" wire:click="$set('settlingBillTipAmount', 50)" class="px-2 py-0.5 text-xs rounded-lg border cursor-pointer font-bold {{ $settlingBillTipAmount == 50 ? 'bg-amber-500 text-slate-950 border-amber-600' : 'bg-slate-50 text-slate-600 border-slate-200' }}">₹50</button>
+                            <button type="button" wire:click="$set('settlingBillTipAmount', 100)" class="px-2 py-0.5 text-xs rounded-lg border cursor-pointer font-bold {{ $settlingBillTipAmount == 100 ? 'bg-amber-500 text-slate-950 border-amber-600' : 'bg-slate-50 text-slate-600 border-slate-200' }}">₹100</button>
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 text-xs">₹</span>
+                                <input type="number" step="1" min="0" wire:model.live="settlingBillTipAmount" placeholder="Custom"
+                                    class="w-full pl-5 pr-2 py-0.5 text-xs rounded-lg border border-slate-200 bg-white font-mono focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tender Selector Buttons -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" wire:click="$set('settlingTenderType', 'prepaid')"
+                            class="py-2 px-2.5 rounded-xl border text-center font-bold transition cursor-pointer {{ $settlingTenderType === 'prepaid' ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100' }}">
+                            <span>Prepaid Wallet</span>
+                            <div class="text-[10px] font-normal {{ $hasSufficientPrepaid ? 'text-slate-800' : 'text-rose-600 font-bold' }}">
+                                ₹{{ number_format($memberWalletBalancePaise / 100, 2) }}
+                            </div>
+                        </button>
+                        <button type="button" wire:click="$set('settlingTenderType', 'cash')"
+                            class="py-2 px-2.5 rounded-xl border text-center font-bold transition cursor-pointer {{ $settlingTenderType === 'cash' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100' }}">
+                            <span>Cash</span>
+                            <div class="text-[10px] font-normal opacity-80">Physical Drawer</div>
+                        </button>
+                        <button type="button" wire:click="$set('settlingTenderType', 'digital')"
+                            class="py-2 px-2.5 rounded-xl border text-center font-bold transition cursor-pointer {{ $settlingTenderType === 'digital' ? 'bg-blue-600 text-white border-blue-700 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100' }}">
+                            <span>UPI / Digital</span>
+                            <div class="text-[10px] font-normal opacity-80">Bank Clearing</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settlement Action Button -->
+                <div class="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-slate-200 shrink-0">
+                    <button wire:click="closeOutstandingDuesModal" type="button"
+                        class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer">
+                        Close
+                    </button>
+                    <button wire:click="settleOutstandingBill" wire:loading.attr="disabled"
+                        @if ($settlingTenderType === 'prepaid' && !$hasSufficientPrepaid) disabled @endif
+                        class="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer {{ ($settlingTenderType === 'prepaid' && !$hasSufficientPrepaid) ? 'opacity-50 cursor-not-allowed' : '' }}">
+                        <span wire:loading.remove wire:target="settleOutstandingBill">
+                            Settle Bill & Print Receipt (₹{{ number_format($totalSettlingPayable, 2) }}) ↵
+                        </span>
+                        <span wire:loading wire:target="settleOutstandingBill">Settling Bill...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- MODAL 9: Existing Active Running Tab Prompt -->
+    <!-- ========================================== -->
+    @if ($showExistingTabPromptModal && !empty($existingOpenTabsList))
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog" aria-modal="true" aria-labelledby="existing-tab-prompt-title"
+            @click.self="$wire.dismissExistingTabPrompt()"
+            @keydown.escape.window="$wire.dismissExistingTabPrompt()">
+            <div class="bg-white border-2 border-amber-500 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative text-slate-900 max-h-[90vh] flex flex-col">
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4 shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-xl font-bold shadow-sm">
+                            🍸
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-amber-700">Active Order Detected</span>
+                            <h3 id="existing-tab-prompt-title" class="text-lg font-black text-slate-900 mt-0.5">
+                                Resume Existing Tab?
+                            </h3>
+                        </div>
+                    </div>
+                    <button wire:click="dismissExistingTabPrompt" type="button"
+                        class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer">×</button>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-300 text-amber-950 text-xs mb-4 shrink-0 leading-relaxed">
+                    <strong>{{ $selectedMember?->person?->first_name }} {{ $selectedMember?->person?->last_name }} ({{ $selectedMember?->membership_number }})</strong> already has an active running tab parked at the counter. Would you like to resume this tab to add items to it, or start a separate new bill?
+                </div>
+
+                <!-- Tab Cards List -->
+                <div class="space-y-3 overflow-y-auto pr-1 flex-1 mb-4 text-xs">
+                    @foreach ($existingOpenTabsList as $tab)
+                        <div class="p-4 rounded-2xl border bg-slate-50 border-amber-300/80 space-y-2">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-slate-900 text-sm">{{ $tab['tab_number'] }}</span>
+                                        <span class="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-[10px] font-bold">📍 {{ $tab['table_identifier'] }}</span>
+                                        @if (!empty($tab['accompanying_guest_name']))
+                                            <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 text-[10px] font-bold">👤 {{ $tab['accompanying_guest_name'] }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                        Parked {{ $tab['held_time'] }} • Bearer: <strong class="text-slate-800">{{ $tab['waiter_name'] }}</strong>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-base font-extrabold font-mono text-amber-900">₹{{ number_format($tab['net_amount'], 2) }}</span>
+                                    <span class="block text-[10px] text-slate-500">{{ $tab['items_count'] }} {{ $tab['items_count'] === 1 ? 'item' : 'items' }}</span>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200 text-[11px] text-slate-600">
+                                <span class="font-semibold text-slate-500">Items:</span>
+                                <span>{{ $tab['items_summary'] }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Actions Strip -->
+                <div class="mt-2 flex items-center justify-between gap-3 pt-3 border-t border-slate-200 shrink-0">
+                    <button wire:click="dismissExistingTabPrompt" type="button"
+                        class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer">
+                        Start Fresh Bill [Esc]
+                    </button>
+                    <button wire:click="resumePromptTab" type="button"
+                        class="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <span>✓ Add to Existing Tab [Enter]</span>
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-950 border border-amber-600 font-mono text-[10px] font-bold">↵</kbd>
                     </button>
                 </div>
             </div>
@@ -2194,6 +2860,38 @@
                         <span>Close</span>
                     </button>
 
+                @elseif ($showUnsettledWalkoutModal)
+                    <!-- Context: Unsettled Walkout Recording Modal -->
+                    <span class="text-[11px] text-rose-800 font-sans font-semibold mr-1 hidden sm:inline">Walk-Out Record:</span>
+                    <button type="button" wire:click="closeUnsettledWalkoutModal"
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs">Esc</kbd>
+                        <span>Cancel</span>
+                    </button>
+
+                @elseif ($showOutstandingDuesModal && !empty($outstandingBillsList))
+                    <!-- Context: Outstanding Walk-Out Dues Modal -->
+                    <span class="text-[11px] text-rose-800 font-sans font-semibold mr-1 hidden sm:inline">Outstanding Dues:</span>
+                    <button type="button" wire:click="closeOutstandingDuesModal"
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs">Esc</kbd>
+                        <span>Close</span>
+                    </button>
+
+                @elseif ($showExistingTabPromptModal)
+                    <!-- Context: Existing Running Tab Detected Prompt -->
+                    <span class="text-[11px] text-amber-800 font-sans font-semibold mr-1 hidden sm:inline">Active Tab:</span>
+                    <button type="button" wire:click="resumePromptTab"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs border border-amber-600 shadow-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-950 border border-amber-600 font-mono shadow-2xs">Enter ↵</kbd>
+                        <span>Add to Existing Tab</span>
+                    </button>
+                    <button type="button" wire:click="dismissExistingTabPrompt"
+                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs cursor-pointer">
+                        <kbd class="px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-300 shadow-2xs">Esc</kbd>
+                        <span>Start Fresh Bill</span>
+                    </button>
+
                 @elseif ($showServingModal)
                     <!-- Context: Serving Selection Modal -->
                     <span class="text-[11px] text-amber-800 font-sans font-semibold mr-1 hidden sm:inline">Unit:</span>
@@ -2285,6 +2983,11 @@
                         </button>
 
                         @if ($selectedMember || $selectedRoomReservation)
+                            <button type="button" wire:click="printCurrentCartTableCheck"
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold transition-colors cursor-pointer"
+                                title="Print Table Check for Bearer">
+                                <span>📄 Check</span>
+                            </button>
                             <button type="button" wire:click="openHoldTabModal"
                                 class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold transition-colors cursor-pointer"
                                 title="Hold Tab (F6)">

@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Domain\Access\Models\Guest;
 use App\Domain\Access\Services\GuestService;
+use App\Domain\Billing\Models\Bill;
 use App\Domain\Billing\Models\Counter;
 use App\Domain\Billing\Models\PaymentReceipt;
 use App\Domain\Billing\Models\Shift;
@@ -19,6 +20,8 @@ use App\Domain\Membership\Models\Member;
 use App\Domain\Membership\Services\CardService;
 use App\Domain\Prepaid\Services\WalletService;
 use App\Domain\Billing\Models\PosHeldTab;
+use App\Domain\Billing\Models\Waiter;
+use App\Domain\Shared\Enums\BillStatus;
 use App\Domain\Shared\Enums\ShiftStatus;
 use App\Domain\Shared\Enums\TenderType;
 use App\Domain\Tariff\Models\Tariff;
@@ -58,6 +61,11 @@ class CounterPos extends Component
     public bool $showHeldTabsListModal = false;
     public string $heldTabSearch = '';
 
+    // Existing Open Tab Prompt State
+    public bool $showExistingTabPromptModal = false;
+    public ?int $promptExistingTabId = null;
+    public array $existingOpenTabsList = [];
+
     // View Mode: 'grid' (Touch Cards) or 'compact' (Searchable List)
     public string $viewMode = 'grid';
 
@@ -92,6 +100,27 @@ class CounterPos extends Component
     public string $guestLastName = '';
     public string $guestPhone = '';
 
+    // Waiter / Bearer Attribution & Table state
+    public ?int $selectedWaiterId = null;
+    public ?string $tableNumber = null;
+    public ?string $accompanyingGuestName = null;
+
+    // Optional Gratuity / Tip state
+    public float $tipAmount = 0.00;
+
+    // Unsettled Walk-Out Recording state
+    public bool $showUnsettledWalkoutModal = false;
+    public string $unsettledWalkoutReason = 'Member left counter without making payment';
+
+    // Outstanding Unsettled Dues Detection & Enforced Lockout state
+    public bool $hasOutstandingUnsettledBills = false;
+    public array $outstandingBillsList = [];
+    public int $outstandingTotalPaise = 0;
+    public bool $showOutstandingDuesModal = false;
+    public ?int $settlingBillId = null;
+    public float $settlingBillTipAmount = 0.00;
+    public string $settlingTenderType = 'prepaid';
+
     // Payment Confirmation Modal & Idempotency state
     public bool $showPaymentConfirmModal = false;
     public ?string $pendingTenderType = null;
@@ -102,6 +131,7 @@ class CounterPos extends Component
     public string $receiptContent = '';
     public ?string $lastReceiptNumber = null;
     public bool $resetCustomerOnReceiptClose = false;
+    public bool $isTableCheckReceipt = false;
 
     // Notifications
     public ?string $successMessage = null;
@@ -113,6 +143,16 @@ class CounterPos extends Component
 
         $this->openingFloat = (float) \App\Domain\Shared\Models\SystemSetting::get('default_opening_float', 2000.00);
         $this->refreshActiveShift();
+    }
+
+    public function getWaitersProperty(): Collection
+    {
+        return Waiter::active()->orderBy('code')->get();
+    }
+
+    public function setTip(float $amount): void
+    {
+        $this->tipAmount = max(0, round($amount, 2));
     }
 
     public function refreshActiveShift(): void
@@ -363,6 +403,10 @@ class CounterPos extends Component
             $this->searchQuery = "{$res->facility->name} - {$guestName}";
             $this->customerSearchResults = [];
             $this->recalculateCart();
+            $this->checkForOutstandingUnsettledBills();
+            if (!$this->hasOutstandingUnsettledBills && !$this->activeHeldTabId) {
+                $this->checkForExistingOpenTab($res);
+            }
             $this->dispatch('focus-item-search');
         }
     }
@@ -462,6 +506,10 @@ class CounterPos extends Component
         $this->memberWalletBalancePaise = (int) ($member->wallet?->balance_paise ?? 0);
         $this->searchQuery = $member->membership_number;
         $this->recalculateCart();
+        $this->checkForOutstandingUnsettledBills();
+        if (!$this->hasOutstandingUnsettledBills && !$this->activeHeldTabId) {
+            $this->checkForExistingOpenTab($member);
+        }
     }
 
     public function resetMember(): void
@@ -475,6 +523,15 @@ class CounterPos extends Component
         $this->searchQuery = '';
         $this->customerSearchResults = [];
         $this->highlightedCustomerIndex = 0;
+        $this->hasOutstandingUnsettledBills = false;
+        $this->outstandingBillsList = [];
+        $this->outstandingTotalPaise = 0;
+        $this->showOutstandingDuesModal = false;
+        $this->settlingBillId = null;
+        $this->settlingBillTipAmount = 0.00;
+        $this->showExistingTabPromptModal = false;
+        $this->promptExistingTabId = null;
+        $this->existingOpenTabsList = [];
         $this->recalculateCart();
         $this->dispatch('focus-customer-search');
     }
@@ -845,6 +902,13 @@ class CounterPos extends Component
     protected function addTariffToCartInternal(int $tariffId, bool $skipServingModalCheck = false): void
     {
         $this->clearMessages();
+
+        if ($this->hasOutstandingUnsettledBills) {
+            $this->errorMessage = "Ordering locked! Member has outstanding walk-out dues that must be settled first.";
+            $this->showOutstandingDuesModal = true;
+            return;
+        }
+
         $tariff = Tariff::with('servingMapping.inventoryItem')->find($tariffId);
         if (!$tariff || !$tariff->is_active) {
             $this->errorMessage = "Tariff not available or inactive.";
@@ -1183,7 +1247,7 @@ class CounterPos extends Component
             return;
         }
 
-        $maxTabs = (int) config('club.pos.max_held_tabs', 50);
+        $maxTabs = (int) \App\Domain\Shared\Models\SystemSetting::get('pos_max_held_tabs', config('club.pos.max_held_tabs', 50));
         $currentOpenCount = PosHeldTab::forShift($this->activeShift->id)->open()->count();
 
         if (!$this->activeHeldTabId && $currentOpenCount >= $maxTabs) {
@@ -1208,7 +1272,10 @@ class CounterPos extends Component
             $tab = PosHeldTab::find($this->activeHeldTabId);
             if ($tab && $tab->status === 'open') {
                 $tab->update([
-                    'table_identifier' => $this->tabTableIdentifier,
+                    'table_identifier' => $this->tableNumber ?: $this->tabTableIdentifier,
+                    'accompanying_guest_name' => $this->accompanyingGuestName ? trim($this->accompanyingGuestName) : null,
+                    'waiter_id' => $this->selectedWaiterId,
+                    'tip_amount_paise' => (int) round($this->tipAmount * 100),
                     'notes' => $this->tabNotes,
                     'cart_items' => $this->cart,
                     'gross_amount_paise' => $grossPaise,
@@ -1233,7 +1300,10 @@ class CounterPos extends Component
                 'guest_id' => $this->selectedGuest?->id,
                 'customer_name' => $customerName,
                 'customer_identifier' => $customerIdentifier,
-                'table_identifier' => $this->tabTableIdentifier,
+                'table_identifier' => $this->tableNumber ?: $this->tabTableIdentifier,
+                'accompanying_guest_name' => $this->accompanyingGuestName ? trim($this->accompanyingGuestName) : null,
+                'waiter_id' => $this->selectedWaiterId,
+                'tip_amount_paise' => (int) round($this->tipAmount * 100),
                 'notes' => $this->tabNotes,
                 'cart_items' => $this->cart,
                 'gross_amount_paise' => $grossPaise,
@@ -1284,6 +1354,10 @@ class CounterPos extends Component
 
         $this->activeHeldTabId = $tab->id;
         $this->tabTableIdentifier = $tab->table_identifier;
+        $this->tableNumber = $tab->table_identifier;
+        $this->accompanyingGuestName = $tab->accompanying_guest_name;
+        $this->selectedWaiterId = $tab->waiter_id;
+        $this->tipAmount = round(($tab->tip_amount_paise ?? 0) / 100, 2);
         $this->tabNotes = $tab->notes;
         $this->customerType = $tab->customer_type;
 
@@ -1335,11 +1409,113 @@ class CounterPos extends Component
         $this->activeHeldTabId = null;
         $this->tabTableIdentifier = null;
         $this->tabNotes = null;
+        $this->tableNumber = null;
+        $this->selectedWaiterId = null;
+        $this->tipAmount = 0.00;
+        $this->accompanyingGuestName = null;
         $this->resetMember();
         $this->cart = [];
         $this->isGuestSale = false;
         $this->recalculateCart();
         $this->dispatch('focus-customer-search');
+    }
+
+    public function checkForExistingOpenTab(Member|RoomReservation $customer): void
+    {
+        if (!$this->activeShift || $this->activeHeldTabId) {
+            return;
+        }
+
+        $query = PosHeldTab::forShift($this->activeShift->id)
+            ->open()
+            ->with('waiter');
+
+        if ($customer instanceof Member) {
+            $query->where('customer_type', 'member')
+                ->where('member_id', $customer->id);
+        } elseif ($customer instanceof RoomReservation) {
+            $query->where('customer_type', 'room_guest')
+                ->where('room_reservation_id', $customer->id);
+        }
+
+        $openTabs = $query->latest()->get();
+
+        if ($openTabs->isNotEmpty()) {
+            $this->existingOpenTabsList = $openTabs->map(function (PosHeldTab $t) {
+                $itemsSummary = collect($t->cart_items ?? [])->map(function ($i) {
+                    return ($i['quantity'] ?? 1) . 'x ' . ($i['name'] ?? 'Item');
+                })->implode(', ');
+
+                return [
+                    'id' => $t->id,
+                    'tab_number' => $t->tab_number,
+                    'table_identifier' => $t->table_identifier ?: 'Unassigned Table',
+                    'accompanying_guest_name' => $t->accompanying_guest_name,
+                    'waiter_name' => $t->waiter ? "{$t->waiter->name} ({$t->waiter->code})" : 'Direct Counter',
+                    'items_count' => count($t->cart_items ?? []),
+                    'items_summary' => $itemsSummary ?: 'No items',
+                    'net_amount' => round(($t->net_amount_paise ?: 0) / 100, 2),
+                    'held_time' => $t->held_at ? $t->held_at->diffForHumans() : 'recently',
+                ];
+            })->toArray();
+
+            $this->promptExistingTabId = $openTabs->first()->id;
+            $this->showExistingTabPromptModal = true;
+        } else {
+            $this->existingOpenTabsList = [];
+            $this->promptExistingTabId = null;
+            $this->showExistingTabPromptModal = false;
+        }
+    }
+
+    public function resumePromptTab(?int $tabId = null): void
+    {
+        $id = $tabId ?? $this->promptExistingTabId;
+        $this->showExistingTabPromptModal = false;
+        $this->existingOpenTabsList = [];
+        $this->promptExistingTabId = null;
+
+        if (!$id) {
+            return;
+        }
+
+        $tab = PosHeldTab::find($id);
+        if (!$tab || $tab->status !== 'open') {
+            $this->errorMessage = "Held tab is no longer active or was settled.";
+            return;
+        }
+
+        $pendingNewItems = $this->cart;
+
+        $this->cart = [];
+        $this->loadHeldTab($id);
+
+        if (!empty($pendingNewItems)) {
+            foreach ($pendingNewItems as $newItem) {
+                $matched = false;
+                foreach ($this->cart as &$existingItem) {
+                    if ($existingItem['tariff_id'] === $newItem['tariff_id']) {
+                        $existingItem['quantity'] += $newItem['quantity'];
+                        $matched = true;
+                        break;
+                    }
+                }
+                if (!$matched) {
+                    $this->cart[] = $newItem;
+                }
+            }
+            $this->recalculateCart();
+        }
+
+        $this->dispatch('focus-item-search');
+    }
+
+    public function dismissExistingTabPrompt(): void
+    {
+        $this->showExistingTabPromptModal = false;
+        $this->existingOpenTabsList = [];
+        $this->promptExistingTabId = null;
+        $this->dispatch('focus-item-search');
     }
 
     // ==========================================
@@ -1349,6 +1525,12 @@ class CounterPos extends Component
     public function initiateCheckout(string $tenderTypeStr): void
     {
         $this->clearMessages();
+
+        if ($this->hasOutstandingUnsettledBills) {
+            $this->errorMessage = "Ordering locked! Member has outstanding walk-out dues that must be settled first.";
+            $this->showOutstandingDuesModal = true;
+            return;
+        }
 
         if (!$this->activeShift) {
             $this->errorMessage = "Cannot checkout without an open counter shift.";
@@ -1366,7 +1548,8 @@ class CounterPos extends Component
             return;
         }
 
-        $totalPaise = (int) round($this->cartNet * 100);
+        $tipPaise = (int) round($this->tipAmount * 100);
+        $totalPaise = (int) round(($this->cartNet + $this->tipAmount) * 100);
 
         // Pre-validation for Prepaid Wallet: Strict No-Credit
         if ($tenderType === TenderType::PREPAID) {
@@ -1378,9 +1561,10 @@ class CounterPos extends Component
 
             if ($this->memberWalletBalancePaise < $totalPaise) {
                 $this->errorMessage = sprintf(
-                    "Insufficient prepaid balance (Available: ₹%.2f, Required: ₹%.2f). No credit permitted.",
+                    "Insufficient prepaid balance (Available: ₹%.2f, Required: ₹%.2f%s). No credit permitted.",
                     $this->memberWalletBalancePaise / 100.0,
-                    $totalPaise / 100.0
+                    $totalPaise / 100.0,
+                    $tipPaise > 0 ? sprintf(" including ₹%.2f tip", $this->tipAmount) : ""
                 );
                 return;
             }
@@ -1432,7 +1616,8 @@ class CounterPos extends Component
             }
 
             $tenderType = TenderType::from($this->pendingTenderType);
-            $totalPaise = (int) round($this->cartNet * 100);
+            $tipPaise = max(0, (int) round($this->tipAmount * 100));
+            $totalPaise = (int) round(($this->cartNet + $this->tipAmount) * 100);
 
             // Re-verify prepaid balance
             if ($tenderType === TenderType::PREPAID) {
@@ -1442,9 +1627,10 @@ class CounterPos extends Component
 
                 if ($this->memberWalletBalancePaise < $totalPaise) {
                     throw new \RuntimeException(sprintf(
-                        "Insufficient prepaid balance (Available: ₹%.2f, Required: ₹%.2f). No credit permitted.",
+                        "Insufficient prepaid balance (Available: ₹%.2f, Required: ₹%.2f%s). No credit permitted.",
                         $this->memberWalletBalancePaise / 100.0,
-                        $totalPaise / 100.0
+                        $totalPaise / 100.0,
+                        $tipPaise > 0 ? sprintf(" including ₹%.2f tip", $this->tipAmount) : ""
                     ));
                 }
             }
@@ -1514,7 +1700,10 @@ class CounterPos extends Component
                 idempotencyKey: $idempotencyKey,
                 notes: $notes,
                 userId: auth()->id(),
-                promotionContext: $this->getPromotionContext()
+                promotionContext: $this->getPromotionContext(),
+                waiterId: $this->selectedWaiterId,
+                tableNumber: $this->tableNumber ?: $this->tabTableIdentifier,
+                accompanyingGuestName: $this->accompanyingGuestName ? trim($this->accompanyingGuestName) : null
             );
 
             $checkoutResult = $billingService->checkout(
@@ -1522,11 +1711,14 @@ class CounterPos extends Component
                 tenders: [
                     [
                         'tender_type' => $tenderType,
-                        'amount_paise' => $bill->net_amount_paise,
+                        'amount_paise' => $totalPaise,
                     ]
                 ],
-                userId: auth()->id()
+                userId: auth()->id(),
+                tipAmountPaise: $tipPaise
             );
+
+            $this->tipAmount = 0.00;
 
             // Refresh balances
             if ($this->selectedMember) {
@@ -1598,11 +1790,376 @@ class CounterPos extends Component
     {
         $this->showReceiptModal = false;
         $this->receiptContent = '';
+        $this->isTableCheckReceipt = false;
         if ($this->resetCustomerOnReceiptClose) {
             $this->resetWorkspaceToNewBill();
             $this->resetCustomerOnReceiptClose = false;
         } else {
             $this->dispatch('focus-item-search');
+        }
+    }
+
+    // ==========================================
+    // Pre-Settlement Floor Service Table Check
+    // ==========================================
+
+    public function printCurrentCartTableCheck(ReceiptPrinterInterface $printer): void
+    {
+        $this->clearMessages();
+
+        if (empty($this->cart)) {
+            $this->errorMessage = "Cannot print table check: cart is empty.";
+            return;
+        }
+
+        if (!$this->selectedMember && !$this->selectedRoomReservation) {
+            $this->errorMessage = "Member-First Policy: Please select a member or room occupant first to print their table check.";
+            $this->dispatch('focus-customer-search');
+            return;
+        }
+
+        $customerName = $this->selectedRoomReservation
+            ? ($this->selectedGuest?->name ?? $this->selectedRoomReservation->facility->name . ' Resident')
+            : ($this->selectedMember->name ?? 'Member');
+
+        $customerIdentifier = $this->selectedRoomReservation
+            ? $this->selectedRoomReservation->facility->code
+            : ($this->selectedMember->membership_number ?? 'MEMBER');
+
+        $waiterName = null;
+        if ($this->selectedWaiterId) {
+            $waiter = Waiter::find($this->selectedWaiterId);
+            if ($waiter) {
+                $waiterName = "{$waiter->name} ({$waiter->code})";
+            }
+        }
+
+        $grossPaise = (int) round($this->cartGross * 100);
+        $taxPaise = (int) round($this->cartTax * 100);
+        $netPaise = (int) round($this->cartNet * 100);
+        $discountPaise = (int) round($this->cartDiscount * 100);
+        $counterName = $this->activeShift?->counter?->name ?? 'Counter Till';
+
+        $tabNumber = null;
+        if ($this->activeHeldTabId) {
+            $activeTab = PosHeldTab::find($this->activeHeldTabId);
+            $tabNumber = $activeTab?->tab_number;
+        }
+
+        $this->receiptContent = $printer->render80mmTableCheck(
+            cartItems: $this->cart,
+            customerName: $customerName,
+            customerIdentifier: $customerIdentifier,
+            tableNumber: $this->tableNumber,
+            waiterName: $waiterName,
+            counterName: $counterName,
+            grossPaise: $grossPaise,
+            taxPaise: $taxPaise,
+            netPaise: $netPaise,
+            discountPaise: $discountPaise,
+            tabNumber: $tabNumber,
+            accompanyingGuestName: $this->accompanyingGuestName
+        );
+
+        $this->isTableCheckReceipt = true;
+        $this->resetCustomerOnReceiptClose = false;
+        $this->showReceiptModal = true;
+        $this->successMessage = "Table Check generated for {$customerName} (" . ($this->tableNumber ?: 'Bar/Counter') . "). Hand to floor bearer.";
+    }
+
+    public function printHeldTabTableCheck(int $tabId, ReceiptPrinterInterface $printer): void
+    {
+        $this->clearMessages();
+
+        $tab = PosHeldTab::with('waiter')->find($tabId);
+        if (!$tab) {
+            $this->errorMessage = "Running tab not found.";
+            return;
+        }
+
+        $waiterName = $tab->waiter ? "{$tab->waiter->name} ({$tab->waiter->code})" : null;
+        $counterName = $tab->counter?->name ?? $this->activeShift?->counter?->name ?? 'Counter Till';
+
+        $this->receiptContent = $printer->render80mmTableCheck(
+            cartItems: (array) ($tab->cart_items ?? []),
+            customerName: $tab->customer_name ?? 'Member',
+            customerIdentifier: $tab->customer_identifier,
+            tableNumber: $tab->table_identifier,
+            waiterName: $waiterName,
+            counterName: $counterName,
+            grossPaise: (int) ($tab->gross_amount_paise ?? 0),
+            taxPaise: (int) ($tab->tax_amount_paise ?? 0),
+            netPaise: (int) ($tab->net_amount_paise ?? 0),
+            discountPaise: (int) ($tab->discount_amount_paise ?? 0),
+            tabNumber: $tab->tab_number,
+            accompanyingGuestName: $tab->accompanying_guest_name
+        );
+
+        $this->isTableCheckReceipt = true;
+        $this->resetCustomerOnReceiptClose = false;
+        $this->showReceiptModal = true;
+        $this->successMessage = "Table Check generated for Tab #{$tab->tab_number} ({$tab->customer_name}). Hand to floor bearer.";
+    }
+
+    // ==========================================
+    // Unsettled Walk-Out Recording
+    // ==========================================
+
+    public function openUnsettledWalkoutModal(): void
+    {
+        $this->clearMessages();
+
+        if (empty($this->cart)) {
+            $this->errorMessage = "Cannot record an empty cart as an unsettled bill.";
+            return;
+        }
+
+        if (!$this->selectedMember && !$this->selectedRoomReservation) {
+            $this->errorMessage = "Member-First Policy: Please select the member who left the counter.";
+            $this->dispatch('focus-customer-search');
+            return;
+        }
+
+        $this->showUnsettledWalkoutModal = true;
+    }
+
+    public function closeUnsettledWalkoutModal(): void
+    {
+        $this->showUnsettledWalkoutModal = false;
+    }
+
+    public function recordUnsettledWalkout(BillingService $billingService): void
+    {
+        $this->clearMessages();
+
+        if (!$this->activeShift) {
+            $this->errorMessage = "Cannot record bills without an open counter shift.";
+            $this->showUnsettledWalkoutModal = false;
+            return;
+        }
+
+        if (empty($this->cart)) {
+            $this->errorMessage = "Cart is empty.";
+            $this->showUnsettledWalkoutModal = false;
+            return;
+        }
+
+        $customer = $this->selectedRoomReservation 
+            ? ($this->selectedGuest ?? $this->selectedMember ?? Member::first()) 
+            : $this->selectedMember;
+
+        if (!$customer) {
+            $this->errorMessage = "A member or customer must be selected to record an unsettled walk-out.";
+            $this->showUnsettledWalkoutModal = false;
+            return;
+        }
+
+        try {
+            $billItems = [];
+            $primaryDept = $this->cart[0]['department_code'] ?? 'bar';
+
+            foreach ($this->cart as $item) {
+                $itemPayload = [
+                    'department_code' => $item['department_code'],
+                    'item_type' => 'tariff',
+                    'item_id' => $item['tariff_id'],
+                    'item_name' => $item['name'],
+                    'quantity' => $item['quantity'],
+                    'unit_price_paise' => $item['unit_price_paise'],
+                    'tax_percent' => $item['tax_percent'],
+                ];
+                if (!empty($item['discount_amount_paise'])) {
+                    $itemPayload['expected_discount_paise'] = (int) $item['discount_amount_paise'];
+                }
+                $billItems[] = $itemPayload;
+            }
+
+            $idempotencyKey = 'walkout_' . $this->activeShift->id . '_' . time() . '_' . Str::random(8);
+            $notes = "Unsettled walk-out bill. Table/Spot: " . ($this->tableNumber ?: ($this->tabTableIdentifier ?: 'Counter'));
+
+            $bill = $billingService->createDraftBill(
+                shift: $this->activeShift,
+                customer: $customer,
+                departmentCode: $primaryDept,
+                items: $billItems,
+                idempotencyKey: $idempotencyKey,
+                notes: $notes,
+                userId: auth()->id(),
+                promotionContext: $this->getPromotionContext(),
+                waiterId: $this->selectedWaiterId,
+                tableNumber: $this->tableNumber ?: $this->tabTableIdentifier,
+                accompanyingGuestName: $this->accompanyingGuestName ? trim($this->accompanyingGuestName) : null
+            );
+
+            $billingService->recordUnsettledWalkout(
+                bill: $bill,
+                reason: $this->unsettledWalkoutReason ?: 'Member left counter without making payment',
+                userId: auth()->id(),
+                waiterId: $this->selectedWaiterId,
+                tableNumber: $this->tableNumber ?: $this->tabTableIdentifier
+            );
+
+            // Settle active held tab if applicable
+            if ($this->activeHeldTabId) {
+                $heldTab = PosHeldTab::find($this->activeHeldTabId);
+                if ($heldTab && $heldTab->status === 'open') {
+                    $heldTab->update([
+                        'status' => 'settled',
+                        'settled_at' => now(),
+                        'settled_bill_id' => $bill->id,
+                    ]);
+                }
+                $this->activeHeldTabId = null;
+                $this->tabTableIdentifier = null;
+                $this->tabNotes = null;
+            }
+
+            $customerName = $this->selectedMember?->person?->first_name 
+                ? "{$this->selectedMember->person->first_name} {$this->selectedMember->person->last_name} ({$this->selectedMember->membership_number})"
+                : 'Customer';
+
+            $this->cart = [];
+            $this->recalculateCart();
+            $this->showUnsettledWalkoutModal = false;
+
+            $this->successMessage = "Bill #{$bill->bill_number} (₹" . number_format($bill->net_amount, 2) . ") recorded as UNSETTLED WALK-OUT for {$customerName}. Cellar stock has been deducted. Future ordering for this member is now locked.";
+
+            $this->checkForOutstandingUnsettledBills();
+        } catch (\Throwable $e) {
+            $this->errorMessage = "Failed to record unsettled walkout: " . $e->getMessage();
+            $this->showUnsettledWalkoutModal = false;
+        }
+    }
+
+    // ==========================================
+    // Outstanding Dues Settlement & Lockout
+    // ==========================================
+
+    public function checkForOutstandingUnsettledBills(): void
+    {
+        $customer = $this->selectedMember ?? $this->selectedGuest;
+        if (!$customer) {
+            $this->hasOutstandingUnsettledBills = false;
+            $this->outstandingBillsList = [];
+            $this->outstandingTotalPaise = 0;
+            $this->showOutstandingDuesModal = false;
+            return;
+        }
+
+        $bills = app(BillingService::class)->getOutstandingUnsettledBills($customer);
+
+        if ($bills->isNotEmpty()) {
+            $this->hasOutstandingUnsettledBills = true;
+            $this->outstandingBillsList = $bills->map(function (Bill $b) {
+                return [
+                    'id' => $b->id,
+                    'bill_number' => $b->bill_number,
+                    'business_date' => $b->business_date?->format('d M Y') ?? $b->created_at->format('d M Y'),
+                    'created_at' => $b->created_at->format('d M Y, h:i A'),
+                    'table_number' => $b->table_number ?? 'Bar / Counter',
+                    'waiter_name' => $b->waiter ? "{$b->waiter->name} ({$b->waiter->code})" : 'Unassigned',
+                    'waiter_id' => $b->waiter_id,
+                    'net_amount_paise' => $b->net_amount_paise,
+                    'net_amount' => round($b->net_amount_paise / 100, 2),
+                    'unsettled_reason' => $b->unsettled_reason ?: 'Walk-out without payment',
+                    'lines' => $b->lines->map(fn ($l) => "{$l->quantity}x {$l->item_name}")->implode(', '),
+                ];
+            })->toArray();
+
+            $this->outstandingTotalPaise = (int) $bills->sum('net_amount_paise');
+            $this->settlingBillId = $bills->first()->id;
+            $this->settlingBillTipAmount = 0.00;
+            $this->settlingTenderType = ($this->memberWalletBalancePaise >= $bills->first()->net_amount_paise) ? 'prepaid' : 'cash';
+            $this->showOutstandingDuesModal = true;
+        } else {
+            $this->hasOutstandingUnsettledBills = false;
+            $this->outstandingBillsList = [];
+            $this->outstandingTotalPaise = 0;
+            $this->showOutstandingDuesModal = false;
+        }
+    }
+
+    public function closeOutstandingDuesModal(): void
+    {
+        $this->showOutstandingDuesModal = false;
+    }
+
+    public function openOutstandingDuesModal(): void
+    {
+        if ($this->hasOutstandingUnsettledBills) {
+            $this->showOutstandingDuesModal = true;
+        }
+    }
+
+    public function settleOutstandingBill(BillingService $billingService, ReceiptPrinterInterface $printer): void
+    {
+        $this->clearMessages();
+
+        if (! auth('web')->user()?->hasClubPermission('sales.checkout')) {
+            $this->errorMessage = 'Access denied. Settling bills requires sales.checkout permission.';
+            return;
+        }
+
+        if (!$this->settlingBillId) {
+            $this->errorMessage = "No outstanding bill selected for settlement.";
+            return;
+        }
+
+        $bill = Bill::with(['lines', 'waiter', 'customer'])->find($this->settlingBillId);
+        if (!$bill || $bill->status !== BillStatus::UNSETTLED) {
+            $this->errorMessage = "Bill is no longer in unsettled status.";
+            $this->checkForOutstandingUnsettledBills();
+            return;
+        }
+
+        $tipPaise = max(0, (int) round($this->settlingBillTipAmount * 100));
+        $payablePaise = $bill->net_amount_paise + $tipPaise;
+        $tenderType = TenderType::tryFrom($this->settlingTenderType) ?? TenderType::CASH;
+
+        // Strict No-Credit check for prepaid wallet
+        if ($tenderType === TenderType::PREPAID) {
+            if ($this->memberWalletBalancePaise < $payablePaise) {
+                $this->errorMessage = sprintf(
+                    "Insufficient prepaid balance (Available: ₹%.2f, Required: ₹%.2f). Please recharge wallet or select Cash/UPI.",
+                    $this->memberWalletBalancePaise / 100.0,
+                    $payablePaise / 100.0
+                );
+                return;
+            }
+        }
+
+        try {
+            $result = $billingService->checkout(
+                bill: $bill,
+                tenders: [
+                    [
+                        'tender_type' => $tenderType,
+                        'amount_paise' => $payablePaise,
+                    ]
+                ],
+                userId: auth()->id(),
+                tipAmountPaise: $tipPaise
+            );
+
+            // Refresh member wallet balance
+            if ($this->selectedMember) {
+                $this->selectedMember->load('wallet');
+                $this->memberWalletBalancePaise = (int) ($this->selectedMember->wallet?->balance_paise ?? 0);
+            }
+
+            $this->refreshActiveShift();
+
+            $receipts = collect($result['receipts'] ?? PaymentReceipt::where('bill_id', $bill->id)->get());
+            $this->lastReceiptNumber = $bill->bill_number;
+            $this->receiptContent = $printer->render80mmReceipt($bill, $receipts->first());
+            $this->resetCustomerOnReceiptClose = false;
+            $this->showReceiptModal = true;
+
+            $this->successMessage = "Outstanding Bill #{$bill->bill_number} successfully settled (₹" . number_format($payablePaise / 100, 2) . ") via " . $tenderType->label() . ".";
+
+            $this->checkForOutstandingUnsettledBills();
+        } catch (\Throwable $e) {
+            $this->errorMessage = "Settlement failed: " . $e->getMessage();
         }
     }
 
@@ -1701,6 +2258,7 @@ class CounterPos extends Component
             'counters' => $counters,
             'tariffs' => $tariffs,
             'heldTabs' => $heldTabs,
+            'maxHeldTabs' => (int) \App\Domain\Shared\Models\SystemSetting::get('pos_max_held_tabs', config('club.pos.max_held_tabs', 50)),
         ]);
     }
 }

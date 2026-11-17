@@ -256,8 +256,8 @@
         </button>
     </div>
 
-    <!-- Desktop Navigation Tab Bar (Mobile uses Sticky Bottom Navigation Dock) -->
-    <nav aria-label="Member Portal Sections" class="hidden md:flex bg-slate-900/90 border border-slate-800/90 rounded-2xl p-1.5 items-center overflow-x-auto gap-1 text-xs font-bold scrollbar-none shadow-md {{ ($activeTab === 'wallet' || $showBillModal) ? 'print:hidden' : '' }}">
+    <!-- Desktop Navigation Tab Bar (Accessible for Desktop Mouse Users Without Horizontal Scrolling) -->
+    <nav aria-label="Member Portal Sections" class="hidden md:flex bg-slate-900/90 border border-slate-800/90 rounded-2xl p-1.5 items-center flex-wrap gap-1 text-xs font-bold shadow-md {{ ($activeTab === 'wallet' || $showBillModal) ? 'print:hidden' : '' }}">
         <button wire:click="setTab('card')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'card' ? 'page' : 'false' }}"
             class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'card' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
             <span aria-hidden="true">🪪</span> Digital Card
@@ -265,10 +265,6 @@
         <button wire:click="setTab('wallet')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'wallet' ? 'page' : 'false' }}"
             class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'wallet' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
             <span aria-hidden="true">💰</span> Wallet &amp; Ledger
-        </button>
-        <button wire:click="setTab('plans')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'plans' ? 'page' : 'false' }}"
-            class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'plans' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
-            <span aria-hidden="true">🏸</span> Sports Plans
         </button>
         <button wire:click="setTab('bookings')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'bookings' ? 'page' : 'false' }}"
             class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'bookings' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
@@ -278,19 +274,85 @@
             class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'bills' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
             <span aria-hidden="true">🧾</span> Itemized Bills
         </button>
-        <button wire:click="setTab('family')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'family' ? 'page' : 'false' }}"
-            class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'family' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
-            <span aria-hidden="true">👨‍👩‍👦</span> Family
-        </button>
-        <button wire:click="setTab('notices')" @click="scrollToTop()" type="button" aria-current="{{ $activeTab === 'notices' ? 'page' : 'false' }}"
-            class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $activeTab === 'notices' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
-            <span aria-hidden="true">🔔</span> Club Notices
-            @if($unreadNoticesCount > 0)
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold {{ $activeTab === 'notices' ? 'bg-slate-950 text-amber-400' : 'bg-rose-500 text-white animate-pulse' }}">
-                    {{ $unreadNoticesCount }}
-                </span>
-            @endif
-        </button>
+
+        <!-- More Sections Dropdown for Desktop Mouse Users -->
+        <div class="relative shrink-0" x-data="{ open: false }">
+            <button type="button" @click="open = !open"
+                class="px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer border {{ $isMoreTabActive ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm border-amber-400' : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent' }}">
+                @if($activeTab === 'plans')
+                    <span aria-hidden="true">🏸</span> More: Sports Plans
+                @elseif($activeTab === 'family')
+                    <span aria-hidden="true">👨‍👩‍👦</span> More: Family
+                @elseif($activeTab === 'notices')
+                    <span aria-hidden="true">🔔</span> More: Club Notices
+                @else
+                    <span aria-hidden="true">📑</span> More (3)
+                @endif
+
+                @if($unreadNoticesCount > 0 && $activeTab !== 'notices')
+                    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span>
+                @endif
+
+                <svg class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open" x-cloak
+                @click.outside="open = false"
+                @keydown.escape.window="open = false"
+                x-transition:enter="transition ease-out duration-150"
+                x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                class="absolute left-0 sm:left-auto sm:right-0 mt-2 z-50 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 space-y-1">
+                <div class="px-2.5 py-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Additional Member Services
+                </div>
+
+                <button wire:click="setTab('plans')" @click="open = false; scrollToTop()" type="button"
+                    class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === 'plans' ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800' }}">
+                    <div class="flex items-center gap-2">
+                        <span>🏸</span>
+                        <span>Sports Plans</span>
+                    </div>
+                    @if($activeTab === 'plans')
+                        <span class="text-xs font-black">✓</span>
+                    @endif
+                </button>
+
+                <button wire:click="setTab('family')" @click="open = false; scrollToTop()" type="button"
+                    class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === 'family' ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800' }}">
+                    <div class="flex items-center gap-2">
+                        <span>👨‍👩‍👦</span>
+                        <span>Family &amp; Dependents</span>
+                    </div>
+                    @if($activeTab === 'family')
+                        <span class="text-xs font-black">✓</span>
+                    @endif
+                </button>
+
+                <button wire:click="setTab('notices')" @click="open = false; scrollToTop()" type="button"
+                    class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === 'notices' ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800' }}">
+                    <div class="flex items-center gap-2">
+                        <span>🔔</span>
+                        <span>Club Notices</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        @if($unreadNoticesCount > 0)
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold {{ $activeTab === 'notices' ? 'bg-slate-950 text-amber-400' : 'bg-rose-500 text-white animate-pulse' }}">
+                                {{ $unreadNoticesCount }}
+                            </span>
+                        @endif
+                        @if($activeTab === 'notices')
+                            <span class="text-xs font-black">✓</span>
+                        @endif
+                    </div>
+                </button>
+            </div>
+        </div>
     </nav>
 
     <div wire:loading.class="opacity-65 transition-opacity" wire:target="setTab,openBillModal">

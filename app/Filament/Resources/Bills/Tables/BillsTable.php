@@ -20,9 +20,20 @@ class BillsTable
                     ->weight('bold'),
                 \Filament\Tables\Columns\TextColumn::make('customer_id')
                     ->label('Customer')
-                    ->state(fn ($record) => class_basename($record->customer_type) . ' #' . $record->customer_id)
+                    ->state(fn ($record) => $record->customer_display_name ?? (class_basename($record->customer_type) . ' #' . $record->customer_id))
+                    ->description(fn ($record) => $record->accompanying_guest_name ? "Guest: {$record->accompanying_guest_name}" : null)
                     ->badge()
                     ->color('info'),
+                \Filament\Tables\Columns\TextColumn::make('waiter.name')
+                    ->label('Bearer')
+                    ->placeholder('Direct Counter')
+                    ->badge()
+                    ->color('gray')
+                    ->searchable(),
+                \Filament\Tables\Columns\TextColumn::make('table_number')
+                    ->label('Spot/Table')
+                    ->placeholder('-')
+                    ->searchable(),
                 \Filament\Tables\Columns\TextColumn::make('department_code')
                     ->label('Department')
                     ->badge()
@@ -40,14 +51,27 @@ class BillsTable
                     ->state(fn ($record) => '₹' . number_format($record->net_amount_paise / 100, 2))
                     ->weight('bold')
                     ->sortable(),
+                \Filament\Tables\Columns\TextColumn::make('tip_amount_paise')
+                    ->label('Tip')
+                    ->state(fn ($record) => ($record->tip_amount_paise ?? 0) > 0 ? ('₹' . number_format($record->tip_amount_paise / 100, 2)) : '-')
+                    ->sortable(),
                 \Filament\Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state?->value ?? $state) {
+                        'unsettled' => 'Unsettled Walk-Out',
+                        'paid' => 'Paid',
+                        'draft' => 'Draft',
+                        'refunded' => 'Refunded',
+                        'reversed' => 'Reversed',
+                        default => ucfirst($state?->value ?? (string) $state),
+                    })
                     ->color(fn ($state) => match ($state?->value ?? $state) {
                         'paid' => 'success',
                         'draft' => 'warning',
+                        'unsettled' => 'danger',
                         'refunded' => 'danger',
-                        'voided' => 'gray',
+                        'reversed' => 'gray',
                         default => 'secondary',
                     }),
                 \Filament\Tables\Columns\TextColumn::make('created_at')
@@ -59,10 +83,16 @@ class BillsTable
                 \Filament\Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'paid' => 'Paid',
+                        'unsettled' => 'Unsettled Walk-Out',
                         'draft' => 'Draft',
                         'refunded' => 'Refunded',
-                        'voided' => 'Voided',
+                        'reversed' => 'Reversed',
                     ]),
+                \Filament\Tables\Filters\SelectFilter::make('waiter_id')
+                    ->label('Serving Bearer')
+                    ->relationship('waiter', 'name')
+                    ->searchable()
+                    ->preload(),
                 \Filament\Tables\Filters\SelectFilter::make('department_code')
                     ->searchable()
                     ->options([

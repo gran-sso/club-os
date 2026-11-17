@@ -68,10 +68,10 @@
             
             <!-- Filter & Search Toolbar for Cards -->
             <div class="p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full">
                     
                     <!-- Search Input (takes all remaining horizontal width) -->
-                    <div class="flex-1 min-w-[220px] relative">
+                    <div class="flex-1 min-w-[200px] sm:min-w-[240px] relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -91,9 +91,9 @@
                     </div>
 
                     <!-- Category Selector -->
-                    <div class="w-full sm:w-auto shrink-0 min-w-[190px]">
+                    <div class="w-full sm:w-auto shrink-0 min-w-[190px]" style="min-width: 190px;">
                         <select wire:model.live="cardCategory"
-                            class="w-full h-10 py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition">
+                            class="w-full h-10 py-2 pl-3 pr-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition cursor-pointer">
                             <option value="">All Membership Categories</option>
                             @foreach ($categories as $cat)
                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -101,10 +101,10 @@
                         </select>
                     </div>
 
-                    <!-- Standing Selector -->
-                    <div class="w-full sm:w-auto shrink-0 min-w-[155px]">
+                    <!-- Standing Selector (Ensures 'All Standing' & options are never cut off) -->
+                    <div class="w-full sm:w-auto shrink-0 min-w-[185px]" style="min-width: 185px;">
                         <select wire:model.live="cardStatus"
-                            class="w-full h-10 py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition">
+                            class="w-full h-10 py-2 pl-3 pr-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition cursor-pointer">
                             <option value="">All Standing</option>
                             <option value="active">Active (Good Standing)</option>
                             <option value="suspended">Suspended</option>
@@ -113,12 +113,13 @@
                         </select>
                     </div>
 
-                    <!-- Committee Toggle Button -->
-                    <div class="w-full sm:w-auto shrink-0">
+                    <!-- Committee Toggle Button (Strictly non-wrapping & matches input height) -->
+                    <div class="w-full sm:w-auto shrink-0 min-w-max" style="min-width: max-content;">
                         <button type="button" wire:click="$toggle('cardCommitteeOnly')"
-                            class="w-full sm:w-auto h-10 px-3.5 text-xs font-semibold rounded-xl border transition flex items-center justify-center gap-1.5 cursor-pointer select-none whitespace-nowrap {{ $cardCommitteeOnly ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
-                            <span class="{{ $cardCommitteeOnly ? 'text-amber-100' : 'text-amber-500' }}">★</span>
-                            <span>Committee Only</span>
+                            style="white-space: nowrap;"
+                            class="w-full sm:w-auto h-10 px-4 text-xs font-semibold rounded-xl border transition inline-flex items-center justify-center gap-1.5 cursor-pointer select-none whitespace-nowrap shrink-0 {{ $cardCommitteeOnly ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                            <span class="shrink-0 {{ $cardCommitteeOnly ? 'text-amber-100' : 'text-amber-500' }}">★</span>
+                            <span class="shrink-0 whitespace-nowrap" style="white-space: nowrap;">Committee Only</span>
                         </button>
                     </div>
                 </div>

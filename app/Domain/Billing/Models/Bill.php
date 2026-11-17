@@ -20,6 +20,9 @@ class Bill extends Model
         'shift_id',
         'customer_type',
         'customer_id',
+        'waiter_id',
+        'table_number',
+        'accompanying_guest_name',
         'department_code',
         'status',
         'business_date',
@@ -27,7 +30,10 @@ class Bill extends Model
         'discount_amount_paise',
         'tax_amount_paise',
         'net_amount_paise',
+        'tip_amount_paise',
         'paid_amount_paise',
+        'unsettled_at',
+        'unsettled_reason',
         'idempotency_key',
         'idempotency_hash',
         'notes',
@@ -39,10 +45,12 @@ class Bill extends Model
     protected $casts = [
         'status' => BillStatus::class,
         'business_date' => 'date',
+        'unsettled_at' => 'datetime',
         'gross_amount_paise' => 'integer',
         'discount_amount_paise' => 'integer',
         'tax_amount_paise' => 'integer',
         'net_amount_paise' => 'integer',
+        'tip_amount_paise' => 'integer',
         'paid_amount_paise' => 'integer',
     ];
 
@@ -81,9 +89,34 @@ class Bill extends Model
         return $this->receipts();
     }
 
+    public function waiter(): BelongsTo
+    {
+        return $this->belongsTo(Waiter::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function getTipAmountAttribute(): float
+    {
+        return round(($this->tip_amount_paise ?? 0) / 100, 2);
+    }
+
+    public function isUnsettled(): bool
+    {
+        return $this->status === BillStatus::UNSETTLED;
+    }
+
+    public function scopeUnsettled($query)
+    {
+        return $query->where('status', BillStatus::UNSETTLED);
+    }
+
+    public function getTotalPayablePaise(): int
+    {
+        return $this->net_amount_paise + ($this->tip_amount_paise ?? 0);
     }
 
     public function getGrossAmountAttribute(): float

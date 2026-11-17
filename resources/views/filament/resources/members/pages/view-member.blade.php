@@ -446,10 +446,30 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- 2. MOBILE HORIZONTAL SCROLLING TAB BAR    -->
+        <!-- 2. DESKTOP & MOBILE RESPONSIVE TAB BAR     -->
         <!-- ========================================== -->
+        @php
+            $turnstileLabel = \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Gate & Turnstile Logs' : 'Door & Entrance Logs';
+            $secondaryMemberTabs = [
+                'access' => [
+                    'icon' => '🚪',
+                    'title' => $turnstileLabel,
+                    'count' => $accessEvents->count(),
+                    'desc' => 'Physical entry, exit & reader timestamps',
+                ],
+                'dependents' => [
+                    'icon' => '👨‍👩‍👦',
+                    'title' => 'Family & Guests',
+                    'count' => $dependents->count() + $sponsoredGuests->count(),
+                    'desc' => 'Registered dependents & active guest cards',
+                ],
+            ];
+            $isMoreMemberTabActive = array_key_exists($activeTab, $secondaryMemberTabs);
+            $activeMoreMemberTab = $isMoreMemberTabActive ? $secondaryMemberTabs[$activeTab] : null;
+        @endphp
+
         <div class="relative print:hidden no-print">
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-slate-200/90 dark:border-slate-700/80 scroll-smooth">
+            <div class="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-slate-200/90 dark:border-slate-700/80 select-none">
                 
                 <!-- Tab: Overview -->
                 <button type="button" wire:click="setActiveTab('overview')"
@@ -496,31 +516,91 @@
                     </span>
                 </button>
 
-                <!-- Tab: Gate & Turnstile Logs -->
-                <button type="button" wire:click="setActiveTab('access')"
-                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'access' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                    </svg>
-                    <span>{{ \App\Domain\Shared\Models\SystemSetting::getBool('enable_turnstile_gate', false) ? 'Gate & Turnstile Logs' : 'Door & Entrance Logs' }}</span>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {{ $accessEvents->count() }}
-                    </span>
-                </button>
+                <!-- More Tabs Dropdown (Accessible to Desktop Mouse Users Without Horizontal Scrolling) -->
+                <div class="relative shrink-0" x-data="{ open: false }">
+                    <button type="button" @click="open = !open"
+                        class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none border {{ $isMoreMemberTabActive ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border-slate-200 dark:border-slate-700 font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50 border-transparent' }}">
+                        @if ($isMoreMemberTabActive && $activeMoreMemberTab)
+                            <span>{{ $activeMoreMemberTab['icon'] }}</span>
+                            <span>More: {{ $activeMoreMemberTab['title'] }}</span>
+                            @if ($activeMoreMemberTab['count'] !== null)
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500 text-slate-950 font-bold">
+                                    {{ $activeMoreMemberTab['count'] }}
+                                </span>
+                            @endif
+                        @else
+                            <span>📑</span>
+                            <span>More Tabs (2)</span>
+                        @endif
+                        <svg class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
 
-                <!-- Tab: Dependents & Guests -->
-                <button type="button" wire:click="setActiveTab('dependents')"
-                    class="h-8.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer select-none {{ $activeTab === 'dependents' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs border border-slate-200 dark:border-slate-700' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50' }}">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                    <span>Family &amp; Guests</span>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {{ $dependents->count() + $sponsoredGuests->count() }}
-                    </span>
-                </button>
+                    <div x-show="open" x-cloak
+                        @click.outside="open = false"
+                        @keydown.escape.window="open = false"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                        class="absolute left-0 sm:left-auto sm:right-0 mt-2 z-50 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-2 space-y-1">
+                        <div class="px-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Member Records &amp; Logs
+                        </div>
+                        @foreach ($secondaryMemberTabs as $tabKey => $mTab)
+                            <button type="button"
+                                @click="open = false; $wire.setActiveTab('{{ $tabKey }}')"
+                                class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === $tabKey ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="text-base shrink-0">{{ $mTab['icon'] }}</span>
+                                    <div class="min-w-0">
+                                        <div class="truncate">{{ $mTab['title'] }}</div>
+                                        <div class="text-[10px] font-normal truncate {{ $activeTab === $tabKey ? 'text-slate-950/80' : 'text-slate-400' }}">{{ $mTab['desc'] }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    @if ($mTab['count'] !== null)
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium {{ $activeTab === $tabKey ? 'bg-slate-950 text-amber-400 font-bold' : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+                                            {{ $mTab['count'] }}
+                                        </span>
+                                    @endif
+                                    @if ($activeTab === $tabKey)
+                                        <span class="text-xs font-black">✓</span>
+                                    @endif
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Unsettled Walk-Out Dues Alert Banner -->
+        @php
+            $memberUnsettledBills = $this->record->bills()->where('status', \App\Domain\Shared\Enums\BillStatus::UNSETTLED)->get();
+        @endphp
+        @if ($memberUnsettledBills->isNotEmpty())
+            <div class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <div>
+                        <h4 class="font-bold text-xs uppercase tracking-wide text-rose-800 dark:text-rose-300">
+                            Member Has {{ $memberUnsettledBills->count() }} Outstanding Walk-Out Bill(s) — Total: ₹{{ number_format($memberUnsettledBills->sum('net_amount_paise') / 100, 2) }}
+                        </h4>
+                        <p class="text-[11px] text-rose-700 dark:text-rose-400 mt-0.5">
+                            Counter POS ordering is currently locked for this member until unsettled dues are cleared.
+                        </p>
+                    </div>
+                </div>
+                <button type="button" wire:click="setActiveTab('bills')"
+                    class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer shrink-0 transition">
+                    View & Settle Bills &rarr;
+                </button>
+            </div>
+        @endif
 
         <!-- ========================================== -->
         <!-- 3. TAB 1: OVERVIEW & KYC                  -->
@@ -1512,19 +1592,28 @@
                                             {{ $bill->created_at->format('d M Y, H:i') }}
                                         </td>
                                         <td class="p-3.5 capitalize font-medium text-slate-700 dark:text-slate-300">
-                                            {{ $bill->department_code ?: 'Restaurant' }}
+                                            <div>{{ $bill->department_code ?: 'Restaurant' }}</div>
+                                            @if ($bill->waiter)
+                                                <div class="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">🤵 {{ $bill->waiter->name }}</div>
+                                            @endif
+                                            @if ($bill->table_number)
+                                                <div class="text-[10px] text-slate-400">Spot: {{ $bill->table_number }}</div>
+                                            @endif
                                         </td>
                                         <td class="p-3.5">
                                             <span class="inline-flex items-center gap-1 font-bold text-[11px] uppercase text-slate-600 dark:text-slate-400">
                                                 {{ ucfirst($tenderStr) }}
                                             </span>
+                                            @if (($bill->tip_amount_paise ?? 0) > 0)
+                                                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">+₹{{ number_format($bill->tip_amount, 2) }} Tip</div>
+                                            @endif
                                         </td>
                                         <td class="p-3.5 text-right font-mono font-extrabold text-slate-900 dark:text-white text-sm">
                                             ₹{{ number_format($bill->net_amount, 2) }}
                                         </td>
                                         <td class="p-3.5 text-center">
-                                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded {{ $bStatus === 'paid' ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 text-rose-800' }}">
-                                                {{ $bStatus }}
+                                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded {{ $bStatus === 'paid' ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : ($bStatus === 'unsettled' ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 font-extrabold' : 'bg-amber-100 text-amber-800') }}">
+                                                {{ $bStatus === 'unsettled' ? 'Unsettled' : $bStatus }}
                                             </span>
                                         </td>
                                         <td class="p-3 text-right">

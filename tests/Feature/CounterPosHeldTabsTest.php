@@ -241,4 +241,44 @@ class CounterPosHeldTabsTest extends TestCase
             ->call('holdCurrentCart')
             ->assertSee('concurrent active tabs reached');
     }
+
+    public function test_dynamic_system_setting_for_max_held_tabs_is_respected(): void
+    {
+        \App\Domain\Shared\Models\SystemSetting::set('pos_max_held_tabs', 3, 'billing');
+
+        $component = Livewire::actingAs($this->cashier)
+            ->test(CounterPos::class)
+            ->set('selectedCounterId', $this->counter->id)
+            ->set('openingFloat', 2000.00)
+            ->call('openShift');
+
+        // Tab 1
+        $component->set('searchQuery', 'MC-001')
+            ->call('searchMember')
+            ->call('addToCart', $this->tariff->id)
+            ->set('tabTableIdentifier', 'T1')
+            ->call('holdCurrentCart');
+
+        // Tab 2
+        $component->set('searchQuery', 'MC-002')
+            ->call('searchMember')
+            ->call('addToCart', $this->tariff->id)
+            ->set('tabTableIdentifier', 'T2')
+            ->call('holdCurrentCart');
+
+        // Tab 3
+        $component->set('searchQuery', 'MC-001')
+            ->call('searchMember')
+            ->call('addToCart', $this->tariff->id)
+            ->set('tabTableIdentifier', 'T3')
+            ->call('holdCurrentCart');
+
+        // Attempt Tab 4 (Limit of 3 reached)
+        $component->set('searchQuery', 'MC-002')
+            ->call('searchMember')
+            ->call('addToCart', $this->tariff->id)
+            ->set('tabTableIdentifier', 'T4')
+            ->call('holdCurrentCart')
+            ->assertSee('Limit of 3 concurrent active tabs reached');
+    }
 }

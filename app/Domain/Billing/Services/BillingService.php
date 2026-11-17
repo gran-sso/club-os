@@ -28,6 +28,7 @@ use App\Domain\Shared\Exceptions\ShiftNotOpenException;
 use App\Domain\Shared\Exceptions\UnauthorizedActionException;
 use App\Domain\Tariff\Models\Tariff;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -60,19 +61,25 @@ class BillingService
         string $idempotencyKey,
         ?string $notes = null,
         ?int $userId = null,
-        array $promotionContext = []
+        array $promotionContext = [],
+        ?int $waiterId = null,
+        ?string $tableNumber = null,
+        ?string $accompanyingGuestName = null
     ): Bill {
         if (!$shift->isOpen()) {
             throw new ShiftNotOpenException("Cannot create bills on a closed shift.");
         }
 
-        return DB::transaction(function () use ($shift, $customer, $departmentCode, $items, $idempotencyKey, $notes, $userId, $promotionContext) {
+        return DB::transaction(function () use ($shift, $customer, $departmentCode, $items, $idempotencyKey, $notes, $userId, $promotionContext, $waiterId, $tableNumber, $accompanyingGuestName) {
             $payloadHash = hash('sha256', json_encode([
                 'customer_type' => get_class($customer),
                 'customer_id' => $customer->getKey(),
                 'department_code' => $departmentCode,
                 'items' => $items,
                 'promotion_context' => $promotionContext,
+                'waiter_id' => $waiterId,
+                'table_number' => $tableNumber,
+                'accompanying_guest_name' => $accompanyingGuestName,
             ]));
 
             $existingBill = Bill::where('idempotency_key', $idempotencyKey)->first();
@@ -131,6 +138,9 @@ class BillingService
                 'shift_id' => $shift->id,
                 'customer_type' => get_class($customer),
                 'customer_id' => $customer->getKey(),
+                'waiter_id' => $waiterId,
+                'table_number' => $tableNumber,
+                'accompanying_guest_name' => $accompanyingGuestName,
                 'department_code' => $departmentCode,
                 'status' => BillStatus::DRAFT,
                 'gross_amount_paise' => $evaluated['gross_paise'],
@@ -158,9 +168,9 @@ class BillingService
      *
      * @param array<array{tender_type: TenderType|string, amount_paise: int, reference?: string, wallet_account_id?: int}> $tenders
      */
-    public function checkout(Bill $bill, array $tenders, ?int $userId = null): array
+    public function checkout(Bill $bill, array $tenders, ?int $userId = null, ?int $tipAmountPaise = null): array
     {
-        return DB::transaction(function () use ($bill, $tenders, $userId) {
+        return DB::transaction(function () use ($bill, $tenders, $userId, $tipAmountPaise) {
             // Check if already paid
             if ($bill->isPaid()) {
                 $receipts = PaymentReceipt::where('bill_id', $bill->id)->get();
@@ -170,6 +180,14 @@ class BillingService
                     'receipt_text' => $this->printer->render80mmReceipt($bill, $receipts->first()),
                 ];
             }
+
+            if ($tipAmountPaise !== null) {
+                $bill->tip_amount_paise = max(0, (int) $tipAmountPaise);
+                $bill->save();
+            }
+
+            $tipPaise = (int) ($bill->tip_amount_paise ?? 0);
+            $expectedPayablePaise = (int) $bill->net_amount_paise + $tipPaise;
 
             // Calculate total allocated tenders
             $totalTenderPaise = 0;
@@ -181,10 +199,12 @@ class BillingService
                 $totalTenderPaise += $amount;
             }
 
-            if ($totalTenderPaise !== $bill->net_amount_paise) {
+            if ($totalTenderPaise !== $expectedPayablePaise) {
                 throw new InvalidArgumentException(
-                    sprintf("Tender total (₹%.2f) does not match bill net amount (₹%.2f). No credit permitted.",
-                    $totalTenderPaise / 100.0, $bill->net_amount_paise / 100.0)
+                    sprintf("Tender total (₹%.2f) does not match bill payable amount (₹%.2f%s). No credit permitted.",
+                    $totalTenderPaise / 100.0,
+                    $expectedPayablePaise / 100.0,
+                    $tipPaise > 0 ? sprintf(" including ₹%.2f staff tip", $tipPaise / 100.0) : "")
                 );
             }
 
@@ -334,6 +354,15 @@ class BillingService
                 ];
             }
 
+            if ($tipPaise > 0) {
+                $bearerName = $bill->waiter ? " (Bearer: {$bill->waiter->name})" : '';
+                $journalLines[] = [
+                    'account_code' => '2040', // Staff Tips & Gratuity Payable (liability)
+                    'credit_paise' => $tipPaise,
+                    'narration' => "Staff tip/gratuity collected on {$bill->bill_number}{$bearerName}",
+                ];
+            }
+
             $journal = $this->journalService->post(
                 sourceType: 'bill',
                 sourceId: $bill->id,
@@ -346,7 +375,8 @@ class BillingService
             // Update bill status
             $bill->update([
                 'status' => BillStatus::PAID,
-                'paid_amount_paise' => $bill->net_amount_paise,
+                'paid_amount_paise' => $expectedPayablePaise,
+                'tip_amount_paise' => $tipPaise,
                 'business_date' => $billBusinessDateStr,
             ]);
 
@@ -547,5 +577,64 @@ class BillingService
 
             return $refund;
         });
+    }
+
+    /**
+     * Record an unsettled walk-out bill for a customer who consumed items but left without paying.
+     * Deducts inventory stock immediately to prevent cellar stock discrepancies.
+     */
+    public function recordUnsettledWalkout(
+        Bill $bill,
+        string $reason,
+        ?int $userId = null,
+        ?int $waiterId = null,
+        ?string $tableNumber = null
+    ): Bill {
+        if ($bill->isPaid()) {
+            throw new InvalidArgumentException("Cannot mark an already paid bill as unsettled.");
+        }
+
+        return DB::transaction(function () use ($bill, $reason, $userId, $waiterId, $tableNumber) {
+            $updateData = [
+                'status' => BillStatus::UNSETTLED,
+                'unsettled_at' => now(),
+                'unsettled_reason' => $reason,
+            ];
+
+            if ($waiterId !== null) {
+                $updateData['waiter_id'] = $waiterId;
+            }
+            if ($tableNumber !== null) {
+                $updateData['table_number'] = $tableNumber;
+            }
+
+            $bill->update($updateData);
+
+            // Deduct inventory stock immediately so physical bar inventory matches cellar books
+            foreach ($bill->lines as $line) {
+                $this->inventoryService->issueStockForBillLine(
+                    line: $line,
+                    shiftId: $bill->shift_id,
+                    userId: $userId
+                );
+            }
+
+            return $bill->fresh(['lines', 'waiter', 'customer']);
+        });
+    }
+
+    /**
+     * Get all active outstanding unsettled bills for a customer.
+     *
+     * @return Collection<int, Bill>
+     */
+    public function getOutstandingUnsettledBills(Model $customer): Collection
+    {
+        return Bill::with(['lines', 'waiter'])
+            ->where('customer_type', get_class($customer))
+            ->where('customer_id', $customer->getKey())
+            ->where('status', BillStatus::UNSETTLED)
+            ->orderBy('created_at', 'asc')
+            ->get();
     }
 }

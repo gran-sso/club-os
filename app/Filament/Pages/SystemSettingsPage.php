@@ -47,6 +47,7 @@ class SystemSettingsPage extends Page
     public float $lostCardFee = 150.00;
     public bool $allowSplitTender = true;
     public bool $allowZeroStockSales = false;
+    public string|int $posMaxHeldTabs = 50;
 
     // Tab 3: Front Desk & Facilities
     public string $checkInTime = '14:00';
@@ -122,6 +123,7 @@ class SystemSettingsPage extends Page
         $this->lostCardFee = (float) SystemSetting::get('lost_card_fee', 150.00);
         $this->allowSplitTender = SystemSetting::getBool('allow_split_tender', true);
         $this->allowZeroStockSales = SystemSetting::getBool('allow_zero_stock_sales', false);
+        $this->posMaxHeldTabs = (int) SystemSetting::get('pos_max_held_tabs', config('club.pos.max_held_tabs', 50));
 
         // Tab 3
         $this->checkInTime = (string) SystemSetting::get('check_in_time', '14:00');
@@ -174,6 +176,7 @@ class SystemSettingsPage extends Page
                 'minWalletRecharge' => 'required|numeric|min:1',
                 'maxWalletRecharge' => 'required|numeric|min:1000',
                 'lostCardFee' => 'required|numeric|min:0',
+                'posMaxHeldTabs' => 'required|integer|min:1|max:500',
                 'tallyHost' => 'required|string',
                 'tallyPort' => 'required|numeric|min:1|max:65535',
                 'tallyCompany' => 'required|string',
@@ -192,6 +195,7 @@ class SystemSettingsPage extends Page
                 'minWalletRecharge' => 'billing',
                 'maxWalletRecharge' => 'billing',
                 'lostCardFee' => 'billing',
+                'posMaxHeldTabs' => 'billing',
                 'tallyHost' => 'tally',
                 'tallyPort' => 'tally',
                 'tallyCompany' => 'tally',
@@ -227,6 +231,7 @@ class SystemSettingsPage extends Page
         SystemSetting::set('lost_card_fee', $this->lostCardFee, 'billing');
         SystemSetting::set('allow_split_tender', $this->allowSplitTender ? '1' : '0', 'billing');
         SystemSetting::set('allow_zero_stock_sales', $this->allowZeroStockSales ? '1' : '0', 'billing');
+        SystemSetting::set('pos_max_held_tabs', (int) $this->posMaxHeldTabs, 'billing');
 
         // Save Tab 3
         SystemSetting::set('check_in_time', $this->checkInTime, 'facilities');
@@ -339,6 +344,7 @@ class SystemSettingsPage extends Page
         $this->lostCardFee = 150.00;
         $this->allowSplitTender = true;
         $this->allowZeroStockSales = false;
+        $this->posMaxHeldTabs = (int) config('club.pos.max_held_tabs', 50);
 
         $this->checkInTime = '14:00';
         $this->checkOutTime = '12:00';

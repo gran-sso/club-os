@@ -101,8 +101,39 @@
         </div>
 
         <!-- 3. REPORT TAB SELECTION BAR (SCREEN ONLY) -->
-        <div class="bg-white border border-slate-200/90 rounded-2xl p-2 shadow-xs print:hidden no-print overflow-x-auto">
-            <div class="flex items-center gap-1.5 min-w-max">
+        @php
+            $secondaryReports = [
+                'bar_stock' => [
+                    'number' => '5',
+                    'icon' => '🍷',
+                    'title' => 'Bar & Stock Reports',
+                    'desc' => 'Beverage consumption, wastage & inventory valuations',
+                ],
+                'sports' => [
+                    'number' => '6',
+                    'icon' => '🏸',
+                    'title' => 'Sports Facility Income',
+                    'desc' => 'Badminton, gym subscriptions & guest court fees',
+                ],
+                'payables' => [
+                    'number' => '7',
+                    'icon' => '⚖️',
+                    'title' => 'Payables & Exceptions',
+                    'desc' => 'Food contractor settlements & zero-credit exceptions',
+                ],
+                'pnl' => [
+                    'number' => '8',
+                    'icon' => '📈',
+                    'title' => 'Departmental P&L',
+                    'desc' => 'Departmental margins, overheads & net operating results',
+                ],
+            ];
+            $isMoreReportActive = array_key_exists($activeTab, $secondaryReports);
+            $activeMoreReport = $isMoreReportActive ? $secondaryReports[$activeTab] : null;
+        @endphp
+
+        <div class="bg-white border border-slate-200/90 rounded-2xl p-2 shadow-xs print:hidden no-print">
+            <div class="flex flex-wrap items-center gap-1.5">
                 <button wire:click="setActiveTab('sales')" type="button"
                     class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'sales' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
                     <span>📊</span>
@@ -127,29 +158,53 @@
                     <span>4. Food Contractor</span>
                 </button>
 
-                <button wire:click="setActiveTab('bar_stock')" type="button"
-                    class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'bar_stock' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                    <span>🍷</span>
-                    <span>5. Bar &amp; Stock Reports</span>
-                </button>
+                <!-- More Reports Dropdown (Accessible to Desktop Mouse Users Without Horizontal Scrolling) -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" type="button"
+                        class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer select-none border {{ $isMoreReportActive ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300' }}">
+                        @if ($isMoreReportActive && $activeMoreReport)
+                            <span>{{ $activeMoreReport['icon'] }}</span>
+                            <span>More: {{ $activeMoreReport['number'] }}. {{ $activeMoreReport['title'] }}</span>
+                        @else
+                            <span>📂</span>
+                            <span>More Reports (4)</span>
+                        @endif
+                        <svg class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
 
-                <button wire:click="setActiveTab('sports')" type="button"
-                    class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'sports' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                    <span>🏸</span>
-                    <span>6. Sports Facility Income</span>
-                </button>
-
-                <button wire:click="setActiveTab('payables')" type="button"
-                    class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'payables' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                    <span>⚖️</span>
-                    <span>7. Payables &amp; Exceptions</span>
-                </button>
-
-                <button wire:click="setActiveTab('pnl')" type="button"
-                    class="px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'pnl' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                    <span>📈</span>
-                    <span>8. Departmental P&amp;L</span>
-                </button>
+                    <div x-show="open" x-cloak
+                        @click.outside="open = false"
+                        @keydown.escape.window="open = false"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                        class="absolute left-0 mt-2 z-50 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 space-y-1">
+                        <div class="px-2.5 py-1.5 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Additional Statutory &amp; Audit Reports
+                        </div>
+                        @foreach ($secondaryReports as $tabKey => $rep)
+                            <button type="button"
+                                @click="open = false; $wire.setActiveTab('{{ $tabKey }}')"
+                                class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-between gap-2.5 cursor-pointer {{ $activeTab === $tabKey ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100' }}">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="text-base shrink-0">{{ $rep['icon'] }}</span>
+                                    <div class="min-w-0">
+                                        <div class="truncate">{{ $rep['number'] }}. {{ $rep['title'] }}</div>
+                                        <div class="text-[10px] font-normal truncate {{ $activeTab === $tabKey ? 'text-slate-950/80' : 'text-slate-400' }}">{{ $rep['desc'] }}</div>
+                                    </div>
+                                </div>
+                                @if ($activeTab === $tabKey)
+                                    <span class="text-xs font-black shrink-0">✓</span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
 

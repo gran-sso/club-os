@@ -2946,5 +2946,187 @@ For environments where full browser automation is unavailable, operators should 
   - Ran `TallyConfigurationTest.php` and `TallyRealWorldUpgradeTest.php` verifying `IntegrationStatusPage` (10/10 passed, 112 assertions).
   - Cleared compiled views and route caches.
 
+### 16 November 2026 — Waiter/Bearer Floor Attribution, Optional Tips/Gratuity Liability Accounting & Unsettled Walk-Out Arrears Enforcement
+
+- **Requirement & Objectives:**
+  - Enable table service waiter/bearer attribution on counter bills and held tabs.
+  - Allow members and guests to voluntarily add tips/gratuity for the serving bearer during checkout.
+  - Isolate tips from club revenue and contractor turnover by crediting Account `2040` (*Staff Tips & Gratuity Payable*) as a staff liability.
+  - If a member forgets to pay or walks out without settling, record an unsettled walk-out bill under the member's account. Cellar stock must be issued immediately to maintain physical bottle count balance.
+  - When that member returns to the counter, POS must detect the previous unsettled dues, display table and bearer details, and strictly freeze further ordering until the outstanding arrears are settled.
+- **Architectural Implementation:**
+  1. **Database Schema & Migration:**
+     - Migration [`2026_11_16_154052_create_waiters_and_add_bearer_tips_and_unsettled_bills_support.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/database/migrations/2026_11_16_154052_create_waiters_and_add_bearer_tips_and_unsettled_bills_support.php):
+       - Created `waiters` table (`id`, `code`, `name`, `phone`, `department_code`, `is_active`, `notes`, `timestamps`).
+       - Seeded default club bearers (`B01` - `B05`).
+       - Added columns to `bills`: `waiter_id`, `table_number`, `tip_amount_paise`, `unsettled_at`, `unsettled_reason`.
+       - Added columns to `pos_held_tabs`: `waiter_id`, `tip_amount_paise`.
+       - Seeded Account `2040` (*Staff Tips & Gratuity Payable*, current liability) in `accounts` table.
+  2. **Domain Models & Enums:**
+     - Created `Waiter` model ([`Waiter.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/Waiter.php)) with `displayName`, `scopeActive()`, `bills()`, and `tipsTotalPaise()`.
+     - Updated `BillStatus` enum ([`BillStatus.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Shared/Enums/BillStatus.php)): added `UNSETTLED = 'unsettled'`.
+     - Updated `Bill` model ([`Bill.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/Bill.php)): added relationships, fillable attributes, casts, `isUnsettled()`, `scopeUnsettled()`, and `getTotalPayablePaise()`.
+     - Updated `PosHeldTab` model ([`PosHeldTab.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Models/PosHeldTab.php)): added `waiter_id`, `tip_amount_paise`, and `waiter` relationship.
+  3. **Domain Services & Inventory Integration:**
+     - Updated `InventoryService::issueStockForBillLine()` ([`InventoryService.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Inventory/Services/InventoryService.php)): Added idempotency guard on `reference_type = 'bill_line'` and `type = 'sale_issue'` preventing duplicate stock deduction when an unsettled bill is settled later.
+     - Updated `BillingService` ([`BillingService.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Billing/Services/BillingService.php)):
+       - `createDraftBill()`: Accepts `waiterId` and `tableNumber`.
+       - `checkout()`: Accepts `tipAmountPaise`, posts credit to Account `2040` (*Staff Tips & Gratuity Payable*), ensures tendered total equals net plus tip, and updates bill `tip_amount_paise`.
+       - `recordUnsettledWalkout()`: Sets status to `UNSETTLED`, timestamps `unsettled_at`, records `unsettled_reason`, and immediately calls `inventoryService->issueStockForBillLine()` for cellar inventory balance.
+       - `getOutstandingUnsettledBills()`: Retrieves unsettled bills for any customer.
+     - Updated `ThermalReceiptPrinter` ([`ThermalReceiptPrinter.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Domain/Integrations/Adapters/ThermalReceiptPrinter.php)): Outputs Bearer badge (`name (code)`), Table / Spot, Tip amount, and Tender Breakdown.
+  4. **Counter POS Interface (`CounterPos.php` & `counter-pos.blade.php`):**
+     - Floor staff bearer selector (`🤵 Serving Bearer`) and table spot input strip above cart.
+     - Optional tips selector in Payment Confirmation Modal (₹0, ₹20, ₹50, ₹100, custom).
+     - Dedicated **Walk-Out Dues** cart action and recording modal (Modal 7).
+     - Automatic outstanding arrears detection on customer search and selection.
+     - Prominent red warning banner with one-click **Review & Settle Dues Now** CTA.
+     - Ordering lockout: prevents adding items or checking out while unsettled dues exist.
+     - Outstanding Walk-Out Dues Settlement Modal (Modal 8) with bill line breakdown, waiter tip option, tender selection, and one-click settlement.
+     - Integrated waiter and tips into held tab management (`holdCurrentCart()`, `loadHeldTab()`).
+  5. **Back-Office Management & Profile Visibility:**
+     - Created `WaiterResource` (`app/Filament/Resources/Waiters/`) under **Club Master Setup -> Service Staff / Bearers** with badge number, phone, department, total tips accumulated badge, and active status filters.
+     - Updated `BillsTable.php`: Added Bearer column, Table/Spot column, Tip column, `Unsettled Walk-Out` badge, and status/waiter filters.
+     - Updated `view-member.blade.php`: Added outstanding arrears warning banner on member 360° profile, and bearer/spot/tip/unsettled status badges on historical invoices.
+  6. **Member Directory Cards Filter Strip Fix (`list-members.blade.php`):**
+     - Corrected sizing on Standing selector: set explicit `min-w-[185px]` preventing truncation of `"All Standing"` to `"All Sta"`.
+     - Corrected Committee Only button: enforced `whitespace-nowrap shrink-0 min-w-max` on both button and inner label span with height `h-10 px-4`, eliminating multiline wrapping and vertical stretching.
+     - Recompiled frontend assets via `npm run build`.
+  7. **Pre-Settlement Table Check / Pro-forma Bill Printing (`CounterPos.php`, `ThermalReceiptPrinter.php`, `counter-pos.blade.php`):**
+     - Added `render80mmTableCheck()` to `ThermalReceiptPrinter` and contract `ReceiptPrinterInterface`. Formats an official 80mm table check with table spot, bearer, member ID, line items, taxes, total payable, and payment method checkboxes with blank lines for `Add Bearer Tip (Gratuity): ₹ _____` and `Member Signature: _____`.
+     - Added `printCurrentCartTableCheck()` to `CounterPos`: prints table check directly from the active cart without clearing or discarding items.
+     - Added `printHeldTabTableCheck()` to `CounterPos`: 1-click check printing for any running tab from the top running tabs chips or held tabs manager dialog.
+     - Integrated dedicated **`📄 Table Check`** button in the checkout panel, and an inline split-button print trigger on running tab chips.
+     - Added 1-click **`🍸 Park Tab`** action inside the preview modal so the cashier can immediately park the tab under that table after printing, freeing the till while the bearer carries the check to the table.
+  8. **Cart Header Decluttering & Layout Streamlining (`counter-pos.blade.php`):**
+     - Removed redundant **Hold Tab** button (already accessible via the top running tabs bar and <kbd>F6</kbd> shortcut).
+     - Removed redundant **Table Check** button from the cart header (now cleanly situated right where checkout decisions occur in the checkout payment panel and tab chips).
+     - Removed clunky multi-line `F4 Focus Qty` box from the header.
+     - Refined title into a crisp, non-wrapping `Current Order` title with a compact `N items` pill badge.
+     - Positioned `Walk-Out Dues` and `Clear Bill [Del]` as neat, balanced right-aligned actions with a subtle bottom divider (`border-b border-slate-100 pb-3`), guaranteeing a single-line, elegant presentation across all screen resolutions.
+- **Verification:**
+  - Feature test [`tests/Feature/WaiterAttributionAndUnsettledBillsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/WaiterAttributionAndUnsettledBillsTest.php): **5 passed, 55 assertions, 0 failures**.
+  - Feature test [`tests/Feature/MemberProfileExpansionTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/MemberProfileExpansionTest.php): **5 passed, 95 assertions, 0 failures**.
+  - Feature tests [`BillResourceTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/BillResourceTest.php) and [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php): **18 passed, 135 assertions, 0 failures**.
+  - Recompiled production assets with `npm run build` (`public/build/assets/app-yYnmRRMG.css`).
+
+---
+
+## Counter POS Escape Key Modal Dismissal & Backdrop Guards (Delivered)
+
+- **Audit & Problem Analysis:**
+  - Audited all 9 modal dialogs, overlays, and popup forms in `resources/views/livewire/counter-pos.blade.php`:
+    1. Error Alert Dialogue (`$errorMessage`)
+    2. Explicit Serving Selection Dialog (`$showServingModal`)
+    3. Payment Tender Confirmation Dialog (`$showPaymentConfirmModal`)
+    4. Thermal Receipt / Table Check Preview Modal (`$showReceiptModal`)
+    5. Reconcile & Close Counter Dialog (`showCloseShiftModal`)
+    6. Hold / Park Bar Tab Modal (`$showHoldTabModal`)
+    7. All Held Tabs Manager Modal (`$showHeldTabsListModal`)
+    8. Unsettled Walk-Out Recording Dialog (`$showUnsettledWalkoutModal`)
+    9. Outstanding Walk-Out Dues Settlement Modal (`$showOutstandingDuesModal`)
+  - **Identified Failure Points**:
+    - `showUnsettledWalkoutModal` and `showOutstandingDuesModal` were completely omitted from `handleGlobalKeydown(e)`. When either form was displayed and the user pressed <kbd>Esc</kbd>, execution cascaded down to Section 7 ("Cascading Clear"), which triggered `wire.clearCart()`. This left the modal open while wiping out active cart items behind the modal.
+    - Modals lacked `@keydown.escape.window` and `@click.self` on their background overlay containers. If a form input/textarea had focus or event propagation stopped, <kbd>Esc</kbd> would not dismiss the modal.
+    - The bottom keyboard helper bar did not render context guidance for walk-out recording or outstanding dues settlement.
+- **Architectural Implementation:**
+  - **Global Keydown Interception**: Added explicit handlers in `handleGlobalKeydown(e)`:
+    - `showUnsettledWalkoutModal`: <kbd>Esc</kbd> executes `wire.closeUnsettledWalkoutModal()`.
+    - `showOutstandingDuesModal`: <kbd>Esc</kbd> executes `wire.closeOutstandingDuesModal()`.
+  - **Dual-Layer Escape & Backdrop Dismissal**: Added `@keydown.escape.window` and `@click.self` on the outer backdrop of all 9 dialogs, ensuring clicking outside or hitting <kbd>Esc</kbd> closes them immediately.
+  - **Field Focus Escape Handling**: Updated Section 7 so that hitting <kbd>Esc</kbd> while actively focused inside customer search (`#customer-search-input`) clears the search query and dropdown first rather than falling through to item search or cart clearing.
+  - **Cheatsheet Alignment**: Added contextual `[Esc] Cancel` and `[Esc] Dismiss` status pills in the bottom shortcut bar when either walk-out or outstanding dues forms are active.
+  - **Thermal Receipt Text**: Restored standard `"Net Payable"` label in `ThermalReceiptPrinter.php` while preserving tip line formatting.
+- **Verification:**
+  - Feature test [`tests/Feature/WaiterAttributionAndUnsettledBillsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/WaiterAttributionAndUnsettledBillsTest.php): **7 passed, 137 assertions, 0 failures** (including `test_counter_pos_modals_can_be_dismissed` and `test_counter_pos_proactively_prompts_to_resume_when_member_has_active_held_tab`).
+  - Feature tests [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php) & [`IntegrationAndReleaseTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/IntegrationAndReleaseTest.php): **All tests passed**.
+  - Recompiled production frontend assets via `npm run build` (`public/build/assets/app-u_7bfLdy.css`).
+
+---
+
+## Proactive Active Running Tab Detection & Modal Prompt (Delivered)
+
+- **Requirements & User Problem:**
+  - When a member has an order on hold in a tab, and the counter staff finishes billing another member, if the staff searches for the first member again instead of clicking the top tab chip, items risked being billed as a separate split transaction instead of appending to the member's table tab.
+  - The counter should proactively detect if the selected member already has an active open tab and prompt the staff whether to add the new item to the existing tab or start a fresh separate bill.
+- **Architectural Implementation:**
+  1. **Automatic Open Tab Detection (`checkForExistingOpenTab`)**:
+     - Whenever a member or resident room guest is selected (via smartcard tap, barcode scan, customer search autocomplete, or manual lookup), `CounterPos::checkForExistingOpenTab()` checks if the customer already has an active `open` held tab on the current shift.
+     - If an active tab exists (and the till is not already editing that tab), the POS triggers `$showExistingTabPromptModal = true`.
+  2. **High-Visibility Interactive Modal Dialog (Modal 9)**:
+     - Displays member identification, tab number (`TAB-01`), table spot (`📍 Table 4`), serving bearer name, item summary, and current parked balance.
+     - Provides two distinct, keyboard-friendly choices:
+       - **✓ Add to Existing Tab [Enter ↵]**: Calls `resumePromptTab()`. Loads the tab, restores table and bearer attribution, and focuses the item search box ready for new items. If any items were already added to the cart prior to member selection, they are merged cleanly into the tab's items.
+       - **Start Fresh Bill [Esc]**: Calls `dismissExistingTabPrompt()`. Dismisses the prompt and leaves the member selected with a clean cart for an independent, separate bill.
+  3. **Global Keyboard & Footer Cheatsheet Synchronization**:
+     - Added `showExistingTabPromptModal` handling to `handleGlobalKeydown(e)`: <kbd>Enter</kbd> resumes the tab, <kbd>Esc</kbd> dismisses to a fresh bill.
+     - Docked bottom status bar reflects active contextual shortcuts (`[Enter ↵] Add to Existing Tab` / `[Esc] Start Fresh Bill`).
+- **Verification:**
+  - Automated test in `tests/Feature/WaiterAttributionAndUnsettledBillsTest.php`:
+    - `test_counter_pos_proactively_prompts_to_resume_when_member_has_active_held_tab`: Passed with 19 assertions verifying automatic detection upon customer selection, modal display, tab resume on `resumePromptTab()`, cart item merging, and fresh bill fallback on `dismissExistingTabPrompt()`.
+  - Full POS test suite: **15 passed, 137 assertions, 0 errors**.
+  - Compiled Vite production assets via `npm run build`.
+
+---
+
+## Configurable Running Bar Tabs Capacity (Up to 500 Tabs) & Top-Strip Virtualization (Delivered)
+
+- **Requirements & Client Need:**
+  - Clubhouse gatherings and banquet events frequently feature 200–300+ members in and around the bar and lounge areas.
+  - The previous default limit of 50 concurrent running tabs (`config('club.pos.max_held_tabs')`) was insufficient for high-density social events.
+  - The client required a configurable setting where club administrators can enter the maximum number of concurrent tabs via a text field with a limit of up to 500 tabs.
+- **Architectural Implementation:**
+  1. **Dynamic Setting in Back-Office (`pos_max_held_tabs`)**:
+     - Added text input field in **Admin -> System Settings -> Cashier & Smartcard Limits** (`SystemSettingsPage.php` & `system-settings.blade.php`) under *POS Running Bar & Lounge Tabs Capacity*.
+     - Configured as a text field (`type="text"`, `inputmode="numeric"`) with validation: `'posMaxHeldTabs' => 'required|integer|min:1|max:500'`.
+     - Stored dynamically via `SystemSetting::set('pos_max_held_tabs', (int) $this->posMaxHeldTabs, 'billing')`.
+     - Logged in audit history and restored cleanly in `resetToDefaults()`.
+  2. **Dynamic Capacity Enforcement in POS (`CounterPos.php`)**:
+     - Dynamic resolution: `SystemSetting::get('pos_max_held_tabs', config('club.pos.max_held_tabs', 50))`.
+     - Enforced in `CounterPos::holdCurrentCart()` when creating new tabs on the current shift, rejecting requests beyond the configured capacity with a clear operational error message.
+  3. **High-Density Top Bar Optimization (`counter-pos.blade.php`)**:
+     - Rendered the top 12 most recently updated tabs as quick chips, ensuring that any currently loaded tab (`$activeHeldTabId`) remains pinned and visible.
+     - When total active tabs exceed 12, an overflow button (`+N more...`) appears immediately beside the chips, linking to the All Tabs Manager modal.
+     - In the All Tabs Manager modal (<kbd>F6</kbd>), all 200–500 tabs can be searched in real time by member name, membership number, table spot, or bearer name, with accurate capacity metrics (`Max capacity: {N} concurrent tabs`).
+- **Verification:**
+  - Feature test [`tests/Feature/SystemSettingsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SystemSettingsTest.php):
+    - `test_can_save_billing_and_cashier_policies`: Verified saving `posMaxHeldTabs` up to 300 tabs.
+    - `test_cannot_set_pos_max_held_tabs_above_500`: Verified rejection when input exceeds 500.
+  - Feature test [`tests/Feature/CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php):
+    - `test_max_held_tabs_limit_is_enforced`: Passed verifying config default.
+    - `test_dynamic_system_setting_for_max_held_tabs_is_respected`: Passed verifying dynamic database setting enforcement.
+  - Full test suite: **23 passed, 124 assertions, 0 errors**.
+  - Compiled Vite production assets via `npm run build` (`public/build/assets/app-BtMt5gnA.css`).
+
+---
+
+## Accompanying Bar Guest Name Logging on Member Bills & Tabs (Delivered)
+
+- **Requirements & Client Need:**
+  - Members frequently bring friends or colleagues to the clubhouse bar.
+  - Asking visiting guests for lengthy front-desk KYC at the bar counter is impractical and slows down service.
+  - The client needed an optional quick field on the POS workspace to simply type the accompanying person's name, maintaining the member as the customer/payer while recording who was accompanying them for club visitor logs and audit records.
+- **Architectural Implementation:**
+  1. **Schema & Database Models (`bills` & `pos_held_tabs`)**:
+     - Added nullable `accompanying_guest_name` (VARCHAR 150) to `bills` and `pos_held_tabs` tables via migration `2026_11_17_120000_add_accompanying_guest_name_to_bills_and_pos_held_tabs.php`.
+     - Added `'accompanying_guest_name'` to `$fillable` on `Bill` and `PosHeldTab`.
+  2. **Billing Service Integration (`BillingService.php`)**:
+     - Updated `createDraftBill()` to accept and persist `?string $accompanyingGuestName = null` in the immutable bill record and idempotency payload hash.
+  3. **Counter POS Workspace (`CounterPos.php` & `counter-pos.blade.php`)**:
+     - Added `Accompanying Guest: [ Enter friend's name, e.g. Suresh ]` input field alongside Serving Bearer and Table Spot.
+     - Cart summary displays a distinct visitor badge (`👤 Guest: Suresh`) when populated.
+     - Holding/parking a tab (`holdCurrentCart()`) persists the guest name to `pos_held_tabs`.
+     - Resuming a tab (`loadHeldTab()`) restores the guest name seamlessly to the active workspace.
+     - The Tabs Manager list and Active Tab Detected prompt display the guest badge for rapid identification.
+  4. **Thermal Receipts & Table Checks (`ThermalReceiptPrinter.php`)**:
+     - 80mm payment receipts and floor Table Check slips print `Guest:    {name}` right below Table Spot and Serving Bearer.
+     - Filament `BillsTable` displays the visitor name as a secondary description under the Customer column.
+- **Verification:**
+  - Feature test [`tests/Feature/WaiterAttributionAndUnsettledBillsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/WaiterAttributionAndUnsettledBillsTest.php):
+    - `test_accompanying_guest_name_is_captured_on_bill_tab_and_receipt`: Verified tab parking, tab loading, table check printing, cash checkout, bill persistence, and 80mm thermal receipt rendering (8 passed, 90 assertions, 0 errors).
+  - Feature tests [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php) & [`CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php): 16 passed, 84 assertions, 0 errors.
+  - Recompiled production frontend assets via `npm run build` (`public/build/assets/app-D9-1-wR9.css`).
+
+
 
 

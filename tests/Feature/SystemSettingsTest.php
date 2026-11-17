@@ -105,6 +105,7 @@ class SystemSettingsTest extends TestCase
             ->set('lostCardFee', 250.00)
             ->set('allowSplitTender', false)
             ->set('allowZeroStockSales', true)
+            ->set('posMaxHeldTabs', '300')
             ->call('saveSettings')
             ->assertHasNoErrors();
 
@@ -114,6 +115,18 @@ class SystemSettingsTest extends TestCase
         $this->assertEquals('250', SystemSetting::get('lost_card_fee'));
         $this->assertEquals('0', SystemSetting::get('allow_split_tender'));
         $this->assertEquals('1', SystemSetting::get('allow_zero_stock_sales'));
+        $this->assertEquals('300', SystemSetting::get('pos_max_held_tabs'));
+    }
+
+    public function test_cannot_set_pos_max_held_tabs_above_500(): void
+    {
+        $admin = User::where('email', 'admin@malabarclub.local')->firstOrFail();
+
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsPage::class)
+            ->set('posMaxHeldTabs', '501')
+            ->call('saveSettings')
+            ->assertHasErrors(['posMaxHeldTabs']);
     }
 
     public function test_can_save_front_desk_and_facilities_timings(): void
