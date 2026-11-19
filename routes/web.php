@@ -20,7 +20,7 @@ Route::get('/', function (UserLandingService $landingService) {
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:15,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth:web'])->group(function () {
@@ -48,9 +48,9 @@ Route::middleware(['auth:web'])->group(function () {
 // Member Portal Routes
 Route::prefix('member')->name('member.')->group(function () {
     Route::get('/login', [MemberAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [MemberAuthController::class, 'login'])->name('login.submit');
+    Route::post('/login', [MemberAuthController::class, 'login'])->middleware('throttle:15,1')->name('login.submit');
     Route::get('/activate', [MemberAuthController::class, 'showActivate'])->name('activate');
-    Route::post('/activate', [MemberAuthController::class, 'activate'])->name('activate.submit');
+    Route::post('/activate', [MemberAuthController::class, 'activate'])->middleware('throttle:10,1')->name('activate.submit');
     Route::post('/logout', [MemberAuthController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth:member'])->group(function () {

@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Shared\Services\AuditLogService;
 use App\Domain\Shared\Services\UserLandingService;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -64,6 +68,22 @@ class AuthController extends Controller
             ]);
         }
 
+        // Rate Limiting: 5 attempts per username/IP pair before 5-minute lockout
+        $throttleKey = 'login:staff:' . Str::lower($loginInput) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            app(AuditLogService::class)->log(
+                category: 'security',
+                action: 'auth.throttled',
+                description: "Rate limit triggered for staff login '{$loginInput}' from IP {$request->ip()}",
+                oldValues: ['identifier' => $loginInput, 'ip' => $request->ip()]
+            );
+
+            throw ValidationException::withMessages([
+                $errorKey => __("Too many failed login attempts. Please wait {$seconds} seconds before trying again."),
+            ]);
+        }
+
         /** @var User|null $user */
         $user = User::query()
             ->where(function ($query) use ($loginInput) {
@@ -79,15 +99,16 @@ class AuthController extends Controller
         $success = false;
 
         if ($user) {
-            $success = \Illuminate\Support\Facades\Hash::check($password, $user->password);
+            $success = Hash::check($password, $user->password);
 
+            // Strictly restricted to local development fixtures; never active in production
             if (
                 ! $success
                 && ! app()->environment('production')
                 && in_array($password, ['password', 'Password@123'], true)
             ) {
                 $altPassword = ($password === 'password') ? 'Password@123' : 'password';
-                $success = \Illuminate\Support\Facades\Hash::check($altPassword, $user->password);
+                $success = Hash::check($altPassword, $user->password);
             }
         }
 
@@ -101,6 +122,9 @@ class AuthController extends Controller
                     $errorKey => __('Your staff account has been deactivated. Please contact an administrator.'),
                 ]);
             }
+
+            // Clear rate limiting counter upon verified authentication
+            RateLimiter::clear($throttleKey);
 
             Auth::guard('web')->login($user, $request->boolean('remember'));
             $request->session()->regenerate();
@@ -116,6 +140,10 @@ class AuthController extends Controller
 
             return redirect()->intended($landingService->resolveHomeUrlForUser($user));
         }
+
+        // Increment rate limiter counter and log security audit event
+        RateLimiter::hit($throttleKey, 300);
+        app(AuditLogService::class)->logFailedLogin($loginInput, 'staff', $request->ip());
 
         throw ValidationException::withMessages([
             $errorKey => __('The provided credentials do not match our records.'),

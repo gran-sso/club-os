@@ -3163,6 +3163,47 @@ For environments where full browser automation is unavailable, operators should 
   - Full POS test suites [`tests/Feature/CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php) & [`tests/Feature/CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php): 16 passed, 84 assertions, 0 errors.
   - Built production assets with `npm run build`.
 
+## Enterprise Security Hardening, Brute-Force Rate Limiting & HTTP Header Defense (Delivered)
+
+- **Requirements & Core Value:**
+  - Protect club administrative accounts and member PINs from brute-force dictionary attacks.
+  - Mitigate clickjacking, MIME-sniffing, and referrer leakage across all web endpoints.
+  - Lock down deployment endpoints (`/setup-club`) to fail closed on production.
+  - Enforce web-server defense (.htaccess) to prevent `.env` and source code leakage if document root is misconfigured on Hostinger.
+- **Architectural Implementation:**
+  1. **Two-Tier Login Rate Limiting & Lockout**:
+     - Configured in [`app/Http/Controllers/AuthController.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Http/Controllers/AuthController.php) and [`app/Http/Controllers/Member/MemberAuthController.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Http/Controllers/Member/MemberAuthController.php):
+       - Tier 1: Route-level throttle (`throttle:15,1`) in `routes/web.php` blocks high-volume bot floods.
+       - Tier 2: Application-level throttling via Laravel `RateLimiter`. Enforces a strict 5 failed attempts limit per identifier/IP before triggering a 5-minute lockout with a real-time countdown timer.
+       - Also protected `/member/activate` against automated PIN guessing.
+  2. **Security Audit Logging (`AuditLogService.php`)**:
+     - Failed authentication attempts and rate-limit triggers are recorded as security category audit logs (`auth.failed`, `auth.throttled`), capturing targeted identifier and client IP.
+  3. **Global Defensive HTTP Security Headers (`SecurityHeaders.php`)**:
+     - Created `app/Http/Middleware/SecurityHeaders.php` and registered in `bootstrap/app.php`.
+     - Injects:
+       - `X-Frame-Options: SAMEORIGIN` (anti-clickjacking)
+       - `X-Content-Type-Options: nosniff` (anti-MIME sniffing)
+       - `Referrer-Policy: strict-origin-when-cross-origin`
+       - `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
+       - `Strict-Transport-Security` (conditional on HTTPS).
+  4. **Web Setup Wizard Lockdown (`SetupController.php` & `setup/index.blade.php`)**:
+     - Added `guardSetupAccess()`: permanently fails closed in production unless `ALLOW_WEB_SETUP=true` is set.
+     - Disallows bypassing lock via query parameter (`?unlock=1`) once `storage/installed.lock` exists.
+     - Removed hardcoded default token hints from the blade view.
+  5. **Hostinger / Web Server Defense (`.htaccess`)**:
+     - Added repository root `.htaccess` with rewrite rules blocking direct access to `.env`, `.git`, `storage/`, `composer.json`, and source directories with `403 Forbidden`.
+     - Reinforced `public/.htaccess` to block hidden dotfiles.
+- **Verification:**
+  - Dedicated security test suite [`tests/Feature/SecurityHardeningTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SecurityHardeningTest.php):
+    - `test_security_headers_middleware_is_attached_to_web_responses`: Verified headers across web routes.
+    - `test_staff_login_throttling_locks_out_after_consecutive_failed_attempts`: Verified 5-attempt limit, lockout message, and audit log generation.
+    - `test_member_login_throttling_locks_out_after_consecutive_failed_attempts`: Verified member portal throttling and audit logs.
+    - `test_setup_wizard_is_locked_when_installed_lock_exists`: Verified setup wizard fails closed with 403.
+    - Result: 4 passed, 41 assertions, 0 errors.
+  - Regression test suites (`SecurityHardeningTest`, `UnifiedLoginTest`, `MemberPortalTest`, `SetupControllerTest`): 31 passed, 245 assertions, 0 errors.
+  - Shift and POS test suites: 12 passed, 96 assertions, 0 errors.
+  - Assets compiled with `npm run build`.
+
 
 
 

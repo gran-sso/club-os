@@ -136,16 +136,17 @@ class AuditLogService
         );
     }
 
-    public function logFailedLogin(?string $email, ?string $ip = null): ?AuditLog
+    public function logFailedLogin(?string $identifier = null, ?string $guard = 'staff', ?string $ip = null): ?AuditLog
     {
-        $targetEmail = $email ?: 'unknown';
+        $target = $identifier ?: 'unknown';
+        $guardLabel = $guard ? ucfirst($guard) : 'Staff';
         $ip = $ip ?? request()?->ip() ?? 'unknown';
 
         return $this->log(
             category: 'security',
             action: 'auth.failed',
-            description: "Failed login attempt for email '{$targetEmail}' from IP {$ip}",
-            oldValues: ['email' => $targetEmail, 'ip' => $ip]
+            description: "Failed {$guardLabel} login attempt for identifier '{$target}' from IP {$ip}",
+            oldValues: ['identifier' => $target, 'guard' => $guard, 'ip' => $ip]
         );
     }
 

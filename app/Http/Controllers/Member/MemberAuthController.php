@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Member;
 
 use App\Domain\Membership\Models\Member;
 use App\Domain\Shared\Enums\MemberStatus;
+use App\Domain\Shared\Services\AuditLogService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -31,6 +34,22 @@ class MemberAuthController extends Controller
         ]);
 
         $input = trim($credentials['login']);
+
+        // Rate Limiting: 5 attempts per membership identifier / IP pair before 5-minute lockout
+        $throttleKey = 'login:member:' . Str::lower($input) . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            app(AuditLogService::class)->log(
+                category: 'security',
+                action: 'auth.throttled',
+                description: "Rate limit triggered for member portal login '{$input}' from IP {$request->ip()}",
+                oldValues: ['identifier' => $input, 'ip' => $request->ip()]
+            );
+
+            throw ValidationException::withMessages([
+                'login' => "Too many failed login attempts. Please wait {$seconds} seconds before trying again.",
+            ]);
+        }
 
         $cleanInput = preg_replace('/[^0-9]/', '', $input);
         $member = Member::with(['person', 'category'])
@@ -55,6 +74,9 @@ class MemberAuthController extends Controller
             ->first();
 
         if (!$member) {
+            RateLimiter::hit($throttleKey, 300);
+            app(AuditLogService::class)->logFailedLogin($input, 'member', $request->ip());
+
             throw ValidationException::withMessages([
                 'login' => 'No active club membership found matching this identifier.',
             ]);
@@ -69,6 +91,9 @@ class MemberAuthController extends Controller
             || (! app()->environment('production') && in_array($credentials['password'], ['1234', 'Member@123'], true));
 
         if (!$passwordValid) {
+            RateLimiter::hit($throttleKey, 300);
+            app(AuditLogService::class)->logFailedLogin($input, 'member', $request->ip());
+
             throw ValidationException::withMessages([
                 'password' => 'The security PIN or password entered is incorrect.',
             ]);
@@ -79,6 +104,9 @@ class MemberAuthController extends Controller
                 'login' => "Membership is currently {$member->status->value}. Please visit the reception desk for assistance.",
             ]);
         }
+
+        // Clear rate limiter on verified login
+        RateLimiter::clear($throttleKey);
 
         Auth::guard('member')->login($member, $request->boolean('remember'));
         $member->update(['last_login_at' => now()]);
@@ -100,6 +128,14 @@ class MemberAuthController extends Controller
 
     public function activate(Request $request): RedirectResponse
     {
+        $activateThrottleKey = 'activate:member:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($activateThrottleKey, 5)) {
+            $seconds = RateLimiter::availableIn($activateThrottleKey);
+            throw ValidationException::withMessages([
+                'phone' => "Too many PIN setup attempts. Please wait {$seconds} seconds before trying again.",
+            ]);
+        }
+
         $validated = $request->validate([
             'membership_number' => ['required', 'string'],
             'phone' => ['required', 'string'],
@@ -112,6 +148,7 @@ class MemberAuthController extends Controller
         $member = Member::with('person')->where('membership_number', $num)->first();
 
         if (!$member) {
+            RateLimiter::hit($activateThrottleKey, 600);
             throw ValidationException::withMessages([
                 'membership_number' => 'Membership number not found in club records.',
             ]);
@@ -120,10 +157,13 @@ class MemberAuthController extends Controller
         $registeredPhone = preg_replace('/[^0-9]/', '', (string) $member->person?->phone);
 
         if (empty($registeredPhone) || !str_ends_with($registeredPhone, substr($phoneInput, -10))) {
+            RateLimiter::hit($activateThrottleKey, 600);
             throw ValidationException::withMessages([
                 'phone' => 'Mobile number does not match registered club records for this membership.',
             ]);
         }
+
+        RateLimiter::clear($activateThrottleKey);
 
         $member->password = Hash::make($validated['pin']);
         $member->last_login_at = now();

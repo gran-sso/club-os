@@ -1,0 +1,21 @@
+# ==============================================================================
+# MALABAR CLUB - ROOT DIRECTORY SECURITY & REWRITE RULES (HOSTINGER / APACHE)
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Block access to hidden files and dotfiles (e.g., .env, .git)
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+    # 2. Block direct HTTP access to application source code and configuration files
+    RewriteRule ^(\.env|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|README\.md|docs/|tests/|database/|app/|bootstrap/|config/|routes/|storage/) - [F,L,NC]
+
+    # 3. If web server root is misconfigured to project root instead of /public, rewrite to /public
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Block directory browsing
+Options -Indexes
+

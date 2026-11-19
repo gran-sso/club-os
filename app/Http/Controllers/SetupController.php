@@ -12,11 +12,36 @@ use Illuminate\View\View;
 class SetupController extends Controller
 {
     /**
+     * Enforce strict security gates before allowing access to the web setup wizard.
+     */
+    protected function guardSetupAccess(): void
+    {
+        // Strictly block web setup in production unless explicitly authorized in .env
+        if (app()->environment('production') && !env('ALLOW_WEB_SETUP', false)) {
+            abort(403, 'Web setup is disabled in production. Run deployment commands via secure terminal or set ALLOW_WEB_SETUP=true in .env.');
+        }
+
+        // Once locked, disallow web-based execution. Requires manual server filesystem removal.
+        if ($this->isLocked()) {
+            abort(403, 'Application setup is locked. To re-run the wizard, delete storage/installed.lock on the server.');
+        }
+    }
+
+    /**
      * Secret setup token. Configurable via SETUP_TOKEN in .env.
      */
     protected function getSecretToken(): string
     {
-        return (string) env('SETUP_TOKEN', 'malabar-club-setup-2026');
+        $token = (string) env('SETUP_TOKEN', '');
+
+        if ($token === '') {
+            if (app()->environment('production', 'staging')) {
+                abort(403, 'SETUP_TOKEN is not configured in .env. Set a cryptographically secure token to proceed.');
+            }
+            return 'malabar-club-setup-2026';
+        }
+
+        return $token;
     }
 
     /**
@@ -32,6 +57,8 @@ class SetupController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->guardSetupAccess();
+
         $token = $request->input('token') ?? session('setup_token', '');
         $authenticated = !empty($token) && hash_equals($this->getSecretToken(), (string) $token);
 
@@ -68,7 +95,6 @@ class SetupController extends Controller
             'storageLinked' => $storageLinked,
             'appKeySet' => $appKeySet,
             'phpVersion' => PHP_VERSION,
-            'defaultToken' => $this->getSecretToken(),
         ]);
     }
 
@@ -77,13 +103,11 @@ class SetupController extends Controller
      */
     public function execute(Request $request): View
     {
+        $this->guardSetupAccess();
+
         $token = $request->input('token') ?? session('setup_token', '');
         if (empty($token) || !hash_equals($this->getSecretToken(), (string) $token)) {
             abort(403, 'Unauthorized setup token.');
-        }
-
-        if ($this->isLocked() && !$request->boolean('unlock')) {
-            abort(403, 'Setup is locked to protect production integrity. Remove storage/installed.lock to re-run.');
         }
 
         $results = [];
