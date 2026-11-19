@@ -36,6 +36,11 @@ interface ReceiptPrinterInterface
     ): string;
 
     /**
+     * Render 80mm thermal shift closing and handover summary slip.
+     */
+    public function render80mmShiftHandoverSlip(array $details): string;
+
+    /**
      * Device status.
      */
     public function getStatus(): array;

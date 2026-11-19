@@ -63,6 +63,34 @@ class ShiftsTable
                     ]),
             ])
             ->recordActions([
+                \Filament\Actions\Action::make('viewSummary')
+                    ->label('Shift Activity & Summary')
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedClipboardDocumentList)
+                    ->color('info')
+                    ->modalHeading(fn ($record) => "Shift Handover & Activity Summary: #{$record->shift_number}")
+                    ->modalWidth('5xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalContent(function ($record) {
+                        $details = app(\App\Domain\Billing\Services\ShiftService::class)->getShiftTransactionDetails($record);
+                        return view('filament.components.shift-summary-modal', ['details' => $details, 'shift' => $record]);
+                    }),
+
+                \Filament\Actions\Action::make('printHandoverSlip')
+                    ->label('Print Handover Slip')
+                    ->icon(\Filament\Support\Icons\Heroicon::OutlinedPrinter)
+                    ->color('gray')
+                    ->modalHeading(fn ($record) => "Shift Handover Slip: #{$record->shift_number}")
+                    ->modalWidth('md')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalContent(function ($record) {
+                        $service = app(\App\Domain\Billing\Services\ShiftService::class);
+                        $details = $service->getShiftTransactionDetails($record);
+                        $slip = app(\App\Domain\Integrations\Contracts\ReceiptPrinterInterface::class)->render80mmShiftHandoverSlip($details);
+                        return view('filament.components.shift-slip-modal', ['slip' => $slip, 'shift' => $record]);
+                    }),
+
                 \Filament\Actions\Action::make('closeShift')
                     ->label('Close Shift')
                     ->icon(\Filament\Support\Icons\Heroicon::OutlinedLockClosed)

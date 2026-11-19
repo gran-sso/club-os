@@ -215,6 +215,95 @@ Member Signature:          ________________
 TXT;
     }
 
+    public function render80mmShiftHandoverSlip(array $details): string
+    {
+        $clubName = config('club.name', config('app.name', 'Malabar Club'));
+        $clubLocation = config('club.location', 'Vadakkencherry, Kerala');
+        $shiftNum = $details['shift_number'] ?? 'SFT-00000';
+        $counterName = $details['counter_name'] ?? 'Counter Station';
+        $cashierName = $details['cashier_name'] ?? 'Staff Cashier';
+        $dateStr = $details['business_date'] ?? now()->format('d/m/Y');
+        $timings = $details['timings'] ?? ($details['opened_at'] ?? '');
+        $status = strtoupper($details['status_label'] ?? 'SESSION SUMMARY');
+
+        $billsCount = (int) ($details['billed_turnover']['total_bills'] ?? 0);
+        $netSales = $details['billed_turnover']['net_rupees'] ?? '0.00';
+        $grossSales = $details['billed_turnover']['gross_rupees'] ?? '0.00';
+        $taxSales = $details['billed_turnover']['tax_rupees'] ?? '0.00';
+
+        $cashSales = $details['tender_breakdown']['cash_sales_rupees'] ?? '0.00';
+        $digitalSales = $details['tender_breakdown']['digital_sales_rupees'] ?? '0.00';
+        $prepaidSales = $details['tender_breakdown']['prepaid_sales_rupees'] ?? '0.00';
+
+        $topupsCount = (int) ($details['wallet_topups']['total_count'] ?? 0);
+        $topupsTotal = $details['wallet_topups']['total_rupees'] ?? '0.00';
+        $cashTopups = $details['wallet_topups']['cash_topups_rupees'] ?? '0.00';
+        $digitalTopups = $details['wallet_topups']['digital_topups_rupees'] ?? '0.00';
+
+        $tipsTotal = $details['staff_tips']['total_tips_rupees'] ?? '0.00';
+
+        $drawer = $details['drawer_reconciliation'] ?? [];
+        $openingFloat = $drawer['opening_float_rupees'] ?? '0.00';
+        $floatIn = $drawer['float_in_rupees'] ?? '0.00';
+        $cashDrops = $drawer['cash_drops_rupees'] ?? '0.00';
+        $expectedCash = $drawer['expected_cash_rupees'] ?? '0.00';
+        $countedCash = $drawer['counted_cash_rupees'] ?? '—';
+        $discrepancy = $drawer['discrepancy_rupees'] ?? '0.00';
+        $varianceStatus = strtoupper($drawer['discrepancy_status'] ?? 'BALANCED');
+        $notesLine = !empty($drawer['notes']) ? "\nRemarks:  {$drawer['notes']}\n" : "";
+
+        return <<<TXT
+================================================
+               {$clubName}
+          {$clubLocation}
+================================================
+       SHIFT CLOSING & HANDOVER SUMMARY
+Shift #:  {$shiftNum}
+Counter:  {$counterName}
+Cashier:  {$cashierName}
+Date:     {$dateStr}
+Timings:  {$timings}
+Status:   {$status}
+------------------------------------------------
+COLLECTIONS & TURNOVER BREAKDOWN
+Billed Turnover ({$billsCount} Bills):           ₹{$netSales}
+  Gross Sales:                         ₹{$grossSales}
+  Statutory GST:                         ₹{$taxSales}
+
+Billed Tender Breakdown:
+  - Physical Cash Sales:               ₹{$cashSales}
+  - Digital UPI / Card Sales:          ₹{$digitalSales}
+  - Prepaid Wallet Redemptions:        ₹{$prepaidSales}
+
+Prepaid Wallet Top-Ups ({$topupsCount}):             ₹{$topupsTotal}
+  - Cash Top-Ups:                        ₹{$cashTopups}
+  - UPI / Digital Top-Ups:               ₹{$digitalTopups}
+
+Duty Staff Tips Collected:               ₹{$tipsTotal}
+------------------------------------------------
+PHYSICAL CASH DRAWER RECONCILIATION
+Starting Cash Float:                   ₹{$openingFloat}
+(+) Cash Sales Collected:             +₹{$cashSales}
+(+) Cash Wallet Top-Ups:              +₹{$cashTopups}
+(+) Additional Float In:              +₹{$floatIn}
+(-) Mid-Shift Cash Drops:             -₹{$cashDrops}
+------------------------------------------------
+EXPECTED CASH IN TILL:                 ₹{$expectedCash}
+ACTUAL COUNTED CASH:                   ₹{$countedCash}
+DRAWER VARIANCE:                       ₹{$discrepancy}
+Result: {$varianceStatus}{$notesLine}------------------------------------------------
+HANDOVER & VERIFICATION SIGNATURES
+
+Outgoing Cashier:      _________________________
+
+Relieving Staff / Mgr: _________________________
+================================================
+  Attach this slip to the physical cash pouch
+              for the club safe.
+================================================
+TXT;
+    }
+
     public function getStatus(): array
     {
         return [

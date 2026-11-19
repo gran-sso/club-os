@@ -217,6 +217,21 @@
                 return;
             }
 
+            // SHIFT ACTIVITY & SUMMARY MODAL (Esc to close, P to print handover slip)
+            if (this.getProp('showShiftSummaryModal')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    wire.closeShiftSummaryModal();
+                    return;
+                }
+                if (e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    wire.printCurrentShiftSummarySlip();
+                    return;
+                }
+                return;
+            }
+
             // 2. PAYMENT CONFIRMATION MODAL (Enter to Settle, Esc to Cancel)
             if (this.getProp('showPaymentConfirmModal')) {
                 if (e.key === 'Enter') {
@@ -2011,68 +2026,6 @@
         @endif
 
         <!-- ========================================== -->
-        <!-- MODAL 3: 80mm Thermal Receipt Preview Modal -->
-        <!-- ========================================== -->
-        @if ($showReceiptModal)
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in print:p-0 print:static print:bg-transparent print:backdrop-blur-none"
-                role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title"
-                @click.self="$wire.closeReceiptModal()"
-                @keydown.escape.window="$wire.closeReceiptModal()">
-                <div
-                    class="bg-white text-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none">
-                    <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 print:hidden no-print">
-                        <div>
-                            <span id="receipt-modal-title"
-                                class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                {{ $isTableCheckReceipt ? '🍽️ Table Check / Pre-Bill' : '80mm Thermal Receipt' }}
-                            </span>
-                            @if ($isTableCheckReceipt)
-                                <div class="text-[11px] text-indigo-700 font-semibold mt-0.5">
-                                    Deliver slip to table. Settle payment upon bearer's return.
-                                </div>
-                            @elseif ($lastReceiptNumber)
-                                <div class="text-[11px] font-mono text-slate-800 font-semibold mt-0.5">Bill:
-                                    {{ $lastReceiptNumber }}
-                                </div>
-                            @endif
-                        </div>
-                        <button wire:click="closeReceiptModal" type="button"
-                            class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer print:hidden no-print"
-                            aria-label="Close receipt">×</button>
-                    </div>
-
-                    <!-- Receipt Paper Simulation -->
-                    <pre id="printable-pos-receipt" data-print-document="modal"
-                        class="m-0 bg-amber-50/40 p-4 rounded-xl border border-dashed border-slate-300 font-mono text-[11px] leading-relaxed whitespace-pre overflow-x-auto shadow-inner text-slate-800 max-h-96 print:max-h-none print:overflow-visible print:border-none print:bg-white print:text-black print:p-0 print:w-fit print:max-w-full print:mx-auto print:text-[9.5pt] print:leading-snug">{{ $receiptContent }}</pre>
-
-                    <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-2.5 print:hidden no-print">
-                        <button onclick="window.print()" type="button"
-                            class="w-full sm:flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer print:hidden no-print">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            <span>{{ $isTableCheckReceipt ? 'Print Table Check [P]' : 'Print Receipt [P]' }}</span>
-                        </button>
-                        
-                        @if ($isTableCheckReceipt && !empty($cart) && !$activeHeldTabId)
-                            <button wire:click="holdCurrentCart" type="button"
-                                class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer print:hidden no-print"
-                                title="Park this order as a running tab while bearer is at the table">
-                                <span>🍸 Park Tab</span>
-                            </button>
-                        @endif
-
-                        <button wire:click="closeReceiptModal" type="button"
-                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer print:hidden no-print">
-                            {{ $isTableCheckReceipt ? 'Back to POS [Esc]' : 'Done / Next [Esc]' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- ========================================== -->
         <!-- MODAL 4: Reconcile & Close Counter Dialog -->
         <!-- ========================================== -->
         <div x-show="showCloseShiftModal" x-cloak
@@ -2099,6 +2052,40 @@
                     Count the physical currency notes and coins in the cash drawer. Prepaids and digital card/UPI tenders
                     reconcile automatically.
                 </p>
+
+                @php
+                    $quickSummary = app(\App\Domain\Billing\Services\ShiftService::class)->getShiftTransactionDetails($activeShift);
+                @endphp
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Billed Sales</span>
+                        <span class="text-sm font-extrabold font-mono text-slate-900 block">
+                            ₹{{ number_format(($quickSummary['totals']['billed_turnover_paise'] ?? 0) / 100, 2) }}
+                        </span>
+                        <span class="text-[10px] text-slate-400 block">{{ $quickSummary['shift']['total_bills'] ?? 0 }} paid bills</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                        <span class="text-[10px] uppercase font-bold text-emerald-800 block">Cash Sales</span>
+                        <span class="text-sm font-extrabold font-mono text-emerald-900 block">
+                            ₹{{ number_format(($quickSummary['tenders']['cash']['amount_paise'] ?? 0) / 100, 2) }}
+                        </span>
+                        <span class="text-[10px] text-emerald-700 block">{{ $quickSummary['tenders']['cash']['count'] ?? 0 }} orders</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200">
+                        <span class="text-[10px] uppercase font-bold text-blue-800 block">UPI / Card</span>
+                        <span class="text-sm font-extrabold font-mono text-blue-900 block">
+                            ₹{{ number_format(($quickSummary['tenders']['digital']['amount_paise'] ?? 0) / 100, 2) }}
+                        </span>
+                        <span class="text-[10px] text-blue-700 block">{{ $quickSummary['tenders']['digital']['count'] ?? 0 }} orders</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                        <span class="text-[10px] uppercase font-bold text-amber-800 block">Prepaid Wallet</span>
+                        <span class="text-sm font-extrabold font-mono text-amber-900 block">
+                            ₹{{ number_format(($quickSummary['tenders']['prepaid']['amount_paise'] ?? 0) / 100, 2) }}
+                        </span>
+                        <span class="text-[10px] text-amber-700 block">{{ $quickSummary['tenders']['prepaid']['count'] ?? 0 }} orders</span>
+                    </div>
+                </div>
 
                 <form wire:submit.prevent="closeShift" class="space-y-4">
                     <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
@@ -2180,6 +2167,78 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- MODAL 3: 80mm Thermal Receipt Preview Modal -->
+    <!-- ========================================== -->
+    @if ($showReceiptModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in print:p-0 print:static print:bg-transparent print:backdrop-blur-none"
+            role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title"
+            @click.self="$wire.closeReceiptModal()"
+            @keydown.escape.window="$wire.closeReceiptModal()">
+            <div
+                class="bg-white text-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative border border-slate-200 print:shadow-none print:border-none print:p-0 print:max-w-none">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 print:hidden no-print">
+                    <div>
+                        <span id="receipt-modal-title"
+                            class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            @if ($isShiftHandoverSlip)
+                                📋 Shift Handover Summary Slip
+                            @elseif ($isTableCheckReceipt)
+                                🍽️ Table Check / Pre-Bill
+                            @else
+                                80mm Thermal Receipt
+                            @endif
+                        </span>
+                        @if ($isShiftHandoverSlip)
+                            <div class="text-[11px] text-amber-700 font-semibold mt-0.5">
+                                Official cash handover summary. Attach slip to physical cash deposit.
+                            </div>
+                        @elseif ($isTableCheckReceipt)
+                            <div class="text-[11px] text-indigo-700 font-semibold mt-0.5">
+                                Deliver slip to table. Settle payment upon bearer's return.
+                            </div>
+                        @elseif ($lastReceiptNumber)
+                            <div class="text-[11px] font-mono text-slate-800 font-semibold mt-0.5">Reference:
+                                {{ $lastReceiptNumber }}
+                            </div>
+                        @endif
+                    </div>
+                    <button wire:click="closeReceiptModal" type="button"
+                        class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer print:hidden no-print"
+                        aria-label="Close receipt">×</button>
+                </div>
+
+                <!-- Receipt Paper Simulation -->
+                <pre id="printable-pos-receipt" data-print-document="modal"
+                    class="m-0 bg-amber-50/40 p-4 rounded-xl border border-dashed border-slate-300 font-mono text-[11px] leading-relaxed whitespace-pre overflow-x-auto shadow-inner text-slate-800 max-h-96 print:max-h-none print:overflow-visible print:border-none print:bg-white print:text-black print:p-0 print:w-fit print:max-w-full print:mx-auto print:text-[9.5pt] print:leading-snug">{{ $receiptContent }}</pre>
+
+                <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-2.5 print:hidden no-print">
+                    <button onclick="window.print()" type="button"
+                        class="w-full sm:flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer print:hidden no-print">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span>{{ $isShiftHandoverSlip ? 'Print Handover Slip [P]' : ($isTableCheckReceipt ? 'Print Table Check [P]' : 'Print Receipt [P]') }}</span>
+                    </button>
+                    
+                    @if ($isTableCheckReceipt && !empty($cart) && !$activeHeldTabId)
+                        <button wire:click="holdCurrentCart" type="button"
+                            class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer print:hidden no-print"
+                            title="Park this order as a running tab while bearer is at the table">
+                            <span>🍸 Park Tab</span>
+                        </button>
+                    @endif
+
+                    <button wire:click="closeReceiptModal" type="button"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer print:hidden no-print">
+                        {{ $isShiftHandoverSlip ? 'Close & Finish [Esc]' : ($isTableCheckReceipt ? 'Back to POS [Esc]' : 'Done / Next [Esc]') }}
+                    </button>
+                </div>
             </div>
         </div>
     @endif
@@ -2736,6 +2795,205 @@
     @endif
 
     <!-- ========================================== -->
+    <!-- MODAL 10: Shift Activity & Summary Modal   -->
+    <!-- ========================================== -->
+    @if ($showShiftSummaryModal && $currentShiftDetails)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
+            role="dialog" aria-modal="true" aria-labelledby="shift-summary-dialog-title"
+            @click.self="$wire.closeShiftSummaryModal()"
+            @keydown.escape.window="$wire.closeShiftSummaryModal()">
+            <div class="bg-white border-2 border-amber-500 rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl relative text-slate-900 max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex items-start justify-between border-b border-slate-200 pb-3 mb-4 shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-xl font-bold shadow-sm">
+                            📊
+                        </span>
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-wider text-amber-700">Official Cash Handover &amp; Performance</span>
+                            <h3 id="shift-summary-dialog-title" class="text-lg font-black text-slate-900 mt-0.5">
+                                Shift Activity &amp; Summary
+                            </h3>
+                            <div class="text-xs text-slate-500 flex flex-wrap items-center gap-2 mt-0.5 font-sans">
+                                <span class="font-mono font-bold text-slate-800">{{ $currentShiftDetails['shift']['shift_number'] }}</span>
+                                <span>•</span>
+                                <span>{{ $currentShiftDetails['shift']['counter_name'] }}</span>
+                                <span>•</span>
+                                <span>Cashier: <strong class="text-slate-700">{{ $currentShiftDetails['shift']['cashier_name'] }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button wire:click="closeShiftSummaryModal" type="button"
+                        class="text-slate-400 hover:text-slate-700 text-xl font-bold px-2 py-1 focus:outline-none cursor-pointer">×</button>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="overflow-y-auto space-y-4 pr-1 flex-1 text-xs">
+                    <!-- KPI Cards Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block">Billed Turnover</span>
+                            <span class="text-base font-extrabold font-mono text-slate-900 block mt-0.5">
+                                ₹{{ number_format($currentShiftDetails['totals']['billed_turnover_paise'] / 100, 2) }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 block">{{ $currentShiftDetails['shift']['total_bills'] }} paid bills</span>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                            <span class="text-[10px] uppercase font-bold text-emerald-800 block">Expected Cash</span>
+                            <span class="text-base font-extrabold font-mono text-emerald-900 block mt-0.5">
+                                ₹{{ number_format($currentShiftDetails['drawer']['expected_cash_paise'] / 100, 2) }}
+                            </span>
+                            <span class="text-[10px] text-emerald-700 block">Float + Cash Sales</span>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-blue-50/70 border border-blue-200">
+                            <span class="text-[10px] uppercase font-bold text-blue-800 block">UPI / Digital</span>
+                            <span class="text-base font-extrabold font-mono text-blue-900 block mt-0.5">
+                                ₹{{ number_format($currentShiftDetails['tenders']['digital']['amount_paise'] / 100, 2) }}
+                            </span>
+                            <span class="text-[10px] text-blue-700 block">{{ $currentShiftDetails['tenders']['digital']['count'] }} transactions</span>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-200">
+                            <span class="text-[10px] uppercase font-bold text-amber-800 block">Prepaid Wallet</span>
+                            <span class="text-base font-extrabold font-mono text-amber-900 block mt-0.5">
+                                ₹{{ number_format($currentShiftDetails['tenders']['prepaid']['amount_paise'] / 100, 2) }}
+                            </span>
+                            <span class="text-[10px] text-amber-700 block">{{ $currentShiftDetails['tenders']['prepaid']['count'] }} debits</span>
+                        </div>
+                    </div>
+
+                    <!-- Drawer Lifecycle & Reconciliation Box -->
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Physical Cash Drawer Lifecycle</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $currentShiftDetails['drawer']['discrepancy_status'] === 'balanced' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300' }}">
+                                {{ ucfirst($currentShiftDetails['drawer']['discrepancy_status']) }}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 border-t border-slate-200/80">
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">Opening Float:</span>
+                                <span class="font-mono font-bold text-slate-800">₹{{ number_format($currentShiftDetails['drawer']['opening_float_paise'] / 100, 2) }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">+ Cash Sales:</span>
+                                <span class="font-mono font-bold text-emerald-700">+₹{{ number_format($currentShiftDetails['drawer']['cash_sales_paise'] / 100, 2) }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">+ Wallet Cash Top-ups:</span>
+                                <span class="font-mono font-bold text-emerald-700">+₹{{ number_format($currentShiftDetails['drawer']['cash_topups_paise'] / 100, 2) }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">- Cash Drops / Safe:</span>
+                                <span class="font-mono font-bold text-rose-700">-₹{{ number_format($currentShiftDetails['drawer']['cash_drops_paise'] / 100, 2) }}</span>
+                            </div>
+                        </div>
+                        @if ($currentShiftDetails['drawer']['closing_cash_counted_paise'] !== null)
+                            <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                                <span class="font-semibold text-slate-600">Counted Cash at Closing:</span>
+                                <span class="font-mono font-bold text-slate-900">₹{{ number_format($currentShiftDetails['drawer']['closing_cash_counted_paise'] / 100, 2) }}</span>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Department Splits & Waiter Tips -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block">Contractor Food vs Bar Split</span>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Contractor Food Turnover:</span>
+                                <span class="font-mono font-bold text-slate-900">₹{{ number_format($currentShiftDetails['contractor_turnover']['food_contractor_paise'] / 100, 2) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Club Bar Turnover:</span>
+                                <span class="font-mono font-bold text-slate-900">₹{{ number_format($currentShiftDetails['contractor_turnover']['bar_paise'] / 100, 2) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-1.5">
+                            <span class="text-[10px] uppercase font-bold text-amber-800 block">Duty Gratuity &amp; Top-ups</span>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Waiter &amp; Bearer Tips:</span>
+                                <span class="font-mono font-bold text-amber-900">
+                                    ₹{{ number_format($currentShiftDetails['tips']['total_tip_paise'] / 100, 2) }}
+                                    <span class="text-[10px] font-normal text-slate-500">({{ $currentShiftDetails['tips']['count'] }})</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600">Member Wallet Recharges:</span>
+                                <span class="font-mono font-bold text-slate-900">
+                                    ₹{{ number_format($currentShiftDetails['wallet_topups']['total_amount_paise'] / 100, 2) }}
+                                    <span class="text-[10px] font-normal text-slate-500">({{ $currentShiftDetails['wallet_topups']['count'] }})</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itemized Recent Bills in Shift -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-800">Recent Shift Bills ({{ $currentShiftDetails['bills']->count() }})</span>
+                            <span class="text-[10px] text-slate-400">Chronological activity</span>
+                        </div>
+                        @if ($currentShiftDetails['bills']->isEmpty())
+                            <div class="p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-xs italic border border-slate-200">
+                                No bills have been finalized during this shift yet.
+                            </div>
+                        @else
+                            <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 text-[10px] uppercase">
+                                        <tr>
+                                            <th class="p-2">Bill #</th>
+                                            <th class="p-2">Customer</th>
+                                            <th class="p-2">Tender</th>
+                                            <th class="p-2 text-right">Net Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 font-sans">
+                                        @foreach ($currentShiftDetails['bills']->take(15) as $b)
+                                            <tr class="hover:bg-slate-50">
+                                                <td class="p-2 font-mono font-bold text-slate-800">{{ $b->bill_number }}</td>
+                                                <td class="p-2 text-slate-700 truncate max-w-[120px]">{{ $b->customer_display_name }}</td>
+                                                <td class="p-2">
+                                                    @php
+                                                        $tType = $b->tender_type?->value ?? ($b->tender_type ?: 'paid');
+                                                    @endphp
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase {{ $tType === 'cash' ? 'bg-emerald-100 text-emerald-800' : ($tType === 'prepaid' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800') }}">
+                                                        {{ $tType }}
+                                                    </span>
+                                                </td>
+                                                <td class="p-2 font-mono font-bold text-right text-slate-900">₹{{ number_format($b->net_amount_paise / 100, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Footer Action Buttons -->
+                <div class="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-slate-200 shrink-0">
+                    <button wire:click="closeShiftSummaryModal" type="button"
+                        class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold focus:outline-none cursor-pointer">
+                        Close [Esc]
+                    </button>
+                    <button wire:click="printCurrentShiftSummarySlip" type="button"
+                        class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span>Print Handover Slip [P]</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================== -->
     <!-- DOCKED CONTEXTUAL BOTTOM STATUS BAR -->
     <!-- ========================================== -->
     <footer
@@ -2760,6 +3018,11 @@
                         <strong
                             class="font-mono text-slate-800 font-bold">₹{{ number_format($activeShift->calculateExpectedCashPaise() / 100, 2) }}</strong>
                     </span>
+                    <button type="button" wire:click="openShiftSummaryModal"
+                        class="ml-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-sans font-semibold transition-colors cursor-pointer"
+                        title="View Shift Activity & Summary">
+                        <span>📊 Shift Summary</span>
+                    </button>
                     <button type="button" @click="showCloseShiftModal = true"
                         class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 border border-slate-300 hover:border-rose-300 text-[11px] font-sans font-semibold transition-colors cursor-pointer"
                         title="Reconcile and close counter shift">

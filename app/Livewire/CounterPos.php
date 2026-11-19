@@ -132,6 +132,11 @@ class CounterPos extends Component
     public ?string $lastReceiptNumber = null;
     public bool $resetCustomerOnReceiptClose = false;
     public bool $isTableCheckReceipt = false;
+    public bool $isShiftHandoverSlip = false;
+
+    // Shift Handover & Summary state
+    public bool $showShiftSummaryModal = false;
+    public ?array $currentShiftDetails = null;
 
     // Notifications
     public ?string $successMessage = null;
@@ -242,7 +247,18 @@ class CounterPos extends Component
                 notes: $this->shiftNotes
             );
 
-            $this->successMessage = "Shift {$closed->shift_number} closed. Expected: ₹" . number_format($closed->expected_cash_paise / 100, 2) . ", Counted: ₹" . number_format($closed->closing_cash_counted_paise / 100, 2) . ", Discrepancy: ₹" . number_format($closed->discrepancy_paise / 100, 2);
+            // Generate official Shift Handover Slip for physical cash bag
+            $printer = app(\App\Domain\Integrations\Contracts\ReceiptPrinterInterface::class);
+            $shiftDetails = $shiftService->getShiftTransactionDetails($closed);
+            $slipContent = $printer->render80mmShiftHandoverSlip($shiftDetails);
+
+            $this->receiptContent = $slipContent;
+            $this->lastReceiptNumber = $closed->shift_number;
+            $this->isTableCheckReceipt = false;
+            $this->isShiftHandoverSlip = true;
+            $this->showReceiptModal = true;
+
+            $this->successMessage = "Shift {$closed->shift_number} closed. Expected: ₹" . number_format($closed->expected_cash_paise / 100, 2) . ", Counted: ₹" . number_format($closed->closing_cash_counted_paise / 100, 2) . ", Discrepancy: ₹" . number_format($closed->discrepancy_paise / 100, 2) . ". Shift Handover Slip is ready to print.";
             $this->activeShift = null;
             $this->closingCashCounted = null;
             $this->shiftNotes = null;
@@ -252,6 +268,40 @@ class CounterPos extends Component
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
         }
+    }
+
+    public function openShiftSummaryModal(ShiftService $shiftService): void
+    {
+        $this->clearMessages();
+
+        if (!$this->activeShift) {
+            $this->errorMessage = 'No active shift to summarize.';
+            return;
+        }
+
+        $this->currentShiftDetails = $shiftService->getShiftTransactionDetails($this->activeShift);
+        $this->showShiftSummaryModal = true;
+    }
+
+    public function closeShiftSummaryModal(): void
+    {
+        $this->showShiftSummaryModal = false;
+        $this->currentShiftDetails = null;
+    }
+
+    public function printCurrentShiftSummarySlip(ShiftService $shiftService, ReceiptPrinterInterface $printer): void
+    {
+        if (!$this->activeShift) {
+            return;
+        }
+
+        $details = $shiftService->getShiftTransactionDetails($this->activeShift);
+        $this->receiptContent = $printer->render80mmShiftHandoverSlip($details);
+        $this->lastReceiptNumber = $this->activeShift->shift_number;
+        $this->isTableCheckReceipt = false;
+        $this->isShiftHandoverSlip = true;
+        $this->showShiftSummaryModal = false;
+        $this->showReceiptModal = true;
     }
 
     // ==========================================
@@ -1791,6 +1841,7 @@ class CounterPos extends Component
         $this->showReceiptModal = false;
         $this->receiptContent = '';
         $this->isTableCheckReceipt = false;
+        $this->isShiftHandoverSlip = false;
         if ($this->resetCustomerOnReceiptClose) {
             $this->resetWorkspaceToNewBill();
             $this->resetCustomerOnReceiptClose = false;

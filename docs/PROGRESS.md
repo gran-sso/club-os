@@ -3125,7 +3125,43 @@ For environments where full browser automation is unavailable, operators should 
   - Feature test [`tests/Feature/WaiterAttributionAndUnsettledBillsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/WaiterAttributionAndUnsettledBillsTest.php):
     - `test_accompanying_guest_name_is_captured_on_bill_tab_and_receipt`: Verified tab parking, tab loading, table check printing, cash checkout, bill persistence, and 80mm thermal receipt rendering (8 passed, 90 assertions, 0 errors).
   - Feature tests [`CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php) & [`CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php): 16 passed, 84 assertions, 0 errors.
-  - Recompiled production frontend assets via `npm run build` (`public/build/assets/app-D9-1-wR9.css`).
+  - Recompiled production frontend assets via `npm run build`.
+
+## Shift-Based Transaction Details, Cash Handover Slip & Mid-Shift Summary (Delivered)
+
+- **Requirements & Core Value:**
+  - Cashiers and club supervisors require real-time and end-of-shift visibility into financial transactions, tender breakdowns, physical cash drawer movements, and cashier reconciliation.
+  - Required professional, user-friendly labels (strictly avoiding technical jargon such as "Shift Z-Report" or "X-Report").
+  - Mobile-first, responsive layouts across touchscreens, tablets, and desktop displays.
+- **Architectural Implementation:**
+  1. **Domain Calculation Engine (`ShiftService.php`)**:
+     - Added `getShiftTransactionDetails(Shift $shift): array` method.
+     - Calculates integer paise totals for:
+       - **Billed Sales Turnover:** Total paid bills, gross amount, taxes, net amount, and separate contractor food turnover vs. club bar sales.
+       - **Tender Breakdown:** Physical cash sales, digital UPI / card terminal collections, and member prepaid wallet redemptions.
+       - **Prepaid Wallet Top-Ups:** Member wallet recharges collected during the shift (cash vs. digital).
+       - **Physical Cash Drawer Lifecycle:** Opening float + cash sales + cash wallet top-ups + float additions - safe cash drops = expected cash in till. Calculates counted cash, discrepancy (shortage / surplus), and discrepancy status.
+       - **Staff / Waiter Gratuity:** Waiter and bearer tips collected (Account 2040) per staff member.
+       - **Itemized Records:** Collections of bills, top-up receipts, and cash movements.
+  2. **80mm Thermal Cash Handover Slip (`ThermalReceiptPrinter.php` & `ReceiptPrinterInterface.php`)**:
+     - Implemented `render80mmShiftHandoverSlip(array $details): string`.
+     - Standard 48-column thermal slip for cash pouch attachment: header, turnover breakdown, physical drawer reconciliation, and dual signature lines (*Outgoing Cashier* and *Relieving Staff / Mgr*).
+  3. **Administrative Shifts Resource Table (`ShiftsTable.php`)**:
+     - Added **Shift Activity & Summary** modal action displaying responsive KPI cards, drawer lifecycle, waiter tips, and tabbed itemized lists for bills, wallet top-ups, and cash movements (`shift-summary-modal.blade.php`).
+     - Added **Print Handover Slip** action with live 80mm thermal slip preview and 1-click `window.print()` (`shift-slip-modal.blade.php`).
+  4. **Counter POS Integration (`CounterPos.php` & `counter-pos.blade.php`)**:
+     - Added `📊 Shift Summary` action in the docked footer for live mid-shift inspection and slip printing.
+     - Added a 4-card quick turnover preview (billed sales, cash sales, UPI/card, prepaid debits) inside the Close Shift modal before entering counted cash.
+     - Automatically renders and opens the official 80mm Shift Handover Slip upon shift closure for instant thermal printing and physical cash pouch attachment.
+- **Verification:**
+  - Dedicated test suite [`tests/Feature/ShiftTransactionDetailsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/ShiftTransactionDetailsTest.php):
+    - `test_shift_service_calculates_comprehensive_transaction_details_accurately`: Verified integer paise calculations for billed turnover, cash/UPI/prepaid tenders, drawer reconciliation, and contractor food vs. bar split.
+    - `test_thermal_receipt_printer_renders_professional_shift_handover_slip`: Verified 80mm thermal slip formatting, professional labels, and zero technical jargon.
+    - `test_counter_pos_livewire_can_open_and_close_shift_summary_modal_and_print_slip`: Verified opening/closing the shift summary modal, printing mid-shift slips, and automatic handover slip generation on shift close.
+    - `test_admin_can_view_shift_summary_modal_and_print_slip_action_on_shifts_table`: Verified Filament `ShiftsTable` actions.
+    - Result: 4 passed, 42 assertions, 0 errors.
+  - Full POS test suites [`tests/Feature/CounterPosTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosTest.php) & [`tests/Feature/CounterPosHeldTabsTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/CounterPosHeldTabsTest.php): 16 passed, 84 assertions, 0 errors.
+  - Built production assets with `npm run build`.
 
 
 
