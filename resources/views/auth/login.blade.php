@@ -200,10 +200,6 @@
                             <p class="text-xs text-slate-500 text-center font-medium">
                                 Exclusively for Members &amp; Authorised Staff
                             </p>
-
-                            <p class="text-[11px] text-slate-400 text-center">
-                                Routes automatically to Admin Console, Guest Rooms (101–105), or Counter POS based on your role.
-                            </p>
                         </form>
 
                         @if(!app()->environment('production'))
