@@ -9,7 +9,7 @@
     $memberHasError = $errors->any() && $errorPortal === 'member';
 @endphp
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<html lang="en" class="h-full bg-slate-50 text-slate-800">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,32 +25,32 @@
         body { font-family: 'Outfit', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* Selected tab indicator uses both tint and a structural underline so state
-           does not depend on color alone (WCAG 1.4.1 / forced-colors). */
+        /* Selected tab indicator in light theme: crisp white pill with amber underline */
         [role="tab"] {
             position: relative;
         }
 
         [role="tab"][aria-selected="true"] {
-            color: #fbbf24;
-            background-color: rgb(30 41 59 / 0.9);
+            color: #b45309; /* amber-700 */
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
         }
 
         [role="tab"][aria-selected="true"]::after {
             content: "";
             position: absolute;
-            inset: auto 0.875rem 0.25rem;
-            border-block-end: 3px solid currentColor;
+            inset: auto 1rem 0.25rem;
+            border-block-end: 2.5px solid #d97706; /* amber-600 */
             border-radius: 9999px;
         }
 
         [role="tab"][aria-selected="false"] {
-            color: #94a3b8;
+            color: #64748b; /* slate-500 */
             background-color: transparent;
         }
 
         [role="tab"][aria-selected="false"]:hover {
-            color: #e2e8f0;
+            color: #0f172a; /* slate-900 */
         }
 
         .login-input {
@@ -58,45 +58,45 @@
         }
     </style>
 </head>
-<body class="min-h-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 antialiased selection:bg-amber-500 selection:text-slate-950">
+<body class="min-h-full flex items-center justify-center bg-gradient-to-br from-slate-100 via-amber-50/40 to-slate-100 p-4 antialiased selection:bg-amber-500 selection:text-white">
     <main class="w-full max-w-md my-auto">
         <!-- Brand Header -->
         <div class="text-center mb-7">
-            <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 items-center justify-center font-black text-2xl text-slate-950 shadow-lg shadow-amber-500/25 mb-3.5">
+            <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 items-center justify-center font-black text-2xl text-slate-950 shadow-md shadow-amber-500/20 mb-3.5">
                 {{ config('club.short_name', 'MC') }}
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{{ config('club.name', 'Malabar Club') }}</h1>
-            <p class="text-xs text-slate-400 mt-1">{{ config('club.location', 'Vadakkencherry, Kerala') }} &bull; Club Access Terminal</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">{{ config('club.name', 'Malabar Club') }}</h1>
+            <p class="text-xs text-slate-500 mt-1">{{ config('club.location', 'Vadakkencherry, Kerala') }} &bull; Club Access Terminal</p>
         </div>
 
         <!-- Unified Login Card -->
         <div id="login-portal-tabs"
              data-initial-tab="{{ $initialTab }}"
              data-force-tab="{{ $forceInitialTab ? '1' : '0' }}"
-             class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+             class="bg-white/95 border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 backdrop-blur-md">
 
             @if(session('status'))
-                <div role="status" class="mb-5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+                <div role="status" class="mb-5 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium">
                     {{ session('status') }}
                 </div>
             @endif
 
             @if(session('info'))
-                <div role="status" class="mb-5 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-xs text-sky-300">
+                <div role="status" class="mb-5 p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-sky-900 font-medium">
                     {{ session('info') }}
                 </div>
             @endif
 
             <!-- Segmented Portal Switcher -->
             <div role="tablist" aria-label="Sign in portal"
-                 class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-950 border border-slate-800 mb-6">
+                 class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-100 border border-slate-200/80 mb-6">
                 <button type="button"
                         role="tab"
                         id="tab-staff"
                         data-tab-target="staff"
                         aria-selected="{{ $initialTab === 'staff' ? 'true' : 'false' }}"
                         tabindex="{{ $initialTab === 'staff' ? '0' : '-1' }}"
-                        class="portal-tab min-h-12 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                        class="portal-tab min-h-12 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                     Staff Terminal
                 </button>
                 <button type="button"
@@ -105,7 +105,7 @@
                         data-tab-target="member"
                         aria-selected="{{ $initialTab === 'member' ? 'true' : 'false' }}"
                         tabindex="{{ $initialTab === 'member' ? '0' : '-1' }}"
-                        class="portal-tab min-h-12 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                        class="portal-tab min-h-12 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                     Member Portal
                 </button>
             </div>
@@ -120,8 +120,8 @@
                     <div class="space-y-4">
                         @if ($staffHasError)
                             <div id="staff-form-error" role="alert" aria-live="polite"
-                                 class="p-4 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2.5">
-                                <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                 class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5">
+                                <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>
                                 <span>{{ $errors->first() }}</span>
@@ -134,8 +134,8 @@
                             <h2 id="staff-form-heading" class="sr-only">Staff Terminal Sign In</h2>
 
                             <div>
-                                <label for="staff-login" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                                    Staff Username / ID <span aria-hidden="true" class="text-amber-400">*</span>
+                                <label for="staff-login" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                    Staff Username / ID <span aria-hidden="true" class="text-amber-600">*</span>
                                 </label>
                                 <input type="text"
                                        id="staff-login"
@@ -148,14 +148,14 @@
                                        spellcheck="false"
                                        enterkeyhint="next"
                                        @if($staffHasError) aria-invalid="true" aria-describedby="staff-form-error" @endif
-                                       class="login-input w-full min-h-12 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 transition-colors shadow-2xs"
+                                       class="login-input w-full min-h-12 px-4 py-3 bg-slate-50/80 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 transition-colors shadow-2xs"
                                        placeholder="e.g. admin, cashier1, or EMP-104">
                                 <p class="text-[11px] text-slate-500 mt-1">Sign in with your assigned staff username or employee ID.</p>
                             </div>
 
                             <div>
-                                <label for="staff-password" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                                    Password <span aria-hidden="true" class="text-amber-400">*</span>
+                                <label for="staff-password" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                    Password <span aria-hidden="true" class="text-amber-600">*</span>
                                 </label>
                                 <div class="relative">
                                     <input type="password"
@@ -164,16 +164,16 @@
                                            required
                                            autocomplete="current-password"
                                            enterkeyhint="done"
-                                           class="login-input w-full min-h-12 pl-4 pr-14 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 transition-colors shadow-2xs"
+                                           class="login-input w-full min-h-12 pl-4 pr-14 py-3 bg-slate-50/80 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 transition-colors shadow-2xs"
                                            placeholder="••••••••••••">
                                     <button type="button"
                                             data-toggle-password="staff-password"
                                             aria-pressed="false"
                                             aria-label="Show password"
                                             aria-describedby="staff-password-warning"
-                                            class="absolute inset-y-0 right-0 min-w-12 px-3 inline-flex items-center justify-center text-slate-400 hover:text-amber-400 rounded-r-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                                            class="absolute inset-y-0 right-0 min-w-12 px-3 inline-flex items-center justify-center text-slate-400 hover:text-amber-600 rounded-r-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                                         <span data-eye-show class="text-[11px] font-bold uppercase tracking-wide">Show</span>
-                                        <span data-eye-hide class="hidden text-[11px] font-bold uppercase tracking-wide text-amber-400">Hide</span>
+                                        <span data-eye-hide class="hidden text-[11px] font-bold uppercase tracking-wide text-amber-600">Hide</span>
                                     </button>
                                 </div>
                                 <span id="staff-password-warning" class="sr-only">Warning: this will display your password on the screen.</span>
@@ -185,47 +185,47 @@
                                            id="staff-remember"
                                            name="remember"
                                            value="1"
-                                           class="w-5 h-5 rounded bg-slate-950 border-slate-700 accent-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 cursor-pointer">
-                                    <label for="staff-remember" class="text-slate-300 select-none cursor-pointer py-1.5">
+                                           class="w-5 h-5 rounded bg-white border-slate-300 accent-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 cursor-pointer">
+                                    <label for="staff-remember" class="text-slate-600 select-none cursor-pointer py-1.5">
                                         Remember this terminal session
                                     </label>
                                 </div>
                             </div>
 
                             <button type="submit"
-                                    class="w-full min-h-12 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md shadow-amber-500/20 active:scale-98 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                                    class="w-full min-h-12 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md shadow-amber-500/20 active:scale-98 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                                 Sign In to Terminal
                             </button>
 
-                            <p class="text-[11px] text-slate-400 text-center">
+                            <p class="text-[11px] text-slate-500 text-center">
                                 Routes automatically to Admin Console, Guest Rooms (101–105), or Counter POS based on your role.
                             </p>
                         </form>
 
                         @if(!app()->environment('production'))
                             <!-- Quick Demo Accounts (Development & Staging Only) -->
-                            <div class="mt-5 pt-5 border-t border-slate-800">
+                            <div class="mt-5 pt-5 border-t border-slate-100">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">Development Staff Quick Fill</p>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
                                     <button type="button" data-demo-staff="admin"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">Admin</div>
-                                        <div class="text-[10px] text-slate-400">Admin Console</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">Admin</div>
+                                        <div class="text-[10px] text-slate-500">Admin Console</div>
                                     </button>
                                     <button type="button" data-demo-staff="manager"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">Manager</div>
-                                        <div class="text-[10px] text-slate-400">V. Jayaprakash</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">Manager</div>
+                                        <div class="text-[10px] text-slate-500">V. Jayaprakash</div>
                                     </button>
                                     <button type="button" data-demo-staff="reception"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">Reception</div>
-                                        <div class="text-[10px] text-slate-400">Guest Rooms (101–105)</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">Reception</div>
+                                        <div class="text-[10px] text-slate-500">Guest Rooms (101–105)</div>
                                     </button>
                                     <button type="button" data-demo-staff="cashier1"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">Cashier 1</div>
-                                        <div class="text-[10px] text-slate-400">Counter POS</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">Cashier 1</div>
+                                        <div class="text-[10px] text-slate-500">Counter POS</div>
                                     </button>
                                 </div>
                             </div>
@@ -241,8 +241,8 @@
                     <div class="space-y-4">
                         @if ($memberHasError)
                             <div id="member-form-error" role="alert" aria-live="polite"
-                                 class="p-4 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2.5">
-                                <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                 class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5">
+                                <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>
                                 <span>{{ $errors->first() }}</span>
@@ -255,8 +255,8 @@
                             <h2 id="member-form-heading" class="sr-only">Member Portal Sign In</h2>
 
                             <div>
-                                <label for="member-login" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                                    Membership Number or Mobile <span aria-hidden="true" class="text-amber-400">*</span>
+                                <label for="member-login" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                                    Membership Number or Mobile <span aria-hidden="true" class="text-amber-600">*</span>
                                 </label>
                                 <input type="text"
                                        id="member-login"
@@ -269,16 +269,16 @@
                                        spellcheck="false"
                                        enterkeyhint="next"
                                        @if($memberHasError && $errors->has('login')) aria-invalid="true" aria-describedby="member-form-error" @endif
-                                       class="login-input w-full min-h-12 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 transition-colors shadow-2xs"
+                                       class="login-input w-full min-h-12 px-4 py-3 bg-slate-50/80 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 transition-colors shadow-2xs"
                                        placeholder="e.g. MC-001 or 9895011111">
                             </div>
 
                             <div>
                                 <div class="flex items-center justify-between mb-1.5">
-                                    <label for="member-password" class="text-xs font-bold uppercase tracking-wider text-slate-300">
-                                        Security PIN / Password <span aria-hidden="true" class="text-amber-400">*</span>
+                                    <label for="member-password" class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Security PIN / Password <span aria-hidden="true" class="text-amber-600">*</span>
                                     </label>
-                                    <a href="{{ route('member.activate') }}" class="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors py-1 px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 rounded">
+                                    <a href="{{ route('member.activate') }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors py-1 px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 rounded">
                                         Reset PIN?
                                     </a>
                                 </div>
@@ -290,16 +290,16 @@
                                            autocomplete="current-password"
                                            enterkeyhint="done"
                                            @if($memberHasError && $errors->has('password')) aria-invalid="true" aria-describedby="member-form-error" @endif
-                                           class="login-input w-full min-h-12 pl-4 pr-14 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 transition-colors shadow-2xs"
+                                           class="login-input w-full min-h-12 pl-4 pr-14 py-3 bg-slate-50/80 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 transition-colors shadow-2xs"
                                            placeholder="Enter your security PIN or password">
                                     <button type="button"
                                             data-toggle-password="member-password"
                                             aria-pressed="false"
                                             aria-label="Show password"
                                             aria-describedby="member-password-warning"
-                                            class="absolute inset-y-0 right-0 min-w-12 px-3 inline-flex items-center justify-center text-slate-400 hover:text-amber-400 rounded-r-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                                            class="absolute inset-y-0 right-0 min-w-12 px-3 inline-flex items-center justify-center text-slate-400 hover:text-amber-600 rounded-r-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                                         <span data-eye-show class="text-[11px] font-bold uppercase tracking-wide">Show</span>
-                                        <span data-eye-hide class="hidden text-[11px] font-bold uppercase tracking-wide text-amber-400">Hide</span>
+                                        <span data-eye-hide class="hidden text-[11px] font-bold uppercase tracking-wide text-amber-600">Hide</span>
                                     </button>
                                 </div>
                                 <span id="member-password-warning" class="sr-only">Warning: this will display your password on the screen.</span>
@@ -311,8 +311,8 @@
                                            id="member-remember"
                                            name="remember"
                                            value="1"
-                                           class="w-5 h-5 rounded bg-slate-950 border-slate-700 accent-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 cursor-pointer">
-                                    <label for="member-remember" class="text-slate-300 select-none cursor-pointer py-1.5">
+                                           class="w-5 h-5 rounded bg-white border-slate-300 accent-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 cursor-pointer">
+                                    <label for="member-remember" class="text-slate-600 select-none cursor-pointer py-1.5">
                                         Stay signed in
                                     </label>
                                 </div>
@@ -320,33 +320,33 @@
                             </div>
 
                             <button type="submit"
-                                    class="w-full min-h-12 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md shadow-amber-500/20 active:scale-98 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
+                                    class="w-full min-h-12 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md shadow-amber-500/20 active:scale-98 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                                 Sign In to Member Portal
                             </button>
                         </form>
 
-                        <div class="pt-4 border-t border-slate-800/80 text-center space-y-2">
-                            <p class="text-xs text-slate-400">
+                        <div class="pt-4 border-t border-slate-100 text-center space-y-2">
+                            <p class="text-xs text-slate-500">
                                 First time accessing the portal?
-                                <a href="{{ route('member.activate') }}" class="font-bold text-amber-400 hover:text-amber-300 transition-colors underline decoration-amber-500/40 inline-block py-1 px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 rounded">
+                                <a href="{{ route('member.activate') }}" class="font-bold text-amber-600 hover:text-amber-700 transition-colors underline decoration-amber-500/40 inline-block py-1 px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 rounded">
                                     Activate your account &amp; set PIN
                                 </a>
                             </p>
                         </div>
 
                         @if(!app()->environment('production'))
-                            <div class="pt-3 border-t border-slate-800">
+                            <div class="pt-3 border-t border-slate-100">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 text-center">Development Member Quick Fill</p>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
                                     <button type="button" data-demo-member="MC-001"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">MC-001</div>
-                                        <div class="text-[10px] text-slate-400">Active Member</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">MC-001</div>
+                                        <div class="text-[10px] text-slate-500">Active Member</div>
                                     </button>
                                     <button type="button" data-demo-member="MC-002"
-                                        class="min-h-12 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 hover:border-amber-500/50 text-slate-300 border border-slate-800 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">
-                                        <div class="font-bold text-amber-400">MC-002</div>
-                                        <div class="text-[10px] text-slate-400">Active Member</div>
+                                        class="min-h-12 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/70 hover:border-amber-300 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                                        <div class="font-bold text-amber-700">MC-002</div>
+                                        <div class="text-[10px] text-slate-500">Active Member</div>
                                     </button>
                                 </div>
                             </div>
@@ -356,11 +356,11 @@
             </div>
         </div>
 
-        <div class="text-center mt-6 text-[11px] text-slate-400 font-mono space-y-1.5">
-            <div>Secure Member Ledger &bull; Strict No-Credit Policy Enforced</div>
-            <div class="text-slate-500 font-sans text-xs">
+        <div class="text-center mt-6 text-xs text-slate-500 space-y-1.5">
+            <div class="font-medium text-slate-600">Exclusively for Members &amp; Authorised Staff</div>
+            <div class="text-[11px] text-slate-400">
                 <span>Powered by</span>
-                <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors">Skysys</a>
+                <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
             </div>
         </div>
     </main>

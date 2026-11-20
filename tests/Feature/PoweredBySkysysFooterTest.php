@@ -20,6 +20,7 @@ class PoweredBySkysysFooterTest extends TestCase
     {
         $response = $this->get('/login');
         $response->assertStatus(200);
+        $response->assertSee('Exclusively for Members &amp; Authorised Staff', false);
         $response->assertSee('Powered by', false);
         $response->assertSee('href="https://www.skysysonline.com/"', false);
         $response->assertSee('target="_blank"', false);

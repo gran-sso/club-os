@@ -3227,6 +3227,21 @@ For environments where full browser automation is unavailable, operators should 
   - Regression test suite (`SecurityHardeningTest`, `UnifiedLoginTest`, `MemberPortalTest`, `CounterPosTest`): 35 passed, 290 assertions, 0 errors.
   - Fresh frontend assets built with `npm run build` (vite v8.3.4, 442ms).
 
+### 2026-11-20: Unified Login Light Theme & Copy Refinement
+
+- **Objective:** Convert the unified login interface from dark slate to a clean, institutional light theme and update the bottom copy to "Exclusively for Members & Authorised Staff".
+- **Implementation:**
+  1. Updated [`resources/views/auth/login.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/login.blade.php):
+     - Converted background from dark slate gradient to crisp `slate-100` / warm `amber-50` backdrop.
+     - Redesigned card container into clean `bg-white/95 border-slate-200/90 shadow-xl shadow-slate-200/60`.
+     - Re-styled segmented tabs with an elevated white active tab pill, amber-600 indicator line, and dark slate inactive typography.
+     - Updated all form inputs to light theme (`bg-slate-50/80 border-slate-300` focused to white with amber border and accessible focus ring).
+     - Refreshed alerts (amber status, sky info, rose error) with high-contrast light borders and backgrounds.
+     - Updated footer copy to `"Exclusively for Members & Authorised Staff"` with the `"Powered by Skysys"` link below.
+- **Verification:**
+  - Full authentication test suite ([`tests/Feature/UnifiedLoginTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/UnifiedLoginTest.php), [`tests/Feature/PoweredBySkysysFooterTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/PoweredBySkysysFooterTest.php), [`tests/Feature/SecurityHardeningTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SecurityHardeningTest.php)): 18 tests passed, 171 assertions, 0 errors.
+  - Compiled Vite assets (`npm run build`).
+
 
 
 
