@@ -356,8 +356,12 @@
             </div>
         </div>
 
-        <div class="text-center mt-6 text-[11px] text-slate-400 font-mono">
-            Secure Member Ledger &bull; Strict No-Credit Policy Enforced
+        <div class="text-center mt-6 text-[11px] text-slate-400 font-mono space-y-1.5">
+            <div>Secure Member Ledger &bull; Strict No-Credit Policy Enforced</div>
+            <div class="text-slate-500 font-sans text-xs">
+                <span>Powered by</span>
+                <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors">Skysys</a>
+            </div>
         </div>
     </main>
 

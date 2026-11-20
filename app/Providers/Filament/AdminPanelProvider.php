@@ -57,6 +57,12 @@ class AdminPanelProvider extends PanelProvider
                     view('filament.components.pwa-mobile-nav')->render()
                 ),
             )
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn (): Htmlable => new \Illuminate\Support\HtmlString(
+                    view('filament.components.footer')->render()
+                ),
+            )
             ->navigationGroups([
                 'Operations & Front Desk',
                 'Membership & Guest Desk',

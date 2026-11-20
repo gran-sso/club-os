@@ -248,8 +248,12 @@
             </form>
         @endif
 
-        <div class="text-center text-xs text-slate-400">
-            Malabar Club &bull; Palakkad, Kerala &bull; Internal Secretariat System
+        <div class="text-center text-xs text-slate-400 space-y-1">
+            <div>Malabar Club &bull; Palakkad, Kerala &bull; Internal Secretariat System</div>
+            <div class="text-slate-500">
+                <span>Powered by</span>
+                <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors">Skysys</a>
+            </div>
         </div>
 
     </div>

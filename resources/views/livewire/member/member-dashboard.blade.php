@@ -1274,6 +1274,10 @@
                 <p class="text-[10px] text-center text-slate-500 font-mono">
                     {{ config('club.name', 'Malabar Club') }} &bull; Server-Authoritative Ledger System
                 </p>
+                <p class="text-[10px] text-center text-slate-500">
+                    <span>Powered by</span>
+                    <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-500 hover:text-amber-400 hover:underline transition-colors">Skysys</a>
+                </p>
             </div>
         </div>
     </dialog>

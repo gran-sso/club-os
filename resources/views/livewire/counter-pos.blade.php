@@ -669,6 +669,11 @@
                             class="px-1.5 py-0.5 rounded bg-white/80 text-slate-950 border border-amber-600 font-mono text-[11px] shadow-2xs font-bold">↵
                             Enter</kbd>
                     </button>
+
+                    <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+                        <span>Powered by</span>
+                        <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -3028,6 +3033,10 @@
                         title="Reconcile and close counter shift">
                         <span>Close Shift</span>
                     </button>
+                    <span class="hidden 2xl:inline-flex items-center gap-1 text-[11px] text-slate-400 font-sans border-l border-slate-200 pl-2">
+                        <span>Powered by</span>
+                        <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
+                    </span>
                 @else
                     <span
                         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-[11px] font-semibold">
@@ -3036,6 +3045,10 @@
                     </span>
                     <span class="text-slate-500 text-xs font-sans hidden sm:inline">Enter opening cash above to begin
                         counter billing</span>
+                    <span class="hidden lg:inline-flex items-center gap-1 text-[11px] text-slate-400 font-sans border-l border-slate-200 pl-2">
+                        <span>Powered by</span>
+                        <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
+                    </span>
                 @endif
             </div>
 

@@ -3204,6 +3204,30 @@ For environments where full browser automation is unavailable, operators should 
   - Shift and POS test suites: 12 passed, 96 assertions, 0 errors.
   - Assets compiled with `npm run build`.
 
+### 2026-11-20: Standardized "Powered by Skysys" Attribution Footer
+
+- **Objective:** Add uniform, responsive "Powered by Skysys" footer branding across all application viewports and public endpoints, with clickable link text on "Skysys" navigating to `https://www.skysysonline.com/` (`target="_blank" rel="noopener noreferrer"`).
+- **Implementation:**
+  1. **Filament Back-Office Admin (`/admin`):**
+     - Created [`resources/views/filament/components/footer.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/footer.blade.php) featuring institutional copyright, system identifier, and "Powered by [Skysys](https://www.skysysonline.com/)".
+     - Registered with `PanelsRenderHook::FOOTER` (`panels::footer`) in [`app/Providers/Filament/AdminPanelProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Providers/Filament/AdminPanelProvider.php).
+  2. **Unified Login Gateway (`/login` & `/`):**
+     - Updated [`resources/views/auth/login.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/login.blade.php) with the attribution footer positioned cleanly below the no-credit policy indicator.
+  3. **Staff Password Management Screens:**
+     - Updated [`resources/views/auth/change-password.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/change-password.blade.php) and [`resources/views/auth/forced-password-change.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/forced-password-change.blade.php).
+  4. **Member Portal (Desktop & Mobile):**
+     - Updated desktop layout in [`resources/views/layouts/member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/layouts/member.blade.php).
+     - Added attribution to the mobile `#member-more-sheet` drawer in [`resources/views/livewire/member/member-dashboard.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/member/member-dashboard.blade.php).
+  5. **Counter POS Terminal (`/pos`):**
+     - Added attribution to the docked bottom status bar and inside the Open Counter Shift gateway card in [`resources/views/livewire/counter-pos.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/livewire/counter-pos.blade.php).
+  6. **Public Welcome, Setup Wizard & Offline Shell:**
+     - Updated [`resources/views/welcome.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/welcome.blade.php), [`resources/views/setup/index.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/setup/index.blade.php), [`resources/views/setup/results.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/setup/results.blade.php), and [`public/offline.html`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/public/offline.html).
+- **Verification:**
+  - Dedicated automated test suite [`tests/Feature/PoweredBySkysysFooterTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/PoweredBySkysysFooterTest.php): 5 passed, 22 assertions, 0 errors.
+  - Regression test suite (`SecurityHardeningTest`, `UnifiedLoginTest`, `MemberPortalTest`, `CounterPosTest`): 35 passed, 290 assertions, 0 errors.
+  - Fresh frontend assets built with `npm run build` (vite v8.3.4, 442ms).
+
+
 
 
 

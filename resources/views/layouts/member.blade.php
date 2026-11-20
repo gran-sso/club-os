@@ -227,7 +227,14 @@
     <footer class="{{ $isAuthenticatedMember ? 'hidden md:block ' : '' }}mt-auto border-t border-slate-900 py-6 text-center text-xs text-slate-500 print:hidden no-print">
         <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px]">
             <span>&copy; {{ date('Y') }} {{ config('club.name', 'Malabar Club') }}, {{ config('club.location', 'Vadakkencherry, Kerala') }}. All rights reserved.</span>
-            <span class="text-slate-600 font-mono">Server-Authoritative Ledger System</span>
+            <div class="flex items-center gap-3">
+                <span class="text-slate-600 font-mono">Server-Authoritative Ledger System</span>
+                <span class="text-slate-700">•</span>
+                <span class="inline-flex items-center gap-1 text-slate-400">
+                    <span>Powered by</span>
+                    <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-500 hover:text-amber-400 hover:underline transition-colors">Skysys</a>
+                </span>
+            </div>
         </div>
     </footer>
 

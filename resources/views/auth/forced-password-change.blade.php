@@ -124,6 +124,11 @@
                 </form>
             </div>
         </div>
+
+        <div class="text-center mt-6 text-xs text-slate-500 font-sans">
+            <span>Powered by</span>
+            <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors">Skysys</a>
+        </div>
     </main>
 </body>
 </html>

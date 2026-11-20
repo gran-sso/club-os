@@ -192,7 +192,14 @@
     <footer class="border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span>© {{ date('Y') }} {{ config('club.name', 'Malabar Club') }}. {{ config('club.address', 'Vadakkencherry, Palakkad District, Kerala') }}. All rights reserved.</span>
-            <span class="font-mono text-[11px]">System Status: Online ({{ config('club.timezone', 'Asia/Kolkata') }})</span>
+            <div class="flex items-center gap-3">
+                <span class="font-mono text-[11px]">System Status: Online ({{ config('club.timezone', 'Asia/Kolkata') }})</span>
+                <span class="text-slate-700">•</span>
+                <span class="inline-flex items-center gap-1 text-slate-400">
+                    <span>Powered by</span>
+                    <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors">Skysys</a>
+                </span>
+            </div>
         </div>
     </footer>
 </body>
