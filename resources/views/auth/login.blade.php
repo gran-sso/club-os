@@ -197,7 +197,11 @@
                                 Sign In to Terminal
                             </button>
 
-                            <p class="text-[11px] text-slate-500 text-center">
+                            <p class="text-xs text-slate-500 text-center font-medium">
+                                Exclusively for Members &amp; Authorised Staff
+                            </p>
+
+                            <p class="text-[11px] text-slate-400 text-center">
                                 Routes automatically to Admin Console, Guest Rooms (101–105), or Counter POS based on your role.
                             </p>
                         </form>
@@ -323,6 +327,10 @@
                                     class="w-full min-h-12 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md shadow-amber-500/20 active:scale-98 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
                                 Sign In to Member Portal
                             </button>
+
+                            <p class="text-xs text-slate-500 text-center font-medium">
+                                Exclusively for Members &amp; Authorised Staff
+                            </p>
                         </form>
 
                         <div class="pt-4 border-t border-slate-100 text-center space-y-2">
@@ -356,12 +364,8 @@
             </div>
         </div>
 
-        <div class="text-center mt-6 text-xs text-slate-500 space-y-1.5">
-            <div class="font-medium text-slate-600">Exclusively for Members &amp; Authorised Staff</div>
-            <div class="text-[11px] text-slate-400">
-                <span>Powered by</span>
-                <a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
-            </div>
+        <div class="text-center mt-6 text-xs text-slate-500">
+            <span>Club OS, Club Management System, powered by </span><a href="https://www.skysysonline.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors">Skysys</a>
         </div>
     </main>
 
