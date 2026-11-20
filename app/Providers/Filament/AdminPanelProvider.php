@@ -36,6 +36,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Malabar Club')
             ->brandLogo(fn () => view('filament.components.brand-logo'))
             ->brandLogoHeight('2.5rem')
+            ->favicon('/favicon.ico')
             ->font('Outfit')
             ->colors([
                 'primary' => Color::Amber,

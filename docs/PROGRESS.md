@@ -3243,6 +3243,23 @@ For environments where full browser automation is unavailable, operators should 
   - Full authentication test suite ([`tests/Feature/UnifiedLoginTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/UnifiedLoginTest.php), [`tests/Feature/PoweredBySkysysFooterTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/PoweredBySkysysFooterTest.php), [`tests/Feature/SecurityHardeningTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/SecurityHardeningTest.php)): 18 tests passed, 171 assertions, 0 errors.
   - Compiled Vite assets (`npm run build`).
 
+### 2026-11-20: Official Brand Favicon & Web App Icon Standardization
+
+- **Objective:** Integrate the user's official insignia as the universal application favicon and PWA icon suite.
+- **Implementation:**
+  1. **Icon Asset Generation:**
+     - Processed source image to generate transparent, high-fidelity PNG icons: `public/favicon.png` (32x32), `public/icons/favicon-32x32.png`, `public/icons/favicon-16x16.png`, `public/icons/apple-touch-icon.png` (180x180), `public/icons/icon-192.png` (192x192), and `public/icons/icon-512.png` (512x512).
+     - Built standard multi-resolution ICO file at `public/favicon.ico` containing 16x16, 32x32, and 48x48 RGBA layers.
+     - Generated vector SVG wrappers `public/icons/icon-192.svg` and `public/icons/icon-512.svg`.
+  2. **Application Head Declarations:**
+     - Registered `->favicon('/favicon.ico')` on the Filament admin panel in [`app/Providers/Filament/AdminPanelProvider.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/app/Providers/Filament/AdminPanelProvider.php).
+     - Updated favicon and apple-touch-icon tags across all blade layouts: [`resources/views/filament/components/pwa-head.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/filament/components/pwa-head.blade.php), [`resources/views/auth/login.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/login.blade.php), [`resources/views/layouts/member.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/layouts/member.blade.php), [`resources/views/layouts/app.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/layouts/app.blade.php), [`resources/views/welcome.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/welcome.blade.php), [`resources/views/auth/change-password.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/change-password.blade.php), [`resources/views/auth/forced-password-change.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/auth/forced-password-change.blade.php), [`resources/views/setup/index.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/setup/index.blade.php), and [`resources/views/setup/results.blade.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/resources/views/setup/results.blade.php).
+  3. **PWA Manifests:**
+     - Configured `public/manifest.json`, `public/manifest-admin.json`, and `public/manifest-member.json` with updated icon specifications.
+- **Verification:**
+  - Added `test_favicon_and_brand_icon_assets_exist_and_are_referenced` in [`tests/Feature/PoweredBySkysysFooterTest.php`](file:///Users/krishnadaspnair/Documents/Skysys/Products/malabar-club/tests/Feature/PoweredBySkysysFooterTest.php): 15 tests passed, 140 assertions, 0 errors.
+  - Built production assets (`npm run build`).
+
 
 
 

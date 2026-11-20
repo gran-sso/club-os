@@ -68,4 +68,21 @@ class PoweredBySkysysFooterTest extends TestCase
         $response->assertSee('https://www.skysysonline.com/', false);
         $response->assertSee('Skysys</a>', false);
     }
+
+    public function test_favicon_and_brand_icon_assets_exist_and_are_referenced(): void
+    {
+        $this->assertFileExists(public_path('favicon.ico'));
+        $this->assertGreaterThan(1000, filesize(public_path('favicon.ico')));
+
+        $this->assertFileExists(public_path('favicon.png'));
+        $this->assertFileExists(public_path('icons/icon-192.png'));
+        $this->assertFileExists(public_path('icons/icon-512.png'));
+        $this->assertFileExists(public_path('icons/apple-touch-icon.png'));
+
+        $loginResponse = $this->get('/login');
+        $loginResponse->assertStatus(200);
+        $loginResponse->assertSee('href="/favicon.ico"', false);
+        $loginResponse->assertSee('href="/icons/favicon-32x32.png"', false);
+        $loginResponse->assertSee('href="/icons/apple-touch-icon.png"', false);
+    }
 }
